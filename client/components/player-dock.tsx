@@ -23,7 +23,7 @@ export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, 
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, type: "spring", bounceDamping: 15, bounce: 0.7 }}
       className="fixed bottom-2 z-50 flex justify-center flex-col items-center">
-      <div className="bg-card/90 backdrop-blur-xl border border-border rounded-2xl shadow-2xl px-4 py-4 md:px-8 space-y-4">
+      <div className="bg-card/90 backdrop-blur-xl border border-border rounded-2xl shadow-2xl px-4 pt-4 pb-6 md:px-8 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-muted-foreground">Ditt lags brickor</span>
