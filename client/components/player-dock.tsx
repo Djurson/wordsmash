@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { Repeat1, Shuffle } from "lucide-react";
 import GameTile from "./game-tile";
+import { Button } from "./ui/button";
+import { Kbd } from "./ui/kbd";
 
 interface PlayerDockProps {
   letters: string[];
@@ -11,16 +13,35 @@ interface PlayerDockProps {
   onSelectLetter: (index: number) => void;
   onShuffle: () => void;
   onTradeIn: () => void;
+  hasPlaceholders: boolean;
 }
 
-export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, onTradeIn }: PlayerDockProps) {
+export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, onTradeIn, hasPlaceholders }: PlayerDockProps) {
   return (
-    <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, type: "spring", bounceDamping: 15, bounce: 0.7 }} className="fixed bottom-2 z-50">
-      <div className="bg-card/90 backdrop-blur-xl border border-border rounded-2xl shadow-2xl px-4 py-4 md:px-8 space-y-2">
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.3, type: "spring", bounceDamping: 15, bounce: 0.7 }}
+      className="fixed bottom-2 z-50 flex justify-center flex-col items-center">
+      <div className="bg-card/90 backdrop-blur-xl border border-border rounded-2xl shadow-2xl px-4 py-4 md:px-8 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-muted-foreground">Ditt lags brickor</span>
             <span className="text-[10px] font-mono font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md ml-1">{letters.length} kvar</span>
+          </div>
+          <div className={`flex gap-2 duration-300 ease-in-out ${hasPlaceholders ? "translate-y-0" : "translate-y-86"}`}>
+            <Button size="sm" variant="outline" className="text-tile-foreground! px-5 flex items-center">
+              Avbryt{" "}
+              <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
+                Esc {selectedIndex ? "+ Esc" : ""}
+              </Kbd>
+            </Button>
+            <Button size="sm" variant="default" className="text-tile-foreground! px-5 flex items-center">
+              Klar{" "}
+              <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/50">
+                ⏎
+              </Kbd>
+            </Button>
           </div>
           <div className="flex gap-2">
             <button

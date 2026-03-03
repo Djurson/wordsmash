@@ -53,6 +53,20 @@
   --color-tile-shadow: var(--tile-shadow);
   --color-tile-foreground: var(--tile-foreground);
   --color-canvas-dot: var(--canvas-dot);
+
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+
+  @keyframes wiggle {
+
+    0%,
+    100% {
+      transform: rotate(-20deg);
+    }
+
+    50% {
+      transform: rotate(20deg);
+    }
+  }
 }
 
 :root {

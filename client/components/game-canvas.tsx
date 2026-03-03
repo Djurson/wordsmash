@@ -3,18 +3,12 @@
 import { useState, useRef, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ZoomControls } from "./zoom-controls";
-import { CELL, cn, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/utils";
+import { CELL, cn, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/utils";
 import GameTile from "./game-tile";
-
-export interface PlacedTile {
-  letter: string;
-  x: number;
-  y: number;
-  team: "a" | "b";
-}
+import { PlacedTile } from "@/lib/types";
 
 interface GameCanvasProps {
-  tiles: PlacedTile[];
+  tiles: Record<string, PlacedTile>;
   selectedLetter: string | null;
   onPlaceTile: (x: number, y: number) => void;
 }
@@ -86,22 +80,18 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
 
       if (!hasDragged.current && selectedLetter) {
         const cell = screenToGrid(e.clientX, e.clientY);
-        const occupied = tiles.some((t) => t.x === cell.x && t.y === cell.y);
-        if (!occupied) {
-          onPlaceTile(cell.x, cell.y);
-        }
+        onPlaceTile(cell.x, cell.y);
       }
     },
     [selectedLetter, screenToGrid, tiles, onPlaceTile],
   );
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
     const delta = e.deltaY > 0 ? -0.08 : 0.08;
     setZoom((prev) => Math.max(MAX_ZOOM_OUT, Math.min(MAX_ZOOM_IN, prev + delta)));
   }, []);
 
-  const hoverOccupied = hoverCell ? tiles.some((t) => t.x === hoverCell.x && t.y === hoverCell.y) : false;
+  const hoverOccupied = hoverCell ? !!tiles[getTileKey(hoverCell.x, hoverCell.y)] : false;
 
   return (
     <div
@@ -136,7 +126,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
 
       {/* Draw the placed letters */}
       <AnimatePresence>
-        {tiles.map((tile) => {
+        {Object.values(tiles).map((tile) => {
           const px = offset.x + tile.x * CELL * zoom;
           const py = offset.y + tile.y * CELL * zoom;
           const halfTile = (TILE_SIZE * zoom) / 2;
@@ -153,7 +143,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
                 transform: `translate(${px - halfTile}px, ${py - halfTile}px)`,
                 zIndex: 10,
               }}>
-              <GameTile letter={tile.letter} team={tile.team} state="placed" zoom={zoom} />
+              <GameTile letter={tile.letter} team={tile.team} state={tile.state} zoom={zoom} />
             </div>
           );
         })}
