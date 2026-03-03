@@ -77,7 +77,7 @@ export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, 
             </motion.div>
           ))}
 
-          {letters.length === 0 && <div className="text-sm text-muted-foreground italic py-4">Väntar på nya brickor...</div>}
+          {letters.length === 0 && <div className="text-sm text-muted-foreground py-4">Väntar på nya brickor...</div>}
         </div>
       </div>
     </motion.div>
