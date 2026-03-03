@@ -1,52 +1,22 @@
 "use client";
 
-import { ComponentExample } from "@/components/component-example";
 import { GameCanvas, PlacedTile } from "@/components/game-canvas";
 import { PlayerDock } from "@/components/player-dock";
 import { TopHUD } from "@/components/top-hud";
+import { CROSSWORD_TILES, GenerateFirstCharactes } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
-
-const CROSSWORD_TILES: PlacedTile[] = [
-  // "REACT" horizontal at row 3
-  { letter: "R", x: 1, y: 3, team: "a" },
-  { letter: "E", x: 2, y: 3, team: "a" },
-  { letter: "A", x: 3, y: 3, team: "a" },
-  { letter: "C", x: 4, y: 3, team: "a" },
-  { letter: "T", x: 5, y: 3, team: "a" },
-
-  { letter: "W", x: 1, y: 5, team: "b" },
-  { letter: "E", x: 2, y: 5, team: "b" },
-  { letter: "B", x: 3, y: 5, team: "b" },
-
-  { letter: "G", x: 3, y: 1, team: "a" },
-  { letter: "O", x: 4, y: 1, team: "a" },
-  { letter: "D", x: 2, y: 6, team: "b" },
-  { letter: "E", x: 3, y: 6, team: "b" },
-  { letter: "V", x: 4, y: 6, team: "b" },
-  { letter: "E", x: 3, y: 7, team: "a" },
-];
-
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ";
-
-const GenerateFirstCharactes = () => {
-  const startletters = [];
-  for (let i = 0; i < 15; i++) {
-    startletters.push(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
-  }
-
-  return startletters;
-};
 
 export default function Page() {
   const [tiles, setTiles] = useState<PlacedTile[]>(CROSSWORD_TILES);
   const [rackLetters, setRackLetters] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const selectedLetter = selectedIndex !== null ? rackLetters[selectedIndex] : null;
-
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRackLetters(GenerateFirstCharactes());
   }, []);
+
+  const selectedLetter = selectedIndex !== null ? rackLetters[selectedIndex] : null;
 
   const handleSelectLetter = useCallback((index: number) => {
     setSelectedIndex((prev) => (prev === index ? null : index));

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useCallback } from "react";
+import { AnimatePresence } from "framer-motion";
 import { ZoomControls } from "./zoom-controls";
-import { cn } from "@/lib/utils";
-import { GhostPointer } from "./ghost-pointer";
+import { CELL, cn, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/utils";
 import GameTile from "./game-tile";
 
 export interface PlacedTile {
@@ -20,12 +19,6 @@ interface GameCanvasProps {
   onPlaceTile: (x: number, y: number) => void;
 }
 
-const TILE_SIZE = 64;
-const GAP = 4;
-const CELL = TILE_SIZE + GAP;
-const MAX_ZOOM_OUT = 0.6;
-const MAX_ZOOM_IN = 2.0;
-
 export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasProps) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -36,12 +29,6 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
   const offsetStartRef = useRef({ x: 0, y: 0 });
   const hasDragged = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      setOffset({ x: 0, y: 0 });
-    }
-  }, []);
 
   const screenToGrid = useCallback(
     (clientX: number, clientY: number) => {
@@ -73,7 +60,6 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      // Uppdatera hover/spök-brickan
       if (selectedLetter) {
         const cell = screenToGrid(e.clientX, e.clientY);
         setHoverCell(cell);
@@ -173,7 +159,6 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
         })}
       </AnimatePresence>
 
-      {/* <GhostPointer offset={offset} color="#ff0000" name="Kalle" zoom={zoom} cell={CELL} /> */}
       <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(MAX_ZOOM_IN, prev + 0.2))} onZoomOut={() => setZoom((prev) => Math.max(MAX_ZOOM_OUT, prev - 0.2))} />
     </div>
   );

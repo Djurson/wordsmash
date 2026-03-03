@@ -11,7 +11,7 @@ interface GhostPointer {
   cell: number;
 }
 
-export function GhostPointer({ offset, name, color, zoom, cell }: GhostPointer) {
+export function GhostPointer({ offset, name, zoom, cell }: GhostPointer) {
   return (
     <div
       className="absolute pointer-events-none"
@@ -23,7 +23,7 @@ export function GhostPointer({ offset, name, color, zoom, cell }: GhostPointer) 
       }}>
       <div className="flex items-center gap-1 drop-shadow-md">
         <MousePointer2 className="w-4 h-4 text-red-500 fill-red-500" />
-        <span className="text-[10px] text-white font-medium bg-red-500 px-1.5 py-0.5 rounded shadow">Kalle</span>
+        <span className="text-[10px] text-white font-medium bg-red-500 px-1.5 py-0.5 rounded shadow">{name}</span>
       </div>
     </div>
   );

@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Snowflake, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface TopHUDProps {
@@ -11,7 +10,7 @@ interface TopHUDProps {
 }
 
 export function TopHUD({ selectedLetter, rackLetters }: TopHUDProps) {
-  const [timeLeft, setTimeLeft] = useState(180);
+  const [timeLeft, setTimeLeft] = useState(5 * 60);
 
   useEffect(() => {
     const interval = setInterval(() => {
