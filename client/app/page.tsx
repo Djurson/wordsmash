@@ -26,14 +26,27 @@ const CROSSWORD_TILES: PlacedTile[] = [
   { letter: "E", x: 3, y: 7, team: "a" },
 ];
 
-const INITIAL_RACK = ["D", "I", "G", "L", "A", "T", "R"];
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ";
+
+const GenerateFirstCharactes = () => {
+  const startletters = [];
+  for (let i = 0; i < 15; i++) {
+    startletters.push(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
+  }
+
+  return startletters;
+};
 
 export default function Page() {
   const [tiles, setTiles] = useState<PlacedTile[]>(CROSSWORD_TILES);
-  const [rackLetters, setRackLetters] = useState<string[]>(INITIAL_RACK);
+  const [rackLetters, setRackLetters] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const selectedLetter = selectedIndex !== null ? rackLetters[selectedIndex] : null;
+
+  useEffect(() => {
+    setRackLetters(GenerateFirstCharactes());
+  }, []);
 
   const handleSelectLetter = useCallback((index: number) => {
     setSelectedIndex((prev) => (prev === index ? null : index));
@@ -68,7 +81,6 @@ export default function Page() {
     setSelectedIndex(null);
   }, []);
 
-  // Escape to deselect
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedIndex(null);
@@ -81,7 +93,7 @@ export default function Page() {
     <main className="w-full h-dvh overflow-hidden bg-background flex flex-col items-center">
       <TopHUD selectedLetter={selectedIndex} rackLetters={rackLetters} />
       <GameCanvas tiles={tiles} selectedLetter={selectedLetter} onPlaceTile={handlePlaceTile} />
-      <PlayerDock letters={rackLetters} team="a" selectedIndex={selectedIndex} onSelectLetter={handleSelectLetter} onShuffle={handleShuffle} />
+      <PlayerDock letters={rackLetters} team="a" selectedIndex={selectedIndex} onSelectLetter={handleSelectLetter} onShuffle={handleShuffle} onTradeIn={() => {}} />
     </main>
   );
 }

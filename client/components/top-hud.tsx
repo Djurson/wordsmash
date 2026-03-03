@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { Snowflake, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -24,7 +25,11 @@ export function TopHUD({ selectedLetter, rackLetters }: TopHUDProps) {
   const isUrgent = timeLeft < 30;
 
   return (
-    <div className="fixed z-50 w-10/12 max-w-2xl flex flex-col items-center space-y-2 mt-2">
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 800, damping: 20 }}
+      className="fixed z-50 w-10/12 max-w-2xl flex flex-col items-center space-y-2 mt-2">
       <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl shadow-lg px-4 py-3 md:px-6 md:py-4 w-full flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <TeamDisplay team="a" />
@@ -46,7 +51,7 @@ export function TopHUD({ selectedLetter, rackLetters }: TopHUDProps) {
       <div className="px-4 py-2 rounded-full bg-white/90 shadow-sm backdrop-blur-md border border-slate-200 text-xs text-slate-500 font-medium z-30">
         {selectedLetter ? `Klicka på brädet för att placera "${rackLetters[selectedLetter]}"` : "Dra för att panorera · Skrolla för att zooma"}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

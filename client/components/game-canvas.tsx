@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ZoomControls } from "./zoom-controls";
 import { cn } from "@/lib/utils";
 import { GhostPointer } from "./ghost-pointer";
+import GameTile from "./game-tile";
 
 export interface PlacedTile {
   letter: string;
@@ -22,6 +23,8 @@ interface GameCanvasProps {
 const TILE_SIZE = 64;
 const GAP = 4;
 const CELL = TILE_SIZE + GAP;
+const MAX_ZOOM_OUT = 0.6;
+const MAX_ZOOM_IN = 2.0;
 
 export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasProps) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -34,14 +37,9 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
   const hasDragged = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-centrera brädet vid start
   useEffect(() => {
     if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setOffset({
-        x: 0, // Börjar i mitten
-        y: 0,
-      });
+      setOffset({ x: 0, y: 0 });
     }
   }, []);
 
@@ -61,7 +59,6 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
     [offset, zoom],
   );
 
-  // V0's PointerEvents för bäst mus/touch-stöd
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (e.button !== 0 && e.pointerType === "mouse") return;
@@ -91,10 +88,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
 
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged.current = true;
 
-      setOffset({
-        x: offsetStartRef.current.x + dx,
-        y: offsetStartRef.current.y + dy,
-      });
+      setOffset({ x: offsetStartRef.current.x + dx, y: offsetStartRef.current.y + dy });
     },
     [isPanning, selectedLetter, screenToGrid],
   );
@@ -118,7 +112,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.08 : 0.08;
-    setZoom((prev) => Math.max(0.3, Math.min(2.5, prev + delta)));
+    setZoom((prev) => Math.max(MAX_ZOOM_OUT, Math.min(MAX_ZOOM_IN, prev + delta)));
   }, []);
 
   const hoverOccupied = hoverCell ? tiles.some((t) => t.x === hoverCell.x && t.y === hoverCell.y) : false;
@@ -130,15 +124,14 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
       style={{
         backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
         backgroundColor: "var(--background, #f8fafc)",
-        backgroundSize: `${32 * zoom}px ${32 * zoom}px`,
-        backgroundPosition: `calc(50% + ${offset.x}px) calc(50% + ${offset.y}px)`,
+        backgroundSize: `${CELL * zoom}px ${CELL * zoom}px`,
+        backgroundPosition: `calc(50% + ${offset.x + (CELL * zoom) / 2}px) calc(50% + ${offset.y + (CELL * zoom) / 2}px)`,
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}>
-      {/* Draw the selected letter */}
       {selectedLetter && hoverCell && !hoverOccupied && (
         <div
           style={{
@@ -149,10 +142,9 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
             height: TILE_SIZE * zoom,
             transform: `translate(${offset.x + hoverCell.x * CELL * zoom - (TILE_SIZE * zoom) / 2}px, ${offset.y + hoverCell.y * CELL * zoom - (TILE_SIZE * zoom) / 2}px)`,
             zIndex: 15,
-            fontSize: 28 * zoom,
           }}
-          className="flex items-center justify-center rounded-lg font-mono font-bold select-none border-2 border-dashed border-primary/50 bg-primary/10 text-primary/60 pointer-events-none">
-          {selectedLetter}
+          className="pointer-events-none">
+          <GameTile letter={selectedLetter} state="selected-hover" zoom={zoom} />
         </div>
       )}
 
@@ -174,27 +166,15 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
                 height: TILE_SIZE * zoom,
                 transform: `translate(${px - halfTile}px, ${py - halfTile}px)`,
                 zIndex: 10,
-                fontSize: 28 * zoom,
               }}>
-              <motion.div
-                initial={{ scale: 0, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className={cn(
-                  "w-full h-full flex items-center justify-center rounded-xl font-mono font-bold select-none border-2 shadow-[0_4px_0_0_#cbd5e1,0_4px_6px_-1px_rgba(0,0,0,0.1)] text-tile-foreground",
-                  tile.team === "a" && "bg-tile-primary border-tile-border",
-                  tile.team === "b" && "bg-tile-accent border-tile-border",
-                )}>
-                <span>{tile.letter}</span>
-              </motion.div>
+              <GameTile letter={tile.letter} team={tile.team} state="placed" zoom={zoom} />
             </div>
           );
         })}
       </AnimatePresence>
 
       {/* <GhostPointer offset={offset} color="#ff0000" name="Kalle" zoom={zoom} cell={CELL} /> */}
-      <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(2.5, prev + 0.2))} onZoomOut={() => setZoom((prev) => Math.max(0.3, prev - 0.2))} />
+      <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(MAX_ZOOM_IN, prev + 0.2))} onZoomOut={() => setZoom((prev) => Math.max(MAX_ZOOM_OUT, prev - 0.2))} />
     </div>
   );
 }
