@@ -1,115 +1,141 @@
 "use client";
 
-import { GameCanvas } from "@/components/game-canvas";
-import { PlayerDock } from "@/components/player-dock";
-import { TopHUD } from "@/components/top-hud";
-import { Direction, PlacedTile } from "@/lib/types";
-import { CROSSWORD_TILES, GenerateFirstCharactes, getTileKey, isValidPlacement } from "@/lib/utils";
-import { useCallback, useEffect, useState } from "react";
+import { CreateGameTab } from "@/components/lobby/create-game-tab";
+import { GameCodeDisplay } from "@/components/lobby/game-code-display";
+import { GameSettings, GameSettingsPanel } from "@/components/lobby/game-settings";
+import { MenuHeader } from "@/components/lobby/header";
+import { JoinTab } from "@/components/lobby/join-tab";
+import { PlayerList } from "@/components/lobby/player-list";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CELL, MOCK_PLAYERS } from "@/lib/utils";
+import { ArrowLeft, Play, Sparkles, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
+import { motion } from "framer-motion";
 
-export default function Page() {
-  const [placedTiles, setPlacedTiles] = useState<Record<string, PlacedTile>>(() => {
-    const initialMap: Record<string, PlacedTile> = {};
-    CROSSWORD_TILES.forEach((tile) => {
-      initialMap[getTileKey(tile.x, tile.y)] = tile;
-    });
-    return initialMap;
+function generateGameCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const segment = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `${segment()}-${segment()}`;
+}
+
+export default function LobbyPage() {
+  const router = useRouter();
+  const [tab, setTab] = useState<string>("create");
+  const [joinCode, setJoinCode] = useState("");
+  const [hasCreated, setHasCreated] = useState(false);
+  const [gameCode, setGameCode] = useState("");
+  const [settings, setSettings] = useState<GameSettings>({
+    timerMinutes: 5,
+    enableBombs: true,
+    gridSize: 15,
+    maxPlayers: 4,
   });
-  const [currentTurnTiles, setcurrentTurnTiles] = useState<Record<string, PlacedTile>>({});
-  const [currentDirection, setCurrentDirection] = useState<Direction | null>(null);
-  const [rackLetters, setRackLetters] = useState<string[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRackLetters(GenerateFirstCharactes());
+  const handleCreate = useCallback(() => {
+    setGameCode(generateGameCode());
+    setHasCreated(true);
   }, []);
 
-  const selectedLetter = selectedIndex !== null ? rackLetters[selectedIndex] : null;
-
-  const handleSelectLetter = useCallback((index: number) => {
-    setSelectedIndex((prev) => (prev === index ? null : index));
-  }, []);
-
-  const handlePlaceTile = useCallback(
-    (x: number, y: number) => {
-      if (selectedIndex === null) return;
-
-      // Rule checking
-      const validationResult = isValidPlacement(x, y, currentDirection, placedTiles, currentTurnTiles);
-
-      if (validationResult === false) {
-        return;
-      }
-
-      const targetKey = getTileKey(x, y);
-      const letter = rackLetters[selectedIndex];
-
-      const newTile: PlacedTile = { letter, x, y, team: "a", state: "placeholder" };
-
-      setcurrentTurnTiles((prev) => ({ ...prev, [targetKey]: newTile }));
-      setCurrentDirection(validationResult);
-      setRackLetters((prev) => prev.filter((_, i) => i !== selectedIndex));
-      setSelectedIndex(null);
-    },
-    [selectedIndex, rackLetters, placedTiles, currentTurnTiles, currentDirection],
-  );
-
-  const handleShuffle = useCallback(() => {
-    setRackLetters((prev) => {
-      const shuffled = [...prev];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    });
-    setSelectedIndex(null);
-  }, []);
-
-  const handleCancelPlacement = useCallback(() => {
-    if (selectedIndex !== null) {
-      setSelectedIndex(null);
-      return;
-    }
-
-    if (Object.keys(currentTurnTiles).length > 0) {
-      let placeholderLetters: string[] = [];
-
-      for (const key in currentTurnTiles) {
-        placeholderLetters.push(currentTurnTiles[key].letter);
-      }
-
-      setRackLetters((prev) => [...prev, ...placeholderLetters]);
-      setcurrentTurnTiles({});
-      setCurrentDirection(null);
-    }
-  }, [selectedIndex, currentTurnTiles]);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleCancelPlacement();
-      }
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [handleCancelPlacement]);
+  const handleStartGame = useCallback(() => {
+    router.push("/game");
+  }, [router]);
 
   return (
-    <main className="w-full h-dvh overflow-hidden bg-background flex flex-col items-center">
-      <TopHUD selectedLetter={selectedIndex} rackLetters={rackLetters} />
-      <GameCanvas tiles={{ ...placedTiles, ...currentTurnTiles }} selectedLetter={selectedLetter} onPlaceTile={handlePlaceTile} />
-      <PlayerDock
-        letters={rackLetters}
-        team="a"
-        selectedIndex={selectedIndex}
-        onSelectLetter={handleSelectLetter}
-        onShuffle={handleShuffle}
-        onTradeIn={() => {}}
-        hasPlaceholders={Object.keys(currentTurnTiles).length > 0}
+    <main className="flex flex-col items-center gap-8 min-h-dvh bg-background">
+      <div
+        className="fixed inset-0 overflow-hidden touch-none"
+        style={{
+          backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
+          backgroundColor: "var(--background, --tile-secondary)",
+          backgroundSize: `${CELL}px ${CELL}px`,
+          backgroundPosition: `calc(50% + ${CELL / 2}px) calc(50% + ${CELL / 2}px)`,
+        }}
       />
+
+      <MenuHeader />
+
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 1200, damping: 40, delay: 0.8 }}
+        className="z-10 flex items-start justify-center flex-1 w-full pb-10">
+        {!hasCreated ? (
+          <div className="w-full max-w-md">
+            <Tabs value={tab} onValueChange={setTab} className="flex flex-col w-full gap-3">
+              <TabsList className="w-full">
+                <TabsTrigger value="create" className="flex-1">
+                  <Sparkles className="w-4 h-4" />
+                  Skapa Spel
+                </TabsTrigger>
+                <TabsTrigger value="join" className="flex-1">
+                  <UserPlus className="w-4 h-4" />
+                  Gå Med
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="create">
+                <CreateGameTab settings={settings} handleCreate={handleCreate} setGameSettings={setSettings} />
+              </TabsContent>
+
+              <TabsContent value="join">
+                <JoinTab joinCode={joinCode} onCodeChange={(e) => setJoinCode(e)} onStartGame={handleStartGame} />
+              </TabsContent>
+            </Tabs>
+          </div>
+        ) : (
+          <div className="flex flex-col w-full max-w-4xl gap-6 lg:flex-row">
+            <div className="flex flex-col flex-1 gap-5">
+              <GameCodeDisplay code={gameCode} />
+              <PlayerList players={MOCK_PLAYERS} />
+            </div>
+
+            <div className="flex flex-col w-full gap-5 lg:flex-1 lg:justify-between">
+              <div className="flex flex-col gap-3 p-6 border shadow-sm rounded-2xl bg-card border-border">
+                <Label className="text-sm font-semibold text-foreground" htmlFor="username">
+                  Namn
+                </Label>
+                <Input
+                  placeholder="Ditt namn..."
+                  // value={formattedJoinCode}
+                  // onChange={(e) => onCodeChange(e.target.value)}
+                  className="text-lg font-bold tracking-widest text-left bg-card"
+                  name="username"
+                />
+              </div>
+
+              <div className="p-6 border shadow-sm rounded-2xl bg-card border-border">
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-base font-extrabold text-foreground">Game Settings</h3>
+                  <GameSettingsPanel settings={settings} onChange={setSettings} isHost={true} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Button size="lg" onClick={handleStartGame} className="w-full text-base font-bold h-14">
+                  Starta
+                  <Play className="w-5 h-5" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setHasCreated(false);
+                    setGameCode("");
+                  }}
+                  className="w-full">
+                  <ArrowLeft />
+                  Tillbaka
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
     </main>
   );
 }

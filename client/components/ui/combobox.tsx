@@ -107,7 +107,7 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-50"
+        className="z-50 isolate"
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
@@ -150,7 +150,7 @@ function ComboboxItem({
       {children}
       <ComboboxPrimitive.ItemIndicator
         render={
-          <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
+          <span className="absolute flex items-center justify-center pointer-events-none right-2 size-4" />
         }
       >
         <CheckIcon className="pointer-events-none" />

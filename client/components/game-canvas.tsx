@@ -99,7 +99,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
       className={cn("fixed inset-0 overflow-hidden touch-none", isPanning ? "cursor-grabbing" : selectedLetter ? "cursor-crosshair" : "cursor-grab")}
       style={{
         backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
-        backgroundColor: "var(--background, #f8fafc)",
+        backgroundColor: "var(--background, --tile-secondary))",
         backgroundSize: `${CELL * zoom}px ${CELL * zoom}px`,
         backgroundPosition: `calc(50% + ${offset.x + (CELL * zoom) / 2}px) calc(50% + ${offset.y + (CELL * zoom) / 2}px)`,
       }}

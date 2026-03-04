@@ -22,6 +22,12 @@ export const CROSSWORD_TILES: PlacedTile[] = [
   { letter: "J", x: 1, y: 0, team: "a", state: "placed" },
 ];
 
+export const MOCK_PLAYERS = [
+  { id: "1", name: "You", avatar: "Y", isHost: true, isReady: true, team: "A" as const },
+  { id: "2", name: "LetterWiz", avatar: "L", isHost: false, isReady: true, team: "A" as const },
+  { id: "3", name: "TileKing", avatar: "T", isHost: false, isReady: false, team: "B" as const },
+];
+
 export const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ";
 
 export const GenerateFirstCharactes = () => {
