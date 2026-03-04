@@ -7,3 +7,24 @@ export interface PlacedTile {
 }
 
 export type Direction = "vertical" | "horizontal";
+
+export type WSMessageType = "lobby_join" | "game_code";
+
+export interface Game {
+  teams: {
+    teamA: { users: User[]; points: number };
+    teamB: { users: User[]; points: number };
+  };
+  gameId: string;
+  powerups: boolean;
+}
+
+export interface User {
+  userId: string;
+  username: string;
+}
+
+export interface Event {
+  type: WSMessageType;
+  payload: any;
+}

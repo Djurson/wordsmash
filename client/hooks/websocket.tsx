@@ -1,35 +1,15 @@
 "use client";
 
 import { ToastError } from "@/lib/toastfunctions";
+import { Event, Game, User, WSMessageType } from "@/lib/types";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
 export interface GameContextContextProps {
   websocket: WebSocket | null;
-  sendMessage: (type: MessageType, payload: any) => void;
+  sendMessage: (type: WSMessageType, payload: any) => void;
   user: User | null;
   game: Game | null;
 }
-
-export interface Game {
-  teams: {
-    teamA: { users: User[]; points: number };
-    teamB: { users: User[]; points: number };
-  };
-  gameId: string;
-  powerups: boolean;
-}
-
-export interface User {
-  userId: string;
-  username: string;
-}
-
-export interface Event {
-  type: MessageType;
-  payload: any;
-}
-
-export type MessageType = "connection" | "game_code";
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
 
@@ -82,7 +62,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const sendMessage = (type: MessageType, payload: any) => {
+  const sendMessage = (type: WSMessageType, payload: any) => {
     if (!websocket || websocket.readyState !== WebSocket.OPEN) {
       ToastError("Ej ansluten till servern");
       return;
