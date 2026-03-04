@@ -60,7 +60,7 @@ export function GameSettingsPanel({ settings, onChange, isHost }: GameSettingsPr
       </div>
 
       <div className="flex flex-col gap-2.5">
-        <span className="text-sm font-semibold text-foreground">Power-ups</span>
+        <span className="text-sm font-semibold text-foreground">Special regler</span>
         <div className="flex flex-col gap-2">
           {POWER_UPS.map((powerUp) => {
             const Icon = powerUp.icon;
