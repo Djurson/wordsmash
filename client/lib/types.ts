@@ -16,7 +16,12 @@ export interface Game {
     teamB: { users: User[]; points: number };
   };
   gameId: string;
-  powerups: boolean;
+  gamesettings: GameSettings | null;
+}
+
+export interface GameSettings {
+  timerMinutes: number;
+  enableBombs: boolean;
 }
 
 export interface User {

@@ -3,13 +3,7 @@
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Timer, Bomb } from "lucide-react";
-
-export interface GameSettings {
-  timerMinutes: number;
-  enableBombs: boolean;
-  gridSize: number;
-  maxPlayers: number;
-}
+import { GameSettings } from "@/lib/types";
 
 interface GameSettingsProps {
   settings: GameSettings;

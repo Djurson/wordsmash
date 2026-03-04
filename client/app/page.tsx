@@ -2,7 +2,7 @@
 
 import { CreateGameTab } from "@/components/lobby/create-game-tab";
 import { GameCodeDisplay } from "@/components/lobby/game-code-display";
-import { GameSettings, GameSettingsPanel } from "@/components/lobby/game-settings";
+import { GameSettingsPanel } from "@/components/lobby/game-settings";
 import { MenuHeader } from "@/components/lobby/header";
 import { JoinTab } from "@/components/lobby/join-tab";
 import { PlayerList } from "@/components/lobby/player-list";
@@ -15,6 +15,7 @@ import { ArrowLeft, Play, Sparkles, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
+import { GameSettings } from "@/lib/types";
 
 function generateGameCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -28,12 +29,7 @@ export default function LobbyPage() {
   const [joinCode, setJoinCode] = useState("");
   const [hasCreated, setHasCreated] = useState(false);
   const [gameCode, setGameCode] = useState("");
-  const [settings, setSettings] = useState<GameSettings>({
-    timerMinutes: 5,
-    enableBombs: true,
-    gridSize: 15,
-    maxPlayers: 4,
-  });
+  const [settings, setSettings] = useState<GameSettings>({ timerMinutes: 5, enableBombs: true });
 
   const handleCreate = useCallback(() => {
     setGameCode(generateGameCode());

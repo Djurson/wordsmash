@@ -1,8 +1,9 @@
 import { Play } from "lucide-react";
 import { Button } from "../ui/button";
-import { GameSettings, GameSettingsPanel } from "./game-settings";
+import { GameSettingsPanel } from "./game-settings";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { GameSettings } from "@/lib/types";
 
 interface CreateGameTabProps {
   settings: GameSettings;
