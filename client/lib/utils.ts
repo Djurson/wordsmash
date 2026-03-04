@@ -102,3 +102,9 @@ export function isValidPlacement(
 
   return newDirection;
 }
+
+export function GenerateGameCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const segment = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `${segment()}-${segment()}`;
+}

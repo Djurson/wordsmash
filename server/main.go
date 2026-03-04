@@ -3,7 +3,7 @@ package main
 import (
 	"api/gameserver"
 	"api/routes"
-	"api/ws"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -16,19 +16,15 @@ func main() {
 		log.Fatalf("Failed to open file: %s", err)
 	}
 
-	server := &gameserver.GameServer{
-		Dictionary: wordMap,
-	}
+	hub := gameserver.NewHub(wordMap)
 
-	manager := ws.NewManager(server)
+	// server.HandlePlayerMove("test")
+	// server.HandlePlayerMove("fuehufheufheuhfe")
 
-	server.HandlePlayerMove("test")
-	server.HandlePlayerMove("fuehufheufheuhfe")
+	go hub.Run()
 
-	router := routes.DefineRoutes(manager)
+	router := routes.DefineRoutes(hub)
 
-	err = http.ListenAndServe(":8080", router)
-	if err != nil {
-		log.Fatalf("Serverkrasch: %v", err)
-	}
+	fmt.Print("Starting server on: 8080")
+	log.Fatal(http.ListenAndServe(":8080", router))
 }

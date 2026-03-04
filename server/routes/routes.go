@@ -1,18 +1,20 @@
 package routes
 
 import (
-	"api/ws"
+	"api/gameserver"
 	"net/http"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
-func DefineRoutes(manager *ws.Manager) http.Handler {
+func DefineRoutes(hub *gameserver.GameHub) http.Handler {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/ws", manager.ServeWs())
-	r.HandleFunc("/test/{word}", TestWord(manager))
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		gameserver.ServeWs(hub, w, r)
+	})
+	// r.HandleFunc("/test/{word}", TestWord())
 
 	return defineHandlers(r)
 }
@@ -32,16 +34,16 @@ func defineHandlers(r *mux.Router) http.Handler {
 	return handlers.CORS(allowedOrigins, allowedMethods, allowedHeaders, allowCredentials)(r)
 }
 
-func TestWord(manager *ws.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
+// func TestWord() http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		vars := mux.Vars(r)
 
-		word := vars["word"]
+// 		word := vars["word"]
 
-		if manager.Gameserver.Dictionary.IsValid(word) {
-			w.Write([]byte("Word exists"))
-		} else {
-			w.Write([]byte("Word does not exist"))
-		}
-	}
-}
+// 		if .Dictionary.IsValid(word) {
+// 			w.Write([]byte("Word exists"))
+// 		} else {
+// 			w.Write([]byte("Word does not exist"))
+// 		}
+// 	}
+// }

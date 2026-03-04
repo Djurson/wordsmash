@@ -20,6 +20,7 @@ export function CreateGameTab({ settings, setGameSettings, handleCreate }: Creat
       </div>
 
       <div className="flex flex-col gap-3">
+        {/** //TODO: Add username */}
         <Label className="text-sm font-semibold text-foreground" htmlFor="username">
           Namn
         </Label>

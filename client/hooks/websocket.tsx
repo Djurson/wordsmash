@@ -26,7 +26,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://${process.env.NEXT_PUBLIC_WS_PATH}/ws`);
+    const ws = new WebSocket("ws://localhost:8080/ws");
 
     ws.onopen = () => {
       console.log("Ansluten till servern");
