@@ -23,7 +23,7 @@ export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, 
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, type: "spring", bounceDamping: 15, bounce: 0.7 }}
       className="fixed z-50 flex flex-col items-center justify-center bottom-4">
-      <div className="px-4 pt-4 pb-6 border shadow-2xl bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8 space-y-4">
+      <div className="px-4 pt-4 pb-6 space-y-4 border shadow-2xl bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-muted-foreground">Ditt lags brickor</span>
@@ -54,7 +54,7 @@ export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, 
             <button
               onClick={onTradeIn}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tile-secondary text-foreground text-sm font-medium hover:bg-tile-secondary/10 transition-colors border border-border active:scale-95"
-              aria-label="Blanda brickor">
+              aria-label="Byt in">
               <Repeat1 className="w-3.5 h-3.5" />
               Byt in
             </button>
