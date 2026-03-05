@@ -18,19 +18,15 @@ func (h *HashMapDictionary) IsValid(word string) bool {
 }
 
 func HashMapLoadWordsFromTextFile(filename string) (*HashMapDictionary, error) {
-
 	hashmapDict := HashMapDictionary{words: make(map[string]struct{})}
-
 	file, err := os.Open(filename)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer file.Close()
 
+	// Read the file line by line
 	scanner := bufio.NewScanner(file)
-
 	for scanner.Scan() {
 		line := scanner.Text()
 
