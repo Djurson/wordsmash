@@ -23,9 +23,14 @@ type Bomb struct {
 }
 
 type TeamState struct {
-	Score   int                `json:"score"`
-	Letters []string           `json:"letters"`
-	Players map[uuid.UUID]User `json:"players"`
+	Score   int                 `json:"score"`
+	Letters []string            `json:"letters"`
+	Players map[uuid.UUID]*User `json:"players"`
+}
+
+type GameSettings struct {
+	TimerMinutes int  `json:"timerMinutes"`
+	EnableBombs  bool `json:"enableBombs"`
 }
 
 type GameState struct {
@@ -34,6 +39,8 @@ type GameState struct {
 	Teams    map[string]*TeamState `json:"teams"`
 	TimeLeft int                   `json:"timeLeft"`
 	GameId   string                `json:"gameId"`
+	Settings GameSettings          `json:"settings"`
+	Host     uuid.UUID             `json:"host"`
 }
 
 func NewGameState(id string) *GameState {
@@ -44,15 +51,19 @@ func NewGameState(id string) *GameState {
 			"a": {
 				Score:   0,
 				Letters: GenerateRandomLetters(15),
-				Players: make(map[uuid.UUID]User),
+				Players: make(map[uuid.UUID]*User),
 			},
 			"b": {
 				Score:   0,
 				Letters: GenerateRandomLetters(15),
-				Players: make(map[uuid.UUID]User),
+				Players: make(map[uuid.UUID]*User),
 			},
 		},
 		GameId: id,
+		Settings: GameSettings{
+			TimerMinutes: 5,
+			EnableBombs:  true,
+		},
 	}
 }
 

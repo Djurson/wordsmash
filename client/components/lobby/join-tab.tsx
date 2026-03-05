@@ -7,17 +7,19 @@ import { ArrowRight } from "lucide-react";
 interface JoinTabProps {
   joinCode: string;
   onCodeChange: (e: string) => void;
-  onStartGame: () => void;
+  username: string;
+  onUsernameChange: (username: string) => void;
+  onJoin: () => void;
 }
 
-export function JoinTab({ joinCode, onCodeChange, onStartGame }: JoinTabProps) {
+export function JoinTab({ ...props }: JoinTabProps) {
   const formattedJoinCode = useMemo(() => {
-    const clean = joinCode.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8);
+    const clean = props.joinCode.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8);
     if (clean.length > 4) {
       return `${clean.slice(0, 4)}-${clean.slice(4)}`;
     }
     return clean;
-  }, [joinCode]);
+  }, [props.joinCode]);
 
   const isJoinCodeValid = formattedJoinCode.length === 9;
 
@@ -34,9 +36,8 @@ export function JoinTab({ joinCode, onCodeChange, onStartGame }: JoinTabProps) {
         </Label>
         <Input
           placeholder="Ditt namn..."
-          // TODO: Implement username
-          // value={formattedJoinCode}
-          // onChange={(e) => onCodeChange(e.target.value)}
+          value={props.username}
+          onChange={(e) => props.onUsernameChange(e.target.value)}
           className="text-lg font-bold tracking-widest text-left bg-card"
           name="username"
         />
@@ -49,7 +50,7 @@ export function JoinTab({ joinCode, onCodeChange, onStartGame }: JoinTabProps) {
         <Input
           placeholder="e.g. AbC1-xY2z"
           value={formattedJoinCode}
-          onChange={(e) => onCodeChange(e.target.value)}
+          onChange={(e) => props.onCodeChange(e.target.value)}
           className="text-lg font-bold tracking-widest text-center bg-card"
           maxLength={9}
           name="game-code"
@@ -57,7 +58,7 @@ export function JoinTab({ joinCode, onCodeChange, onStartGame }: JoinTabProps) {
         <p className="text-xs text-center text-muted-foreground">Format: XXXX-XXXX (bokstäver och nummer, skiftlägeskänslig)</p>
       </div>
 
-      <Button size="lg" onClick={() => onStartGame} disabled={!isJoinCodeValid} className="w-full text-base font-bold">
+      <Button size="lg" onClick={props.onJoin} disabled={!isJoinCodeValid} className="w-full text-base font-bold">
         Gå Med
         <ArrowRight className="w-5 h-5" />
       </Button>

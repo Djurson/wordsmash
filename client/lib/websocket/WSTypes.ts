@@ -1,22 +1,23 @@
-export type WSEventType = "game_created" | "joined_game" | "error" | "lobby_updated" | "game_started" | "board_updated" | "server_connected" | "gamesettings_update";
+export type WSEventType =
+  | "game_created" // Go -> React
+  | "joined_game" // Go -> React
+  | "error" // Go -> React
+  | "lobby_updated" // Go -> React
+  | "game_started" // Go -> React
+  | "board_updated" // Go -> React
+  | "server_connected" // Go -> React
+  | "updated_settings" // Go -> React
+  | "left_room"; // Go -> React (Confirmation)
 
-export type WSEvent = {
-  event: WSEventType;
+// Sent from the client to go
+export type WSSendEventType = "create_game" | "join_game" | "submit_turn" | "update_settings" | "update_username" | "leave_room" | "start_game";
+
+export type WSRecievedEvent = {
+  type: WSEventType;
   payload: any;
 };
 
-// Payload sent when game_create request is sent
-export type CreateGamePayload = {
-  username: string;
-};
-
-// Payload when join_game request is sent
-export type JoinGamePayload = {
-  gameCode: string;
-  username: string;
-};
-
-// Response from the server
-export type GameCreatedPayload = {
-  gameCode: string;
+export type WSSendEvent = {
+  type: WSSendEventType;
+  payload: any;
 };

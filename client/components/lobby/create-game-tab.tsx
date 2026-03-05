@@ -3,15 +3,17 @@ import { Button } from "../ui/button";
 import { GameSettingsPanel } from "./game-settings";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { GameSettings } from "@/lib/types";
+import { GameSettings } from "@/lib/game/types";
 
 interface CreateGameTabProps {
   settings: GameSettings;
-  setGameSettings: (settings: GameSettings) => void;
+  onSettingsChange: (settings: GameSettings) => void;
+  username: string;
+  onUsernameChange: (username: string) => void;
   handleCreate: () => void;
 }
 
-export function CreateGameTab({ settings, setGameSettings, handleCreate }: CreateGameTabProps) {
+export function CreateGameTab({ ...props }: CreateGameTabProps) {
   return (
     <div className="flex flex-col gap-5 p-6 border shadow-sm rounded-2xl bg-card border-border">
       <div className="flex flex-col gap-1">
@@ -20,22 +22,21 @@ export function CreateGameTab({ settings, setGameSettings, handleCreate }: Creat
       </div>
 
       <div className="flex flex-col gap-3">
-        {/** //TODO: Add username */}
         <Label className="text-sm font-semibold text-foreground" htmlFor="username">
           Namn
         </Label>
         <Input
           placeholder="Ditt namn..."
-          // value={formattedJoinCode}
-          // onChange={(e) => onCodeChange(e.target.value)}
+          value={props.username}
+          onChange={(e) => props.onUsernameChange(e.target.value)}
           className="text-lg font-bold tracking-widest text-left bg-card"
           name="username"
         />
       </div>
 
-      <GameSettingsPanel settings={settings} onChange={setGameSettings} isHost={true} />
+      <GameSettingsPanel settings={props.settings} onChange={props.onSettingsChange} />
 
-      <Button size="lg" onClick={handleCreate} className="w-full text-base font-bold">
+      <Button size="lg" onClick={props.handleCreate} className="w-full text-base font-bold">
         Skapa
         <Play className="w-5 h-5" />
       </Button>

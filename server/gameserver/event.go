@@ -7,14 +7,22 @@ import (
 type EventType string
 
 const (
-	GameCreatedEvent         EventType = "game_created"
-	JoinedGameEvent          EventType = "joined_game"
-	ErrorEvent               EventType = "error"
-	LobbyUpdateEvent         EventType = "lobby_updated"
-	GameStartedEvent         EventType = "game_started"
-	BoardUpdateEvent         EventType = "board_updated"
-	ConnectedToServerEvent   EventType = "server_connected"
-	GameSettingsUpdatedEvent EventType = "gamesettings_update"
+	GameCreatedEvent       EventType = "game_created"     // Go (server) -> React (client)
+	JoinedGameEvent        EventType = "joined_game"      // Go (server) -> React (client)
+	ErrorEvent             EventType = "error"            // Go (server) -> React (client)
+	LobbyUpdateEvent       EventType = "lobby_updated"    // Go (server) -> React (client)
+	GameStartedEvent       EventType = "game_started"     // Go (server) -> React (client)
+	BoardUpdateEvent       EventType = "board_updated"    // Go (server) -> React (client)
+	ConnectedToServerEvent EventType = "server_connected" // Go (server) -> React (client)
+	SettingsUpdatedEvent   EventType = "updated_settings" // Go (server) -> React (client)
+	LeftRoomEvent          EventType = "left_room"        // Go (server) -> React (client)
+	CreateGameEvent        EventType = "create_game"      // React (client) -> Go (server)
+	JoinGameEvent          EventType = "join_game"        // React (client) -> Go (server)
+	SubmitTurnEvent        EventType = "submit_turn"      // React (client) -> Go (server)
+	UpdateSettingsEvent    EventType = "update_settings"  // React (client) -> Go (server)
+	UpdateUsernameEvent    EventType = "update_username"  // React (client) -> Go (server)
+	LeaveRoomEvent         EventType = "leave_room"       // React (client) -> Go (server)
+	StartGameEvent         EventType = "start_game"       // React (client) -> Go (server)
 )
 
 type Event struct {
@@ -37,6 +45,12 @@ func PrepareEvent(eventType EventType, payload any) []byte {
 
 // Payload sent by the client when game_create event is sent
 type CreateGamePayload struct {
+	Username string       `json:"username"`
+	Settings GameSettings `json:"settings"`
+}
+
+// Payload sent by react to update username
+type UpdateUsernamePayload struct {
 	Username string `json:"username"`
 }
 

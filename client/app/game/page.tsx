@@ -9,7 +9,7 @@ import { CROSSWORD_TILES, GenerateFirstCharactes } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 
 export default function Page() {
-  const [placedTiles, setPlacedTiles] = useState<Record<string, PlacedTile>>(() => {
+  const [placedTiles, _] = useState<Record<string, PlacedTile>>(() => {
     const initialMap: Record<string, PlacedTile> = {};
     CROSSWORD_TILES.forEach((tile) => {
       initialMap[getTileKey(tile.x, tile.y)] = tile;

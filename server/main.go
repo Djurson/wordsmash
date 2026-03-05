@@ -25,6 +25,6 @@ func main() {
 
 	router := routes.DefineRoutes(hub)
 
-	fmt.Print("Starting server on: 8080")
+	fmt.Print("Starting server on: 8080 \n")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

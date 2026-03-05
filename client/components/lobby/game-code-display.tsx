@@ -2,21 +2,19 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { useGameContext } from "@/hooks/websocket";
 
-interface GameCodeDisplayProps {
-  code: string;
-}
-
-export function GameCodeDisplay({ code }: GameCodeDisplayProps) {
+export function GameCodeDisplay() {
+  const { gamestate } = useGameContext();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
+    await navigator.clipboard.writeText(gamestate?.gameId ?? "");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const [left, right] = code.split("-");
+  const [left, right] = (gamestate?.gameId ?? "").split("-");
 
   return (
     <div className="p-6 border shadow-sm rounded-2xl bg-card border-border">

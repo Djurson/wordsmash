@@ -7,13 +7,16 @@ import (
 )
 
 type GameRoom struct {
-	ID          string
-	Clients     map[*Client]bool
-	State       *GameState
-	Broadcast   chan []byte
-	Register    chan *Client
-	Unregister  chan *Client
-	ProcessMove chan []byte
+	ID             string
+	Clients        map[*Client]bool
+	State          *GameState
+	Broadcast      chan []byte
+	Register       chan *Client
+	Unregister     chan *Client
+	ProcessMove    chan []byte
+	UpdateSettings chan []byte
+	UpdateUsername chan *Client
+	StartGame      chan *Client
 }
 
 type User struct {
@@ -24,13 +27,16 @@ type User struct {
 
 func NewRoom(id string) *GameRoom {
 	return &GameRoom{
-		ID:          id,
-		Clients:     make(map[*Client]bool),
-		State:       NewGameState(id),
-		Broadcast:   make(chan []byte),
-		Register:    make(chan *Client),
-		Unregister:  make(chan *Client),
-		ProcessMove: make(chan []byte),
+		ID:             id,
+		Clients:        make(map[*Client]bool),
+		State:          NewGameState(id),
+		Broadcast:      make(chan []byte),
+		Register:       make(chan *Client),
+		Unregister:     make(chan *Client),
+		ProcessMove:    make(chan []byte),
+		UpdateSettings: make(chan []byte),
+		UpdateUsername: make(chan *Client),
+		StartGame:      make(chan *Client),
 	}
 }
 
@@ -52,7 +58,7 @@ func (r *GameRoom) Run() {
 			}
 			client.Team = assignedTeam
 
-			r.State.Teams[assignedTeam].Players[client.Id] = User{
+			r.State.Teams[assignedTeam].Players[client.Id] = &User{
 				UserId:   client.Id,
 				Username: client.Username,
 				Team:     assignedTeam,
@@ -68,19 +74,37 @@ func (r *GameRoom) Run() {
 		case client := <-r.Unregister:
 			delete(r.Clients, client)
 
-			// Remove the client from the teams
 			if client.Team != "" {
 				delete(r.State.Teams[client.Team].Players, client.Id)
+				client.Team = ""
 			}
 
-			// Delete the room if there are no ther clients
+			// Delete the room if there are no other clients
 			if len(r.Clients) == 0 {
 				client.hub.DeleteRoom(r.ID)
 				return
 			}
 
-			finalMessage := PrepareEvent(LobbyUpdateEvent, r.State)
+			if r.State.Host == client.Id {
+				for remainingClient := range r.Clients {
+					r.State.Host = remainingClient.Id
+					break
+				}
+			}
 
+			finalMessage := PrepareEvent(LobbyUpdateEvent, r.State)
+			for c := range r.Clients {
+				c.send <- finalMessage
+			}
+
+		case client := <-r.UpdateUsername:
+			if client.Team != "" {
+				if player, exists := r.State.Teams[client.Team].Players[client.Id]; exists {
+					player.Username = client.Username
+				}
+			}
+
+			finalMessage := PrepareEvent(LobbyUpdateEvent, r.State)
 			for c := range r.Clients {
 				c.send <- finalMessage
 			}
@@ -109,6 +133,31 @@ func (r *GameRoom) Run() {
 
 			for client := range r.Clients {
 				client.send <- finalMessage
+			}
+
+		case payload := <-r.UpdateSettings:
+			var newSettings GameSettings
+			json.Unmarshal(payload, &newSettings)
+
+			// Update the rooms settings
+			r.State.Settings = newSettings
+
+			finalMessage := PrepareEvent(SettingsUpdatedEvent, newSettings)
+
+			for client := range r.Clients {
+				client.send <- finalMessage
+			}
+
+		// Start game
+		case hostClient := <-r.StartGame:
+			if r.State.Host != hostClient.Id {
+				hostClient.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bara spelledaren kan starta spelet."})
+				continue
+			}
+
+			finalMessage := PrepareEvent(GameStartedEvent, r.State)
+			for c := range r.Clients {
+				c.send <- finalMessage
 			}
 		}
 	}

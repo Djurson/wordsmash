@@ -1,72 +1,59 @@
 "use client";
 
 import { Crown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { User } from "@/lib/game/types";
+import { useGameContext } from "@/hooks/websocket";
 
-interface Player {
-  id: string;
-  name: string;
-  avatar: string;
-  isHost: boolean;
-  isReady: boolean;
-  team: "A" | "B";
-}
-
-interface PlayerListProps {
-  players: Player[];
-}
-
-function PlayerAvatar({ name, avatar }: { name: string; avatar: string }) {
+function PlayerAvatar({ name }: { name: string }) {
+  const split = name.split(" ");
   return (
-    <div className="flex items-center justify-center w-10 h-10 text-lg font-bold rounded-full shrink-0 bg-tile-primary text-tile-foreground drop-shadow-[0_2px_2px_var(--tile-shadow)]">{avatar}</div>
-  );
-}
-
-function PlayerCard(player: Player) {
-  return (
-    <div className="flex items-center gap-3 px-3 py-2 transition-all border rounded-xl bg-card border-border hover:border-primary/30">
-      <PlayerAvatar name={player.name} avatar={player.avatar} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold truncate text-foreground">{player.name}</span>
-          {player.isHost && <Crown className="w-3.5 h-3.5 text-primary shrink-0" />}
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {player.isReady ? (
-          <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Ready</Badge>
-        ) : (
-          <Badge variant="outline" className="text-[10px]">
-            Waiting
-          </Badge>
-        )}
-      </div>
+    <div className="flex items-center justify-center w-10 h-10 text-lg font-bold rounded-full shrink-0 bg-tile-primary text-tile-foreground drop-shadow-[0_2px_2px_var(--tile-shadow)]">
+      {split.length >= 2 ? `${split[0][0]}${split[1][0]}` : name[0]}
     </div>
   );
 }
 
-export function PlayerList({ players }: PlayerListProps) {
+function PlayerCard({ username, isHost, userId }: User & { isHost: boolean }) {
+  const { user } = useGameContext();
   return (
-    <div className="p-6 border shadow-sm rounded-2xl bg-card border-border">
+    <div className="flex items-center gap-4 px-4 py-3 transition-all border rounded-xl bg-card border-border hover:border-primary/30">
+      <PlayerAvatar name={username} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center">
+          <span className={`text-base truncate text-foreground ${user?.userId === userId ? "font-extrabold" : "font-bold"}`}>{username}</span>
+        </div>
+      </div>
+      {isHost && (
+        <div className="flex items-center p-2 bg-primary/15 rounded-md">
+          <Crown className="size-6 text-primary shrink-0 stroke-3 " />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function PlayerList() {
+  const { gamestate } = useGameContext();
+  const teamAPlayers = Object.values(gamestate?.teams["a"].players ?? []);
+  const teamBPlayers = Object.values(gamestate?.teams["b"].players ?? []);
+
+  return (
+    <div className="p-6 border shadow-sm rounded-2xl bg-card border-border flex-1">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <p className="text-base font-extrabold text-foreground">Lag A</p>
-          <span className="text-xs text-muted-foreground">({players.filter((player) => player.team === "A").length} spelare)</span>
+          <span className="text-xs text-muted-foreground">({teamAPlayers.length} spelare)</span>
         </div>
-        {players
-          .filter((player) => player.team === "A")
-          .map((player) => (
-            <PlayerCard key={player.id} {...player} />
-          ))}
+        {teamAPlayers.map((player) => (
+          <PlayerCard key={player.userId} {...player} isHost={player.userId === gamestate?.host} />
+        ))}
         <div className="flex items-center justify-between">
           <p className="text-base font-extrabold text-foreground">Lag B</p>
-          <span className="text-xs text-muted-foreground">({players.filter((player) => player.team === "B").length} spelare)</span>
+          <span className="text-xs text-muted-foreground">({teamBPlayers.length} spelare)</span>
         </div>
-        {players
-          .filter((player) => player.team === "B")
-          .map((player) => (
-            <PlayerCard key={player.id} {...player} />
-          ))}
+        {teamBPlayers.map((player) => (
+          <PlayerCard key={player.userId} {...player} isHost={player.userId === gamestate?.host} />
+        ))}
       </div>
     </div>
   );

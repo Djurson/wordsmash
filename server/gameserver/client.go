@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -54,32 +55,47 @@ func (c *Client) readPump() {
 
 		// Switch case for each event
 		switch event.Type {
-		case "create_game":
+		case CreateGameEvent:
 			// Get & save the username sent by the frontend
 			var createData CreateGamePayload
 			if err := json.Unmarshal(event.Payload, &createData); err != nil {
 				log.Printf("Error when reading create_game payload: %v", err)
 				continue
 			}
+			username := strings.TrimSpace(createData.Username)
+			if username == "" {
+				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Användarnamnet får inte vara tomt."})
+				continue
+			}
+
 			c.Username = createData.Username
 
 			// Create the room and register the client to the room
 			code := c.hub.CreateUniqueRoom()
 			room := c.hub.GetRoom(code)
+
+			// Set host
+			room.State.Host = c.Id
+
 			c.Room = room
 			room.Register <- c
+			room.State.Settings = createData.Settings
 
 			// Send a response to the client with the room code
+			user := User{Username: c.Username, Team: c.Team, UserId: c.Id}
+			c.send <- PrepareEvent(GameCreatedEvent, CreatedJoinGameResponse{User: user, GameState: *room.State, Message: "Du skapade ett nytt spel!"})
 
-			// TODO: Send information about the room
-			userInfo := User{Username: c.Username, Team: c.Team, UserId: c.Id}
-			c.send <- PrepareEvent(GameCreatedEvent, CreatedJoinGameResponse{User: userInfo, GameState: *room.State, Message: "Du skapade ett nytt spel!"})
-
-		case "join_game":
+		case JoinGameEvent:
 			// Get & save the username sent by the frontend, and get the room code
 			var joinData JoinGamePayload
 			if err := json.Unmarshal(event.Payload, &joinData); err != nil {
-				log.Printf("Kunde inte läsa join_game payload: %v", err)
+				log.Printf("Error reading join_game payload: %v", err)
+				continue
+			}
+
+			username := strings.TrimSpace(joinData.Username)
+			if username == "" {
+				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Användarnamnet får inte vara tomt."})
 				continue
 			}
 			c.Username = joinData.Username
@@ -91,7 +107,6 @@ func (c *Client) readPump() {
 				c.Room = room
 				room.Register <- c
 
-				// TODO: Send information about the room
 				userInfo := User{Username: c.Username, Team: c.Team, UserId: c.Id}
 				c.send <- PrepareEvent(JoinedGameEvent, CreatedJoinGameResponse{User: userInfo, GameState: *room.State, Message: "Du gick med i spelet!"})
 			} else {
@@ -99,11 +114,49 @@ func (c *Client) readPump() {
 				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Rummet finns inte."})
 			}
 
-		case "submit_turn":
+		case UpdateSettingsEvent:
+			if c.Room != nil {
+				if c.Id == c.Room.State.Host {
+					c.Room.UpdateSettings <- event.Payload
+				} else {
+					c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bara spelledaren kan ändra inställningar!"})
+				}
+			}
+
+		case LeaveRoomEvent:
+			if c.Room != nil {
+				room := c.Room
+
+				c.Room = nil
+
+				room.Unregister <- c
+
+				c.send <- PrepareEvent(LeftRoomEvent, map[string]string{"message": "Du lämnade rummet"})
+			}
+
+		case UpdateUsernameEvent:
+			var updateData UpdateUsernamePayload
+			if err := json.Unmarshal(event.Payload, &updateData); err != nil {
+				log.Printf("Error reading update_username payload: %v", err)
+				continue
+			}
+
+			c.Username = updateData.Username
+
+			if c.Room != nil {
+				c.Room.UpdateUsername <- c
+			} else {
+				c.send <- PrepareEvent(ConnectedToServerEvent, map[string]string{"message": "Användarnamn uppdaterat!"})
+			}
+
+		case StartGameEvent:
+			if c.Room != nil {
+				c.Room.StartGame <- c
+			}
+
+		case SubmitTurnEvent:
 			if c.Room != nil {
 				c.Room.ProcessMove <- event.Payload
-			} else {
-				//! Player is not in a room
 			}
 		}
 	}

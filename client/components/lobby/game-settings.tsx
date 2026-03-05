@@ -3,12 +3,12 @@
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Timer, Bomb } from "lucide-react";
-import { GameSettings } from "@/lib/types";
+import { GameSettings } from "@/lib/game/types";
+import { useGameContext } from "@/hooks/websocket";
 
 interface GameSettingsProps {
   settings: GameSettings;
   onChange: (settings: GameSettings) => void;
-  isHost: boolean;
 }
 
 const POWER_UPS = [
@@ -19,26 +19,14 @@ const POWER_UPS = [
     icon: Bomb,
     color: "#38bdf8",
   },
-  // {
-  //   key: "enable" as const,
-  //   label: "Sabotage",
-  //   description: "Scramble opponent letter tiles",
-  //   icon: Zap,
-  //   color: "#f97316",
-  // },
-  // {
-  //   key: "enableSwap" as const,
-  //   label: "Swap",
-  //   description: "Swap a tile with the shared pool",
-  //   icon: ArrowLeftRight,
-  //   color: "#a78bfa",
-  // },
 ];
 
-export function GameSettingsPanel({ settings, onChange, isHost }: GameSettingsProps) {
+export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
   const update = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
     onChange({ ...settings, [key]: value });
   };
+
+  const { gamestate, user } = useGameContext();
 
   return (
     <div className="flex flex-col gap-5">
@@ -48,7 +36,7 @@ export function GameSettingsPanel({ settings, onChange, isHost }: GameSettingsPr
           Speltid
         </div>
         <div className="flex items-center gap-4">
-          <Slider value={[settings.timerMinutes]} onValueChange={([v]) => update("timerMinutes", v)} min={2} max={15} step={1} disabled={!isHost} className="flex-1" />
+          <Slider value={[settings.timerMinutes]} onValueChange={([v]) => update("timerMinutes", v)} min={2} max={15} step={1} disabled={!(gamestate?.host === user?.userId)} className="flex-1" />
           <span className="w-12 text-sm font-bold text-right text-foreground tabular-nums">{settings.timerMinutes} min</span>
         </div>
       </div>
@@ -70,7 +58,7 @@ export function GameSettingsPanel({ settings, onChange, isHost }: GameSettingsPr
                   <div className="text-sm font-semibold text-foreground">{powerUp.label}</div>
                   <div className="text-xs text-muted-foreground">{powerUp.description}</div>
                 </div>
-                <Switch checked={enabled} onCheckedChange={(e) => update(powerUp.key, e)} disabled={!isHost} />
+                <Switch checked={enabled} onCheckedChange={(e) => update(powerUp.key, e)} disabled={!(gamestate?.host === user?.userId)} />
               </div>
             );
           })}

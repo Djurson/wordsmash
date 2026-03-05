@@ -13,7 +13,6 @@ export interface Bomb {
 }
 
 export type Direction = "vertical" | "horizontal";
-
 export type Team = "a" | "b";
 
 export type User = {
@@ -24,8 +23,13 @@ export type User = {
 
 export type TeamState = {
   score: number;
-  letter: string[];
+  letters: string[];
   players: Record<string, User>;
+};
+
+export type GameSettings = {
+  timerMinutes: number;
+  enableBombs: boolean;
 };
 
 export type GameState = {
@@ -34,4 +38,6 @@ export type GameState = {
   teams: Record<Team, TeamState>;
   timeLeft: number;
   gameId: string;
+  settings: GameSettings;
+  host: string;
 };

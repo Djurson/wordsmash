@@ -41,6 +41,11 @@ func (h *GameHub) Run() {
 		// Client Disconnects
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
+				if client.Room != nil {
+					room := client.Room
+					client.Room = nil
+					go func() { room.Unregister <- client }()
+				}
 				delete(h.clients, client)
 				close(client.send)
 			}
