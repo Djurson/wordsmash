@@ -8,6 +8,7 @@ import (
 
 type Dictionary interface {
 	IsValid(word string) bool
+	RandomWord() string
 }
 
 type GameHub struct {

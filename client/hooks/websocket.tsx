@@ -97,6 +97,8 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           break;
 
         case "game_started":
+          updateGameState(payload);
+          console.log(payload);
           break;
 
         case "left_room":

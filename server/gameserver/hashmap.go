@@ -3,12 +3,24 @@ package gameserver
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 )
 
 type HashMapDictionary struct {
-	words map[string]struct{}
+	words    map[string]struct{}
+	wordList []string
+}
+
+func (h *HashMapDictionary) RandomWord() string {
+	if len(h.wordList) == 0 {
+		return ""
+	}
+
+	randomIndex := rand.Intn(len(h.wordList))
+
+	return h.wordList[randomIndex]
 }
 
 func (h *HashMapDictionary) IsValid(word string) bool {
@@ -18,7 +30,11 @@ func (h *HashMapDictionary) IsValid(word string) bool {
 }
 
 func HashMapLoadWordsFromTextFile(filename string) (*HashMapDictionary, error) {
-	hashmapDict := HashMapDictionary{words: make(map[string]struct{})}
+	hashmapDict := HashMapDictionary{
+		words:    make(map[string]struct{}),
+		wordList: make([]string, 0),
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -38,6 +54,7 @@ func HashMapLoadWordsFromTextFile(filename string) (*HashMapDictionary, error) {
 		}
 
 		hashmapDict.words[line] = struct{}{}
+		hashmapDict.wordList = append(hashmapDict.wordList, line)
 	}
 
 	if err := scanner.Err(); err != nil {

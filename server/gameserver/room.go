@@ -155,6 +155,8 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
+			r.State.PreStartGame(hostClient.hub)
+
 			finalMessage := PrepareEvent(GameStartedEvent, r.State)
 			for c := range r.Clients {
 				c.send <- finalMessage

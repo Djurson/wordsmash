@@ -13,7 +13,7 @@ type PlacedTile struct {
 	X      int    `json:"x"`
 	Y      int    `json:"y"`
 	Team   string `json:"team"`
-	State  string `json:"state"`
+	State  string `json:"state"` // "placed" | "placeholder"
 }
 
 type Bomb struct {
@@ -34,13 +34,14 @@ type GameSettings struct {
 }
 
 type GameState struct {
-	Board    map[string]PlacedTile `json:"board"`
-	Bombs    map[string]Bomb       `json:"bombs"`
-	Teams    map[string]*TeamState `json:"teams"`
-	TimeLeft int                   `json:"timeLeft"`
-	GameId   string                `json:"gameId"`
-	Settings GameSettings          `json:"settings"`
-	Host     uuid.UUID             `json:"host"`
+	Board     map[string]PlacedTile `json:"board"`
+	Bombs     map[string]Bomb       `json:"bombs"`
+	Teams     map[string]*TeamState `json:"teams"`
+	TimeLeft  int                   `json:"timeLeft"`
+	GameId    string                `json:"gameId"`
+	Settings  GameSettings          `json:"settings"`
+	Host      uuid.UUID             `json:"host"`
+	StartWord string                `json:"startWord"`
 }
 
 func NewGameState(id string) *GameState {
@@ -50,12 +51,12 @@ func NewGameState(id string) *GameState {
 		Teams: map[string]*TeamState{
 			"a": {
 				Score:   0,
-				Letters: GenerateRandomLetters(15),
+				Letters: make([]string, 0),
 				Players: make(map[uuid.UUID]*User),
 			},
 			"b": {
 				Score:   0,
-				Letters: GenerateRandomLetters(15),
+				Letters: make([]string, 0),
 				Players: make(map[uuid.UUID]*User),
 			},
 		},
@@ -64,6 +65,26 @@ func NewGameState(id string) *GameState {
 			TimerMinutes: 5,
 			EnableBombs:  true,
 		},
+	}
+}
+
+func (game *GameState) PreStartGame(hub *GameHub) {
+	for _, team := range game.Teams {
+		team.Letters = GenerateRandomLetters(15)
+	}
+
+	game.StartWord = hub.Dictionary.RandomWord()
+	runeWord := []rune(game.StartWord)
+	startX := int(len(runeWord) / 2)
+
+	for x := range len(runeWord) {
+		game.Board[getTileKey((x-startX), 0)] = PlacedTile{
+			Letter: string(runeWord[x]),
+			X:      x - startX,
+			Y:      0,
+			Team:   "",
+			State:  "placed",
+		}
 	}
 }
 

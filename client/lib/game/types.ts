@@ -40,4 +40,5 @@ export type GameState = {
   gameId: string;
   settings: GameSettings;
   host: string;
+  startWord: string;
 };
