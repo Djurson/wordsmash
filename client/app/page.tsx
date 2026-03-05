@@ -125,7 +125,7 @@ export default function LobbyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Button size="lg" onClick={handleStartGame} className="w-full text-base font-bold h-14" disabled={user?.userId === gamestate.host}>
+                  <Button size="lg" onClick={handleStartGame} className="w-full text-base font-bold h-14" disabled={user?.userId !== gamestate.host}>
                     Starta
                     <Play className="w-5 h-5" />
                   </Button>
