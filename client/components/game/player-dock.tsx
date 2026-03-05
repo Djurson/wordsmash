@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import { Repeat1, Shuffle } from "lucide-react";
 import GameTile from "./game-tile";
-import { Button } from "./ui/button";
-import { Kbd } from "./ui/kbd";
+import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 
 interface PlayerDockProps {
   letters: string[];

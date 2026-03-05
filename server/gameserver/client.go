@@ -70,8 +70,10 @@ func (c *Client) readPump() {
 			room.Register <- c
 
 			// Send a response to the client with the room code
-			responsePayload := GameCreatedPayload{GameCode: code}
-			c.send <- PrepareEvent(GameCreatedEvent, responsePayload)
+
+			// TODO: Send information about the room
+			userInfo := User{Username: c.Username, Team: c.Team, UserId: c.Id}
+			c.send <- PrepareEvent(GameCreatedEvent, CreatedJoinGameResponse{User: userInfo, GameState: *room.State, Message: "Du skapade ett nytt spel!"})
 
 		case "join_game":
 			// Get & save the username sent by the frontend, and get the room code
@@ -89,7 +91,9 @@ func (c *Client) readPump() {
 				c.Room = room
 				room.Register <- c
 
-				c.send <- PrepareEvent(JoinedGameEvent, map[string]string{"message": "Du gick med i spelet!"})
+				// TODO: Send information about the room
+				userInfo := User{Username: c.Username, Team: c.Team, UserId: c.Id}
+				c.send <- PrepareEvent(JoinedGameEvent, CreatedJoinGameResponse{User: userInfo, GameState: *room.State, Message: "Du gick med i spelet!"})
 			} else {
 				// Send error if the room doesn't exists
 				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Rummet finns inte."})
@@ -143,7 +147,7 @@ func ServeWs(hub *GameHub, w http.ResponseWriter, r *http.Request) {
 		send: make(chan []byte, 256),
 	}
 
-	// Register the client to the hub
+	// Registers the client to the hub
 	client.hub.register <- client
 	go client.writePump()
 	go client.readPump()

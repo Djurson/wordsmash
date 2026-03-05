@@ -1,10 +1,11 @@
 "use client";
 
-import { GameCanvas } from "@/components/game-canvas";
-import { PlayerDock } from "@/components/player-dock";
-import { TopHUD } from "@/components/top-hud";
-import { Direction, PlacedTile } from "@/lib/types";
-import { CROSSWORD_TILES, GenerateFirstCharactes, getTileKey, isValidPlacement } from "@/lib/utils";
+import { GameCanvas } from "@/components/game/game-canvas";
+import { PlayerDock } from "@/components/game/player-dock";
+import { TopHUD } from "@/components/game/top-hud";
+import { Direction, PlacedTile } from "@/lib/game/types";
+import { getTileKey, isValidPlacement } from "@/lib/game/utils";
+import { CROSSWORD_TILES, GenerateFirstCharactes } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 
 export default function Page() {

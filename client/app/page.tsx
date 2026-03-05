@@ -10,28 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CELL, GenerateGameCode, MOCK_PLAYERS } from "@/lib/utils";
+import { MOCK_PLAYERS } from "@/lib/utils";
 import { ArrowLeft, Play, Sparkles, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import { GameSettings } from "@/lib/types";
 import { useGameContext } from "@/hooks/websocket";
+import { CELL } from "@/lib/game/utils";
 
 export default function LobbyPage() {
-  const { websocket } = useGameContext();
+  const { websocket, gamestate } = useGameContext();
 
   const router = useRouter();
   const [tab, setTab] = useState<string>("create");
   const [joinCode, setJoinCode] = useState("");
-  const [hasCreated, setHasCreated] = useState(false);
-  const [gameCode, setGameCode] = useState("");
   const [settings, setSettings] = useState<GameSettings>({ timerMinutes: 5, enableBombs: true });
-
-  const handleCreate = useCallback(() => {
-    setGameCode(GenerateGameCode());
-    setHasCreated(true);
-  }, []);
 
   const handleStartGame = useCallback(() => {
     router.push("/game");
@@ -53,7 +47,7 @@ export default function LobbyPage() {
 
       <div className="z-10 flex items-start justify-center flex-1 w-full pb-10">
         <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 1200, damping: 40, delay: 0.8 }} className="w-full max-w-md">
-          {!hasCreated ? (
+          {!gamestate ? (
             <div className="w-full max-w-md">
               <Tabs value={tab} onValueChange={setTab} className="flex flex-col w-full gap-3">
                 <TabsList className="w-full">

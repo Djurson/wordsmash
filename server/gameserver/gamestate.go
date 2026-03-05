@@ -19,28 +19,24 @@ type PlacedTile struct {
 type Bomb struct {
 	X        int    `json:"x"`
 	Y        int    `json:"y"`
-	PlacedBy string `json:"placed_by"`
-}
-
-// Simplified client type that is sent to the frontend
-type PlayerInfo struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+	PlacedBy string `json:"placedBy"`
 }
 
 type TeamState struct {
-	Score   int                      `json:"score"`
-	Letters []string                 `json:"letters"`
-	Players map[uuid.UUID]PlayerInfo `json:"players"`
+	Score   int                `json:"score"`
+	Letters []string           `json:"letters"`
+	Players map[uuid.UUID]User `json:"players"`
 }
 
 type GameState struct {
-	Board map[string]PlacedTile `json:"board"`
-	Bombs map[string]Bomb       `json:"bombs"`
-	Teams map[string]*TeamState `json:"teams"`
+	Board    map[string]PlacedTile `json:"board"`
+	Bombs    map[string]Bomb       `json:"bombs"`
+	Teams    map[string]*TeamState `json:"teams"`
+	TimeLeft int                   `json:"timeLeft"`
+	GameId   string                `json:"gameId"`
 }
 
-func NewGameState() *GameState {
+func NewGameState(id string) *GameState {
 	return &GameState{
 		Board: make(map[string]PlacedTile),
 		Bombs: make(map[string]Bomb),
@@ -48,14 +44,15 @@ func NewGameState() *GameState {
 			"a": {
 				Score:   0,
 				Letters: GenerateRandomLetters(15),
-				Players: make(map[uuid.UUID]PlayerInfo),
+				Players: make(map[uuid.UUID]User),
 			},
 			"b": {
 				Score:   0,
 				Letters: GenerateRandomLetters(15),
-				Players: make(map[uuid.UUID]PlayerInfo),
+				Players: make(map[uuid.UUID]User),
 			},
 		},
+		GameId: id,
 	}
 }
 

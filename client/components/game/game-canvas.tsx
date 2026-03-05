@@ -3,9 +3,9 @@
 import { useState, useRef, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ZoomControls } from "./zoom-controls";
-import { CELL, cn, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/utils";
 import GameTile from "./game-tile";
-import { PlacedTile } from "@/lib/types";
+import { PlacedTile } from "@/lib/game/types";
+import { CELL, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/game/utils";
 
 interface GameCanvasProps {
   tiles: Record<string, PlacedTile>;
@@ -96,7 +96,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
   return (
     <div
       ref={containerRef}
-      className={cn("fixed inset-0 overflow-hidden touch-none", isPanning ? "cursor-grabbing" : selectedLetter ? "cursor-crosshair" : "cursor-grab")}
+      className={`fixed inset-0 overflow-hidden touch-none ${isPanning ? "cursor-grabbing" : selectedLetter ? "cursor-crosshair" : "cursor-grab"}`}
       style={{
         backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
         backgroundColor: "var(--background, --tile-secondary))",

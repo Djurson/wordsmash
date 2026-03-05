@@ -1,5 +1,5 @@
-import GameTile from "@/components/game-tile";
 import { motion } from "framer-motion";
+import GameTile from "@/components/game/game-tile";
 
 export function MenuHeader() {
   return (

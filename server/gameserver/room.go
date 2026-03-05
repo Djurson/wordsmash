@@ -26,7 +26,7 @@ func NewRoom(id string) *GameRoom {
 	return &GameRoom{
 		ID:          id,
 		Clients:     make(map[*Client]bool),
-		State:       NewGameState(),
+		State:       NewGameState(id),
 		Broadcast:   make(chan []byte),
 		Register:    make(chan *Client),
 		Unregister:  make(chan *Client),
@@ -52,9 +52,10 @@ func (r *GameRoom) Run() {
 			}
 			client.Team = assignedTeam
 
-			r.State.Teams[assignedTeam].Players[client.Id] = PlayerInfo{
-				ID:   client.Id,
-				Name: client.Username,
+			r.State.Teams[assignedTeam].Players[client.Id] = User{
+				UserId:   client.Id,
+				Username: client.Username,
+				Team:     assignedTeam,
 			}
 
 			// Send out that the a new client has joined

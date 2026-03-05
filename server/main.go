@@ -13,7 +13,7 @@ const WORD_FILE string = "svenska-ord.txt"
 func main() {
 	wordMap, err := gameserver.HashMapLoadWordsFromTextFile(WORD_FILE)
 	if err != nil {
-		log.Fatalf("Failed to open file: %s", err)
+		log.Fatalf("Failed to open file: %v", err)
 	}
 
 	hub := gameserver.NewHub(wordMap)

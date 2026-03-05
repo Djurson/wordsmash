@@ -1,17 +1,20 @@
 package gameserver
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type EventType string
 
 const (
-	GameCreatedEvent       EventType = "game_created"
-	JoinedGameEvent        EventType = "joined_game"
-	ErrorEvent             EventType = "error"
-	LobbyUpdateEvent       EventType = "lobby_updated"
-	GameStartedEvent       EventType = "game_started"
-	BoardUpdateEvent       EventType = "board_updated"
-	ConnectedToServerEvent EventType = "server_connected"
+	GameCreatedEvent         EventType = "game_created"
+	JoinedGameEvent          EventType = "joined_game"
+	ErrorEvent               EventType = "error"
+	LobbyUpdateEvent         EventType = "lobby_updated"
+	GameStartedEvent         EventType = "game_started"
+	BoardUpdateEvent         EventType = "board_updated"
+	ConnectedToServerEvent   EventType = "server_connected"
+	GameSettingsUpdatedEvent EventType = "gamesettings_update"
 )
 
 type Event struct {
@@ -44,6 +47,8 @@ type JoinGamePayload struct {
 }
 
 // Response from server to client
-type GameCreatedPayload struct {
-	GameCode string `json:"gameCode"`
+type CreatedJoinGameResponse struct {
+	GameState GameState `json:"gamestate"`
+	User      User      `json:"user"`
+	Message   string    `json:"message"`
 }
