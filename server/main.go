@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api/dictionary"
 	"api/gameserver"
 	"api/routes"
 	"fmt"
@@ -11,7 +12,7 @@ import (
 const WORD_FILE string = "svenska-ord.txt"
 
 func main() {
-	wordMap, err := gameserver.HashMapLoadWordsFromTextFile(WORD_FILE)
+	wordMap, err := dictionary.HashMapLoadWordsFromTextFile(WORD_FILE)
 	if err != nil {
 		log.Fatalf("Failed to open file: %v", err)
 	}

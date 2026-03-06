@@ -3,7 +3,7 @@
 import { useGameContext } from "@/hooks/websocket";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface TopHUDProps {
   selectedLetter: number | null;
@@ -11,18 +11,33 @@ interface TopHUDProps {
 
 export function TopHUD({ selectedLetter }: TopHUDProps) {
   const { gamestate, user } = useGameContext();
-  const [timeLeft, setTimeLeft] = useState(5 * 60);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const requestRef = useRef<number>(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!gamestate) return;
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const isUrgent = timeLeft < 30;
+    const calculateTimeLeft = () => {
+      const difference = gamestate.endTime - Date.now();
+
+      if (difference <= 0) {
+        setTimeLeft(0);
+        return;
+      }
+
+      setTimeLeft(difference);
+      requestRef.current = requestAnimationFrame(calculateTimeLeft);
+    };
+
+    requestRef.current = requestAnimationFrame(calculateTimeLeft);
+    return () => cancelAnimationFrame(requestRef.current!);
+  }, [gamestate?.endTime, gamestate?.gameStarted]);
+
+  const totalSeconds = Math.floor(timeLeft / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const milliseconds = Math.round((timeLeft % 1000) / 10);
+  const isUrgent = timeLeft < 30000;
 
   if (!gamestate || !user) return null;
 
@@ -38,7 +53,11 @@ export function TopHUD({ selectedLetter }: TopHUDProps) {
           {/* Timer */}
           <div className="flex flex-col items-center">
             <div className={cn("text-3xl md:text-4xl font-extrabold tabular-nums tracking-tight", isUrgent ? "text-destructive animate-pulse" : "text-foreground")}>
-              {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+              {minutes > 0
+                ? /* There are still minutes left */
+                  `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+                : /* Few seconds left */
+                  `${seconds.toString().padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`}
             </div>
           </div>
 

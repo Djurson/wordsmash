@@ -25,6 +25,11 @@ var (
 	pingIntervall = (pongWait * 9) / 10
 )
 
+const (
+	MAXTIMERMINUTES int = 25
+	MINTIMERMINUTES int = 2
+)
+
 type Client struct {
 	Id       uuid.UUID
 	Username string
@@ -70,7 +75,7 @@ func (c *Client) readPump() {
 		// Switch case for each event
 		switch event.Type {
 		case CreateGameEvent:
-			// Get & save the username sent by the frontend
+			// Get & save the username sent by the frontend & validate gamesettings
 			var createData CreateGamePayload
 			if err := json.Unmarshal(event.Payload, &createData); err != nil {
 				log.Printf("Error when reading create_game payload: %v", err)
@@ -81,6 +86,7 @@ func (c *Client) readPump() {
 				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Användarnamnet får inte vara tomt."})
 				continue
 			}
+			createData = ValidateCreateGameDataSetting(createData)
 
 			c.Username = username
 
@@ -237,4 +243,14 @@ func ServeWs(hub *GameHub, w http.ResponseWriter, r *http.Request) {
 
 func (c *Client) pongHandler(pongMessage string) error {
 	return c.conn.SetReadDeadline(time.Now().Add(pongWait))
+}
+
+func ValidateCreateGameDataSetting(data CreateGamePayload) CreateGamePayload {
+	if data.Settings.TimerMinutes < MINTIMERMINUTES {
+		data.Settings.TimerMinutes = MINTIMERMINUTES
+	} else if data.Settings.TimerMinutes > MAXTIMERMINUTES {
+		data.Settings.TimerMinutes = MAXTIMERMINUTES
+	}
+
+	return data
 }

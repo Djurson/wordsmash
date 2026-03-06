@@ -37,12 +37,14 @@ type GameState struct {
 	Board       map[string]PlacedTile `json:"board"`
 	Bombs       map[string]Bomb       `json:"bombs"`
 	Teams       map[string]*TeamState `json:"teams"`
-	TimeLeft    int                   `json:"timeLeft"`
 	GameId      string                `json:"gameId"`
 	Settings    GameSettings          `json:"settings"`
 	Host        uuid.UUID             `json:"host"`
 	GameStarted bool                  `json:"gameStarted"`
+	EndTime     int64                 `json:"endTime"`
 }
+
+const ROUNDSTARTWAITTIME int = 5
 
 func NewGameState(id string) *GameState {
 	return &GameState{
@@ -86,6 +88,11 @@ func (game *GameState) PreStartGame(hub *GameHub) {
 			State:  "placed",
 		}
 	}
+
+	duration := time.Duration(game.Settings.TimerMinutes)*time.Minute + time.Duration(ROUNDSTARTWAITTIME)*time.Second
+	game.EndTime = time.Now().Add(duration).UnixMilli()
+
+	game.GameStarted = true
 }
 
 func getTileKey(x, y int) string {

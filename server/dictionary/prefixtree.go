@@ -1,4 +1,4 @@
-package gameserver
+package dictionary
 
 type PrefixTreeDictionary struct {
 	// If a prefix tree was a better choice

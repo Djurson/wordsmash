@@ -36,9 +36,9 @@ export type GameState = {
   board: Record<string, PlacedTile>;
   bombs: Record<string, Bomb>;
   teams: Record<Team, TeamState>;
-  timeLeft: number;
   gameId: string;
   settings: GameSettings;
   host: string;
   gameStarted: boolean;
+  endTime: number;
 };

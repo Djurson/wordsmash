@@ -46,6 +46,11 @@ func (r *GameRoom) Run() {
 
 		// A client joins the room
 		case client := <-r.Register:
+			if r.State.GameStarted {
+				client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Spelet har redan börjat, kan inte ansluta."})
+				continue
+			}
+
 			// Add the client to the map
 			r.Clients[client] = true
 
