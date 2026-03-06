@@ -1,6 +1,12 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+/**
+ *! SLOPPY AHH CODE TO BE REWRITTEN SOME DAY
+ ** Have been adding states etc over and over again
+ ** So now I just lost track of how everything works
+ */
+
 interface LetterTileProps {
   letter: string;
   team?: "a" | "b";

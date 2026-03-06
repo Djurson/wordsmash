@@ -16,9 +16,10 @@ import { motion } from "framer-motion";
 import { useGameContext } from "@/hooks/websocket";
 import { CELL } from "@/lib/game/utils";
 import { GameSettings } from "@/lib/game/types";
+import { LoadingIcon } from "@/components/game/loading";
 
 export default function LobbyPage() {
-  const { gamestate, sendMessage, leaveRoom, user } = useGameContext();
+  const { gamestate, sendMessage, leaveRoom, user, connectionError } = useGameContext();
 
   const [tab, setTab] = useState<string>("create");
   const [joinCode, setJoinCode] = useState("");
@@ -47,6 +48,15 @@ export default function LobbyPage() {
       sendMessage("start_game", {});
     }
   };
+
+  if (connectionError) {
+    return (
+      <>
+        <LoadingIcon />
+        {/* <p className="absolute items-center justify-center flex mt-18 font-bold text-xl bg-card border-border">Fel med anslutning till servern, försök igen senare</p> */}
+      </>
+    );
+  }
 
   return (
     <main className="flex flex-col items-center gap-8 min-h-dvh bg-background">

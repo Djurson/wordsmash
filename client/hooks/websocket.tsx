@@ -13,6 +13,7 @@ export interface GameContextContextProps {
   user: User | null;
   gamestate: GameState | null;
   leaveRoom: () => void;
+  connectionError: boolean;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -31,6 +32,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [gamestate, setGameState] = useState<GameState | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [connectionError, setConnectionError] = useState<boolean>(false);
 
   const updateGameState = useCallback((updates: Partial<GameState>) => {
     setGameState((prev) => {
@@ -57,6 +59,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     ws.onerror = () => {
       setIsConnected(false);
       ToastError("Fel med anslutning till servern");
+      setConnectionError(true);
     };
 
     ws.onclose = () => {
@@ -133,7 +136,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     sendMessage("leave_room", {});
   };
 
-  const value: GameContextContextProps = { websocket, isConnected, user, gamestate, sendMessage, leaveRoom };
+  const value: GameContextContextProps = { websocket, isConnected, user, gamestate, sendMessage, leaveRoom, connectionError };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
