@@ -18,7 +18,7 @@ export type Team = "a" | "b";
 export type User = {
   username: string;
   userId: string;
-  team: string;
+  team: Team;
 };
 
 export type TeamState = {
@@ -40,5 +40,5 @@ export type GameState = {
   gameId: string;
   settings: GameSettings;
   host: string;
-  startWord: string;
+  gameStarted: boolean;
 };

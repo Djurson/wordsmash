@@ -1,15 +1,16 @@
 "use client";
 
+import { useGameContext } from "@/hooks/websocket";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 interface TopHUDProps {
   selectedLetter: number | null;
-  rackLetters: string[];
 }
 
-export function TopHUD({ selectedLetter, rackLetters }: TopHUDProps) {
+export function TopHUD({ selectedLetter }: TopHUDProps) {
+  const { gamestate, user } = useGameContext();
   const [timeLeft, setTimeLeft] = useState(5 * 60);
 
   useEffect(() => {
@@ -22,6 +23,8 @@ export function TopHUD({ selectedLetter, rackLetters }: TopHUDProps) {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const isUrgent = timeLeft < 30;
+
+  if (!gamestate || !user) return null;
 
   return (
     <motion.div
@@ -42,11 +45,14 @@ export function TopHUD({ selectedLetter, rackLetters }: TopHUDProps) {
           <TeamDisplay team="b" />
         </div>
         <div className="flex w-full overflow-hidden rounded-xl bg-tile-accent">
-          <div className="w-1/2 h-2 bg-tile-primary rounded-xl" />
+          <div
+            className="h-2 bg-tile-primary rounded-xl"
+            style={{ width: `${gamestate.teams.a.score === 0 ? 50 : (gamestate.teams.a.score / (gamestate.teams.a.score + gamestate.teams.b.score)) * 100}%` }}
+          />
         </div>
       </div>
       <div className="z-30 px-4 py-2 text-xs font-medium border rounded-full bg-white/90 shadow-sm backdrop-blur-md border-slate-200 text-slate-500">
-        {selectedLetter ? `Klicka på brädet för att placera "${rackLetters[selectedLetter]}"` : "Dra för att panorera · Skrolla för att zooma"}
+        {selectedLetter ? `Klicka på brädet för att placera "${gamestate.teams[user.team].letters[selectedLetter]}"` : "Dra för att panorera · Skrolla för att zooma"}
       </div>
     </motion.div>
   );

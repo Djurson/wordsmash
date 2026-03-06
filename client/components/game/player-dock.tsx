@@ -5,10 +5,9 @@ import { Repeat1, Shuffle } from "lucide-react";
 import GameTile from "./game-tile";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
+import { useGameContext } from "@/hooks/websocket";
 
 interface PlayerDockProps {
-  letters: string[];
-  team?: "a" | "b";
   selectedIndex: number | null;
   onSelectLetter: (index: number) => void;
   onShuffle: () => void;
@@ -16,7 +15,11 @@ interface PlayerDockProps {
   hasPlaceholders: boolean;
 }
 
-export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, onTradeIn, hasPlaceholders }: PlayerDockProps) {
+export function PlayerDock({ selectedIndex, onSelectLetter, onShuffle, onTradeIn, hasPlaceholders }: PlayerDockProps) {
+  const { gamestate, user } = useGameContext();
+
+  if (!gamestate || !user) return null;
+
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
@@ -27,7 +30,7 @@ export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-muted-foreground">Ditt lags brickor</span>
-            <span className="text-[10px] font-mono font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md ml-1">{letters.length} kvar</span>
+            <span className="text-[10px] font-mono font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md ml-1">{gamestate.teams[user.team].letters.length} kvar</span>
           </div>
           <div className={`flex gap-2 duration-300 ease-in-out ${hasPlaceholders ? "translate-y-0" : "translate-y-86"}`}>
             <Button size="sm" variant="outline" className="text-tile-foreground! px-5 flex items-center">
@@ -62,7 +65,7 @@ export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, 
         </div>
 
         <div className="flex items-center justify-center gap-2 md:gap-3">
-          {letters.map((letter, index) => (
+          {gamestate.teams[user.team].letters.map((letter, index) => (
             <motion.div
               layout
               key={`dock-tile-${index}-${letter}`}
@@ -77,7 +80,7 @@ export function PlayerDock({ letters, selectedIndex, onSelectLetter, onShuffle, 
             </motion.div>
           ))}
 
-          {letters.length === 0 && <div className="py-4 text-sm text-muted-foreground">Väntar på nya brickor...</div>}
+          {gamestate.teams[user.team].letters.length === 0 && <div className="py-4 text-sm text-muted-foreground">Väntar på nya brickor...</div>}
         </div>
       </div>
     </motion.div>

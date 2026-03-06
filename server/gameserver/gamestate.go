@@ -34,14 +34,14 @@ type GameSettings struct {
 }
 
 type GameState struct {
-	Board     map[string]PlacedTile `json:"board"`
-	Bombs     map[string]Bomb       `json:"bombs"`
-	Teams     map[string]*TeamState `json:"teams"`
-	TimeLeft  int                   `json:"timeLeft"`
-	GameId    string                `json:"gameId"`
-	Settings  GameSettings          `json:"settings"`
-	Host      uuid.UUID             `json:"host"`
-	StartWord string                `json:"startWord"`
+	Board       map[string]PlacedTile `json:"board"`
+	Bombs       map[string]Bomb       `json:"bombs"`
+	Teams       map[string]*TeamState `json:"teams"`
+	TimeLeft    int                   `json:"timeLeft"`
+	GameId      string                `json:"gameId"`
+	Settings    GameSettings          `json:"settings"`
+	Host        uuid.UUID             `json:"host"`
+	GameStarted bool                  `json:"gameStarted"`
 }
 
 func NewGameState(id string) *GameState {
@@ -73,8 +73,8 @@ func (game *GameState) PreStartGame(hub *GameHub) {
 		team.Letters = GenerateRandomLetters(15)
 	}
 
-	game.StartWord = hub.Dictionary.RandomWord()
-	runeWord := []rune(game.StartWord)
+	startWord := hub.Dictionary.RandomWord()
+	runeWord := []rune(startWord)
 	startX := int(len(runeWord) / 2)
 
 	for x := range len(runeWord) {

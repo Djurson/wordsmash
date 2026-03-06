@@ -3,6 +3,7 @@
 import { GameState, User } from "@/lib/game/types";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
 import { WSRecievedEvent, WSSendEvent, WSSendEventType } from "@/lib/websocket/WSTypes";
+import { useRouter } from "next/navigation";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 export interface GameContextContextProps {
@@ -25,6 +26,7 @@ export function useGameContext() {
 }
 
 export function GameContextProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [websocket, setWebSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [gamestate, setGameState] = useState<GameState | null>(null);
@@ -98,7 +100,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
         case "game_started":
           updateGameState(payload);
-          console.log(payload);
+          router.push("/game");
           break;
 
         case "left_room":

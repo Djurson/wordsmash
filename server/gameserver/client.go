@@ -68,7 +68,7 @@ func (c *Client) readPump() {
 				continue
 			}
 
-			c.Username = createData.Username
+			c.Username = username
 
 			// Create the room and register the client to the room
 			code := c.hub.CreateUniqueRoom()
@@ -98,7 +98,7 @@ func (c *Client) readPump() {
 				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Användarnamnet får inte vara tomt."})
 				continue
 			}
-			c.Username = joinData.Username
+			c.Username = username
 
 			// Find the room
 			room := c.hub.GetRoom(joinData.GameCode)
