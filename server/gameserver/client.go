@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -18,6 +19,11 @@ var upgrader = websocket.Upgrader{
 	// TODO: Change to specific
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
+
+var (
+	pongWait      = 10 * time.Second
+	pingIntervall = (pongWait * 9) / 10
+)
 
 type Client struct {
 	Id       uuid.UUID
@@ -34,6 +40,14 @@ func (c *Client) readPump() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
+
+	if err := c.conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	c.conn.SetReadLimit(256)
+	c.conn.SetPongHandler(c.pongHandler)
 
 	for {
 		_, message, err := c.conn.ReadMessage()
@@ -163,25 +177,38 @@ func (c *Client) readPump() {
 }
 
 func (c *Client) writePump() {
+	ticker := time.NewTicker(pingIntervall)
+
 	defer func() {
+		ticker.Stop()
 		c.conn.Close()
 	}()
 
-	for message := range c.send {
-		w, err := c.conn.NextWriter(websocket.TextMessage)
-		if err != nil {
-			return
-		}
+	for {
+		select {
+		case message, ok := <-c.send:
+			if !ok {
+				// The gamehub closed the channel
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
 
-		w.Write(message)
+			w, err := c.conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
 
-		if err := w.Close(); err != nil {
-			return
+			w.Write(message)
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
 		}
 	}
-
-	// The gamehub closed the channel
-	c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 }
 
 func ServeWs(hub *GameHub, w http.ResponseWriter, r *http.Request) {
@@ -206,4 +233,8 @@ func ServeWs(hub *GameHub, w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 
 	client.send <- PrepareEvent(ConnectedToServerEvent, map[string]string{"message": "Välkommen till WordSmash!"})
+}
+
+func (c *Client) pongHandler(pongMessage string) error {
+	return c.conn.SetReadDeadline(time.Now().Add(pongWait))
 }
