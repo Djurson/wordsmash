@@ -64,6 +64,7 @@ type ServerGameState struct {
 	Host        uuid.UUID
 	GameStarted bool
 	EndTime     int64
+	StartTime   int64
 	Players     map[uuid.UUID]*User
 }
 
@@ -77,6 +78,7 @@ type ClientGameState struct {
 	Host        uuid.UUID             `json:"host"`
 	GameStarted bool                  `json:"gameStarted"`
 	EndTime     int64                 `json:"endTime"`
+	StartTime   int64                 `json:"startTime"`
 	TotalScore  int                   `json:"totalScore"`
 	Players     map[uuid.UUID]*User   `json:"players"`
 }
@@ -127,6 +129,8 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 	duration := time.Duration(game.Settings.TimerMinutes)*time.Minute + time.Duration(ROUNDSTARTWAITTIME)*time.Second
 	game.EndTime = time.Now().Add(duration).UnixMilli()
 
+	game.StartTime = time.Now().Add(time.Duration(5) * time.Second).UnixMilli()
+
 	game.GameStarted = true
 }
 
@@ -145,6 +149,7 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 		Host:        game.Host,
 		GameStarted: game.GameStarted,
 		EndTime:     game.EndTime,
+		StartTime:   game.StartTime,
 		TotalScore:  totalScore,
 		Players:     game.Players,
 	}

@@ -48,6 +48,7 @@ export type GameState = {
   host: string;
   gameStarted: boolean;
   endTime: number;
+  startTime: number;
   totalScore: number;
   players: Record<string, User>;
 };
