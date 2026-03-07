@@ -49,7 +49,7 @@ func HashMapLoadWordsFromTextFile(filename string) (*HashMapDictionary, error) {
 		line = strings.TrimSpace(line)
 		line = strings.ToLower(line)
 
-		if strings.Contains(line, "-") || len(line) < 2 {
+		if strings.Contains(line, "-") || len(line) < 2 || strings.Contains(line, " ") {
 			continue
 		}
 
