@@ -2,9 +2,15 @@ package gameserver
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 )
+
+type LockLetterAction struct {
+	Client   *Client
+	LetterId uuid.UUID
+}
 
 type GameRoom struct {
 	ID             string
@@ -17,6 +23,8 @@ type GameRoom struct {
 	UpdateSettings chan []byte
 	UpdateUsername chan *Client
 	StartGame      chan *Client
+	LockLetter     chan LockLetterAction
+	UnlockLetter   chan *Client
 }
 
 type User struct {
@@ -37,6 +45,8 @@ func NewRoom(id string) *GameRoom {
 		UpdateSettings: make(chan []byte),
 		UpdateUsername: make(chan *Client),
 		StartGame:      make(chan *Client),
+		LockLetter:     make(chan LockLetterAction),
+		UnlockLetter:   make(chan *Client),
 	}
 }
 
@@ -79,7 +89,28 @@ func (r *GameRoom) Run() {
 		case client := <-r.Unregister:
 			delete(r.Clients, client)
 
+			// Remove ghost locks
 			if client.Team != "" {
+				teamLetters := r.State.Teams[client.Team].Letters
+				lettersChanged := false
+				for id, letter := range teamLetters {
+					if letter.IsLocked && letter.LockedBy == client.Id {
+						letter.IsLocked = false
+						letter.LockedBy = uuid.Nil
+						teamLetters[id] = letter
+						lettersChanged = true
+					}
+				}
+				if lettersChanged {
+					r.State.Teams[client.Team].Letters = teamLetters
+					finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{Team: client.Team, TeamLetters: teamLetters})
+					for c := range r.Clients {
+						if c.Team == client.Team {
+							c.send <- finalMessage
+						}
+					}
+				}
+
 				delete(r.State.Teams[client.Team].Players, client.Id)
 				client.Team = ""
 			}
@@ -95,6 +126,14 @@ func (r *GameRoom) Run() {
 					r.State.Host = remainingClient.Id
 					break
 				}
+			}
+
+			if r.State.GameStarted {
+				message := PrepareEvent(ErrorEvent, map[string]string{"message": fmt.Sprintf("%s lämnade spelet", client.Username)})
+				for c := range r.Clients {
+					c.send <- message
+				}
+				continue
 			}
 
 			finalMessage := PrepareEvent(LobbyUpdateEvent, r.State)
@@ -165,6 +204,64 @@ func (r *GameRoom) Run() {
 			finalMessage := PrepareEvent(GameStartedEvent, r.State)
 			for c := range r.Clients {
 				c.send <- finalMessage
+			}
+
+		// * TEAM SPECIFIC UPDATES
+		case action := <-r.LockLetter:
+			client := action.Client
+			letterID := action.LetterId
+
+			if client.Team == "" {
+				continue
+			}
+
+			teamLetters := r.State.Teams[client.Team].Letters
+
+			if _, exists := teamLetters[letterID]; !exists {
+				continue
+			}
+
+			letter := teamLetters[letterID]
+
+			if letter.IsLocked {
+				continue
+			}
+
+			letter.IsLocked = true
+			letter.LockedBy = client.Id
+
+			teamLetters[letterID] = letter
+			r.State.Teams[client.Team].Letters = teamLetters
+
+			finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{Team: client.Team, TeamLetters: teamLetters})
+			for c := range r.Clients {
+				if c.Team == client.Team {
+					c.send <- finalMessage
+				}
+			}
+
+		case client := <-r.UnlockLetter:
+			teamLetters := r.State.Teams[client.Team].Letters
+			changed := false
+
+			for id, letter := range teamLetters {
+				if letter.IsLocked && letter.LockedBy == client.Id {
+					letter.IsLocked = false
+					letter.LockedBy = uuid.Nil
+					teamLetters[id] = letter
+					changed = true
+				}
+			}
+
+			// Only send update if something changed
+			if changed {
+				r.State.Teams[client.Team].Letters = teamLetters
+				finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{Team: client.Team, TeamLetters: teamLetters})
+				for c := range r.Clients {
+					if c.Team == client.Team {
+						c.send <- finalMessage
+					}
+				}
 			}
 		}
 	}

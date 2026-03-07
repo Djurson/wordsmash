@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Timer, Bomb } from "lucide-react";
 import { GameSettings } from "@/lib/game/types";
-import { useGameContext } from "@/hooks/websocket";
+import { useGameContext } from "@/hooks/gamecontext";
 
 interface GameSettingsProps {
   settings: GameSettings;

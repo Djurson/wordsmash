@@ -8,6 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	TEAMHANDSIZE int = 15
+)
+
 type PlacedTile struct {
 	Letter string `json:"letter"`
 	X      int    `json:"x"`
@@ -22,10 +26,17 @@ type Bomb struct {
 	PlacedBy string `json:"placedBy"`
 }
 
+type TeamLetter struct {
+	Id       uuid.UUID `json:"id"`
+	Letter   rune      `json:"letter"`
+	IsLocked bool      `json:"isLocked"`
+	LockedBy uuid.UUID `json:"lockedBy"`
+}
+
 type TeamState struct {
-	Score   int                 `json:"score"`
-	Letters []string            `json:"letters"`
-	Players map[uuid.UUID]*User `json:"players"`
+	Score   int                      `json:"score"`
+	Letters map[uuid.UUID]TeamLetter `json:"teamLetters"`
+	Players map[uuid.UUID]*User      `json:"players"`
 }
 
 type GameSettings struct {
@@ -53,12 +64,12 @@ func NewGameState(id string) *GameState {
 		Teams: map[string]*TeamState{
 			"a": {
 				Score:   0,
-				Letters: make([]string, 0),
+				Letters: make(map[uuid.UUID]TeamLetter),
 				Players: make(map[uuid.UUID]*User),
 			},
 			"b": {
 				Score:   0,
-				Letters: make([]string, 0),
+				Letters: make(map[uuid.UUID]TeamLetter),
 				Players: make(map[uuid.UUID]*User),
 			},
 		},
@@ -72,7 +83,12 @@ func NewGameState(id string) *GameState {
 
 func (game *GameState) PreStartGame(hub *GameHub) {
 	for _, team := range game.Teams {
-		team.Letters = GenerateRandomLetters(15)
+		letters := GenerateRandomLetters(TEAMHANDSIZE)
+
+		for _, letter := range letters {
+			id := uuid.New()
+			team.Letters[id] = TeamLetter{Letter: letter, IsLocked: false, Id: id}
+		}
 	}
 
 	startWord := hub.Dictionary.RandomWord()
@@ -99,13 +115,13 @@ func getTileKey(x, y int) string {
 	return fmt.Sprintf("%d,%d", x, y)
 }
 
-func GenerateRandomLetters(count int) []string {
-	letters := "abcdefghijklmnopqrstuvwxyzåäö"
+func GenerateRandomLetters(count int) []rune {
+	letters := []rune("abcdefghijklmnopqrstuvwxyzåäö")
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-	hand := make([]string, count)
+	hand := make([]rune, count)
 	for i := 0; i < count; i++ {
 		randomIndex := seededRand.Intn(len(letters))
-		hand[i] = string(letters[randomIndex])
+		hand[i] = rune(letters[randomIndex])
 	}
 
 	return hand

@@ -1,16 +1,12 @@
 "use client";
 
-import { useGameContext } from "@/hooks/websocket";
+import { useGameContext } from "@/hooks/gamecontext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-interface TopHUDProps {
-  selectedLetter: number | null;
-}
-
-export function TopHUD({ selectedLetter }: TopHUDProps) {
-  const { gamestate, user } = useGameContext();
+export function TopHUD() {
+  const { gamestate, user, localGameState } = useGameContext();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const requestRef = useRef<number>(0);
 
@@ -71,7 +67,11 @@ export function TopHUD({ selectedLetter }: TopHUDProps) {
         </div>
       </div>
       <div className="z-30 px-4 py-2 text-xs font-medium border rounded-full bg-white/90 shadow-sm backdrop-blur-md border-slate-200 text-slate-500">
-        {selectedLetter ? `Klicka på brädet för att placera "${gamestate.teams[user.team].letters[selectedLetter]}"` : "Dra för att panorera · Skrolla för att zooma"}
+        {localGameState.selectedLetterId
+          ? /* Show letter if a letter is selected */
+            `Klicka på brädet för att placera "${gamestate.teams[user.team].teamLetters[localGameState.selectedLetterId].letter}"`
+          : /* Show zoom / pan text if no letter is selected */
+            "Dra för att panorera · Skrolla för att zooma"}
       </div>
     </motion.div>
   );

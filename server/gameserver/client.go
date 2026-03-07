@@ -26,8 +26,11 @@ var (
 )
 
 const (
-	MAXTIMERMINUTES int = 25
-	MINTIMERMINUTES int = 2
+	MAXTIMERMINUTES      int   = 25
+	MINTIMERMINUTES      int   = 2
+	SOCKETREADLIMIT      int64 = 1024
+	MAXMESSAGESPERSECOND int   = 15
+	MAXMESSAGEWARNINGS   int   = 3
 )
 
 type Client struct {
@@ -51,8 +54,12 @@ func (c *Client) readPump() {
 		return
 	}
 
-	c.conn.SetReadLimit(256)
+	c.conn.SetReadLimit(SOCKETREADLIMIT)
 	c.conn.SetPongHandler(c.pongHandler)
+
+	messageCount := 0
+	messageWarnings := 0
+	windowStart := time.Now()
 
 	for {
 		_, message, err := c.conn.ReadMessage()
@@ -62,6 +69,28 @@ func (c *Client) readPump() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
+			break
+		}
+
+		// SOME IMPLEMENTAION OF RATE LIMITING ?
+		now := time.Now()
+		if now.Sub(windowStart) >= time.Second {
+			// Reset time window
+			messageCount = 0
+			windowStart = now
+		}
+
+		messageCount++
+		messageWarnings++
+
+		if messageCount > MAXMESSAGESPERSECOND {
+			log.Printf("Warning: Client %s send packages to quickly! Ignoring for now...", c.Id)
+
+			if messageWarnings < MAXMESSAGEWARNINGS {
+				continue
+			}
+
+			// If the max warnings have been reached -> Disconnect
 			break
 		}
 
@@ -172,6 +201,25 @@ func (c *Client) readPump() {
 		case StartGameEvent:
 			if c.Room != nil {
 				c.Room.StartGame <- c
+			}
+
+		case LockLetterEvent:
+			var payload LockLetterPayload
+			if err := json.Unmarshal(event.Payload, &payload); err != nil {
+				log.Printf("Error reading lock_letter payload: %v", err)
+				continue
+			}
+
+			if c.Room != nil {
+				c.Room.LockLetter <- LockLetterAction{
+					Client:   c,
+					LetterId: payload.LetterId,
+				}
+			}
+
+		case UnlockLetterEvent:
+			if c.Room != nil {
+				c.Room.UnlockLetter <- c
 			}
 
 		case SubmitTurnEvent:

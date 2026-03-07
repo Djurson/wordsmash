@@ -2,7 +2,7 @@
 
 import { Crown } from "lucide-react";
 import { User } from "@/lib/game/types";
-import { useGameContext } from "@/hooks/websocket";
+import { useGameContext } from "@/hooks/gamecontext";
 
 function PlayerAvatar({ name }: { name: string }) {
   const split = name.split(" ");

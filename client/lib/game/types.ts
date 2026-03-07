@@ -1,5 +1,6 @@
 export interface PlacedTile {
   letter: string;
+  id: string;
   x: number;
   y: number;
   team: "a" | "b";
@@ -23,8 +24,15 @@ export type User = {
 
 export type TeamState = {
   score: number;
-  letters: string[];
+  teamLetters: Record<string, TeamLetter>;
   players: Record<string, User>;
+};
+
+export type TeamLetter = {
+  id: string;
+  letter: string;
+  isLocked: boolean;
+  lockedBy: string;
 };
 
 export type GameSettings = {
@@ -41,4 +49,10 @@ export type GameState = {
   host: string;
   gameStarted: boolean;
   endTime: number;
+};
+
+export type LocalGameState = {
+  currentTurnTiles: Record<string, PlacedTile>;
+  currentTurnDirection: Direction | null;
+  selectedLetterId: string | null;
 };

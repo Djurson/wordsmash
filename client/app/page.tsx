@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Play, SendHorizonal, Sparkles, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useGameContext } from "@/hooks/websocket";
+import { useGameContext } from "@/hooks/gamecontext";
 import { CELL } from "@/lib/game/utils";
 import { GameSettings } from "@/lib/game/types";
 import { LoadingIcon } from "@/components/game/loading";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { useGameContext } from "@/hooks/websocket";
+import { useGameContext } from "@/hooks/gamecontext";
 
 export function GameCodeDisplay() {
   const { gamestate } = useGameContext();

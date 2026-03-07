@@ -1,19 +1,20 @@
 "use client";
 
-import { GameState, User } from "@/lib/game/types";
+import { GameState, LocalGameState, PlacedTile, Team, TeamLetter, User } from "@/lib/game/types";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
 import { WSRecievedEvent, WSSendEvent, WSSendEventType } from "@/lib/websocket/WSTypes";
 import { useRouter } from "next/navigation";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 export interface GameContextContextProps {
-  websocket: WebSocket | null;
   isConnected: boolean;
   sendMessage: (type: WSSendEventType, payload: any) => void;
   user: User | null;
   gamestate: GameState | null;
   leaveRoom: () => void;
   connectionError: boolean;
+  localGameState: LocalGameState;
+  updateLocalGameState: (updates: Partial<LocalGameState>) => void;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -34,9 +35,18 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
 
+  const [localGameState, setLocalGameState] = useState<LocalGameState>({ currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null });
+
   const updateGameState = useCallback((updates: Partial<GameState>) => {
     setGameState((prev) => {
       if (!prev) return updates as GameState;
+      return { ...prev, ...updates };
+    });
+  }, []);
+
+  const updateLocalGameState = useCallback((updates: Partial<LocalGameState>) => {
+    setLocalGameState((prev) => {
+      if (!prev) return updates as LocalGameState;
       return { ...prev, ...updates };
     });
   }, []);
@@ -103,12 +113,35 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
         case "game_started":
           updateGameState(payload);
+          setLocalGameState({
+            currentTurnTiles: {},
+            currentTurnDirection: null,
+            selectedLetterId: null,
+          });
           router.push("/game");
           break;
 
         case "left_room":
           ToastError(payload.message);
           setGameState(null);
+          break;
+
+        case "team_letter_updated":
+          const team: Team = payload.team;
+          const letters: Record<string, TeamLetter> = payload.teamLetters;
+          setGameState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev, // Copy board, bombs, timeLeft etc.
+              teams: {
+                ...prev.teams, // Copy the other team
+                [team]: {
+                  ...prev.teams[team], // Copy the current score/players
+                  teamLetters: letters, // Only overwrite the letters with the new data
+                },
+              },
+            };
+          });
           break;
 
         default:
@@ -136,7 +169,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     sendMessage("leave_room", {});
   };
 
-  const value: GameContextContextProps = { websocket, isConnected, user, gamestate, sendMessage, leaveRoom, connectionError };
+  const value: GameContextContextProps = { isConnected, user, gamestate, sendMessage, leaveRoom, connectionError, localGameState, updateLocalGameState };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }

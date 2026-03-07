@@ -5,15 +5,16 @@ import { AnimatePresence } from "framer-motion";
 import { ZoomControls } from "./zoom-controls";
 import GameTile from "./game-tile";
 import { PlacedTile } from "@/lib/game/types";
-import { CELL, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/game/utils";
+import { CELL, getTileKey, isValidPlacement, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/game/utils";
+import { useGameContext } from "@/hooks/gamecontext";
 
-interface GameCanvasProps {
-  tiles: Record<string, PlacedTile>;
-  selectedLetter: string | null;
-  onPlaceTile: (x: number, y: number) => void;
-}
+export function GameCanvas() {
+  const { localGameState, gamestate, user, updateLocalGameState, sendMessage } = useGameContext();
 
-export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasProps) {
+  if (!gamestate || !user) return;
+
+  const tiles = { ...gamestate.board, ...localGameState.currentTurnTiles };
+
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
@@ -54,7 +55,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (selectedLetter) {
+      if (localGameState.selectedLetterId) {
         const cell = screenToGrid(e.clientX, e.clientY);
         setHoverCell(cell);
       } else {
@@ -70,7 +71,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
 
       setOffset({ x: offsetStartRef.current.x + dx, y: offsetStartRef.current.y + dy });
     },
-    [isPanning, selectedLetter, screenToGrid],
+    [isPanning, localGameState.selectedLetterId, screenToGrid],
   );
 
   const handlePointerUp = useCallback(
@@ -78,12 +79,12 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
       setIsPanning(false);
       containerRef.current?.releasePointerCapture(e.pointerId);
 
-      if (!hasDragged.current && selectedLetter) {
+      if (!hasDragged.current && localGameState.selectedLetterId) {
         const cell = screenToGrid(e.clientX, e.clientY);
-        onPlaceTile(cell.x, cell.y);
+        handlePlaceTile(cell.x, cell.y);
       }
     },
-    [selectedLetter, screenToGrid, tiles, onPlaceTile],
+    [localGameState.selectedLetterId, screenToGrid, tiles],
   );
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -91,12 +92,32 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
     setZoom((prev) => Math.max(MAX_ZOOM_OUT, Math.min(MAX_ZOOM_IN, prev + delta)));
   }, []);
 
+  const handlePlaceTile = useCallback(
+    (x: number, y: number) => {
+      if (localGameState.selectedLetterId === null) return;
+
+      // Rule checking
+      const validationResult = isValidPlacement(x, y, localGameState.currentTurnDirection, gamestate.board, localGameState.currentTurnTiles);
+      if (validationResult === false) {
+        return;
+      }
+
+      const targetKey = getTileKey(x, y);
+      const letter = gamestate.teams[user.team].teamLetters[localGameState.selectedLetterId];
+      const newTile: PlacedTile = { letter: letter.letter, x, y, team: "a", state: "placeholder", id: localGameState.selectedLetterId };
+
+      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId });
+      updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: { [targetKey]: newTile } });
+    },
+    [localGameState.selectedLetterId, gamestate.teams[user.team].teamLetters, gamestate.board, localGameState.currentTurnTiles, localGameState.currentTurnDirection],
+  );
+
   const hoverOccupied = hoverCell ? !!tiles[getTileKey(hoverCell.x, hoverCell.y)] : false;
 
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 overflow-hidden touch-none ${isPanning ? "cursor-grabbing" : selectedLetter ? "cursor-crosshair" : "cursor-grab"}`}
+      className={`fixed inset-0 overflow-hidden touch-none ${isPanning ? "cursor-grabbing" : localGameState.selectedLetterId ? "cursor-crosshair" : "cursor-grab"}`}
       style={{
         backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
         backgroundColor: "var(--background, --tile-secondary))",
@@ -108,7 +129,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}>
-      {selectedLetter && hoverCell && !hoverOccupied && (
+      {localGameState.selectedLetterId && hoverCell && !hoverOccupied && (
         <div
           style={{
             position: "absolute",
@@ -120,7 +141,7 @@ export function GameCanvas({ tiles, selectedLetter, onPlaceTile }: GameCanvasPro
             zIndex: 15,
           }}
           className="pointer-events-none">
-          <GameTile letter={selectedLetter} state="selected-hover" zoom={zoom} />
+          <GameTile letter={gamestate.teams[user.team].teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" zoom={zoom} />
         </div>
       )}
 

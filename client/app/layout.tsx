@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { GameContextProvider } from "@/hooks/websocket";
+import { GameContextProvider } from "@/hooks/gamecontext";
 
 const notoSans = Noto_Sans({ variable: "--font-sans" });
 
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={notoSans.variable}>
+    <html lang="sv" className={notoSans.variable}>
       <body className="font-sans antialiased">
         <GameContextProvider>{children}</GameContextProvider>
         <Toaster position="top-right" />
