@@ -32,11 +32,9 @@ export function PlayerDock() {
       return;
     }
 
-    if (Object.keys(localGameState.currentTurnTiles).length > 0) {
-      sendMessage("unlock_letter", {});
-      updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
-    }
-  }, [localGameState.selectedLetterId, localGameState.currentTurnTiles]);
+    sendMessage("unlock_letter", {});
+    updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
+  }, [localGameState.selectedLetterId, handleSelectLetter, sendMessage, updateLocalGameState]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

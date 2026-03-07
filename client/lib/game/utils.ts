@@ -21,24 +21,6 @@ export function isValidPlacement(
     return false;
   }
 
-  const hasNeighbor =
-    placedTiles[getTileKey(requestX + 1, requestY)] ||
-    placedTiles[getTileKey(requestX - 1, requestY)] ||
-    placedTiles[getTileKey(requestX, requestY + 1)] ||
-    placedTiles[getTileKey(requestX, requestY - 1)];
-
-  const hasPlaceholderNeighbor =
-    currentTurnPlacements[getTileKey(requestX + 1, requestY)] ||
-    currentTurnPlacements[getTileKey(requestX - 1, requestY)] ||
-    currentTurnPlacements[getTileKey(requestX, requestY + 1)] ||
-    currentTurnPlacements[getTileKey(requestX, requestY - 1)];
-
-  // Checks if the tile has any neighbors
-  if (!hasNeighbor && !hasPlaceholderNeighbor) {
-    ToastError("Måste placeras vid en befintlig bricka!");
-    return false;
-  }
-
   const isFirstTileOfTurn = Object.keys(currentTurnPlacements).length === 0;
 
   if (isFirstTileOfTurn) {
@@ -71,4 +53,25 @@ export function isValidPlacement(
   }
 
   return newDirection;
+}
+
+export function checkIfTileHasNeighbor(requestX: number, requestY: number, placedTiles: Record<string, PlacedTile>, currentTurnPlacements: Record<string, PlacedTile>): boolean {
+  const hasNeighbor =
+    placedTiles[getTileKey(requestX + 1, requestY)] ||
+    placedTiles[getTileKey(requestX - 1, requestY)] ||
+    placedTiles[getTileKey(requestX, requestY + 1)] ||
+    placedTiles[getTileKey(requestX, requestY - 1)];
+
+  const hasPlaceholderNeighbor =
+    currentTurnPlacements[getTileKey(requestX + 1, requestY)] ||
+    currentTurnPlacements[getTileKey(requestX - 1, requestY)] ||
+    currentTurnPlacements[getTileKey(requestX, requestY + 1)] ||
+    currentTurnPlacements[getTileKey(requestX, requestY - 1)];
+
+  if (!hasNeighbor && !hasPlaceholderNeighbor) {
+    ToastError("Måste placeras vid en befintlig bricka!");
+    return false;
+  }
+
+  return true;
 }

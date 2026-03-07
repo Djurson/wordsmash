@@ -47,12 +47,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const updateLocalGameState = useCallback((updates: Partial<LocalGameState>) => {
     setLocalGameState((prev) => {
       if (!prev) return updates as LocalGameState;
-
-      const merged = { ...prev, ...updates };
-      if (updates.currentTurnTiles) {
-        merged.currentTurnTiles = { ...prev.currentTurnTiles, ...updates.currentTurnTiles };
-      }
-      return merged;
+      return { ...prev, ...updates };
     });
   }, []);
 

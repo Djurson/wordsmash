@@ -96,18 +96,16 @@ export function GameCanvas() {
     (x: number, y: number) => {
       if (localGameState.selectedLetterId === null) return;
 
-      // Rule checking
       const validationResult = isValidPlacement(x, y, localGameState.currentTurnDirection, gamestate.board, localGameState.currentTurnTiles);
-      if (validationResult === false) {
-        return;
-      }
+      if (validationResult === false) return;
 
       const targetKey = getTileKey(x, y);
       const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
       const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder" };
+      const updatedTurnTiles = { ...localGameState.currentTurnTiles, [targetKey]: newTile };
 
-      updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: { [targetKey]: newTile } });
-      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId, placement: { ...localGameState.currentTurnTiles, ...{ [targetKey]: newTile } } });
+      updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });
+      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId, placement: updatedTurnTiles });
     },
     [localGameState.selectedLetterId, gamestate.team.teamLetters, gamestate.board, localGameState.currentTurnTiles, localGameState.currentTurnDirection],
   );
