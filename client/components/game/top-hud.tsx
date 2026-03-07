@@ -37,6 +37,8 @@ export function TopHUD() {
 
   if (!gamestate || !user) return null;
 
+  const teamAScore = user.team === "a" ? gamestate.team.score : gamestate.totalScore - gamestate.team.score;
+
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
@@ -60,16 +62,13 @@ export function TopHUD() {
           <TeamDisplay team="b" />
         </div>
         <div className="flex w-full overflow-hidden rounded-xl bg-tile-accent">
-          <div
-            className="h-2 bg-tile-primary rounded-xl"
-            style={{ width: `${gamestate.teams.a.score === 0 ? 50 : (gamestate.teams.a.score / (gamestate.teams.a.score + gamestate.teams.b.score)) * 100}%` }}
-          />
+          <div className="h-2 bg-tile-primary rounded-xl" style={{ width: `${teamAScore === 0 ? 50 : (teamAScore / gamestate.totalScore) * 100}%` }} />
         </div>
       </div>
       <div className="z-30 px-4 py-2 text-xs font-medium border rounded-full bg-white/90 shadow-sm backdrop-blur-md border-slate-200 text-slate-500">
         {localGameState.selectedLetterId
           ? /* Show letter if a letter is selected */
-            `Klicka på brädet för att placera "${gamestate.teams[user.team].teamLetters[localGameState.selectedLetterId].letter}"`
+            `Klicka på brädet för att placera "${gamestate.team.teamLetters[localGameState.selectedLetterId].letter}"`
           : /* Show zoom / pan text if no letter is selected */
             "Dra för att panorera · Skrolla för att zooma"}
       </div>

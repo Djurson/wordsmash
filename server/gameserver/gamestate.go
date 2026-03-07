@@ -8,16 +8,27 @@ import (
 	"github.com/google/uuid"
 )
 
+type TileState string
+
 const (
 	TEAMHANDSIZE int = 15
+
+	TileStatePlaced      TileState = "placed"
+	TileStatePlaceholder TileState = "placeholder"
 )
 
+type User struct {
+	Username string    `json:"username"`
+	UserId   uuid.UUID `json:"userId"`
+	Team     string    `json:"team"`
+}
+
 type PlacedTile struct {
-	Letter string `json:"letter"`
-	X      int    `json:"x"`
-	Y      int    `json:"y"`
-	Team   string `json:"team"`
-	State  string `json:"state"` // "placed" | "placeholder"
+	Letter   string    `json:"letter"`
+	X        int       `json:"x"`
+	Y        int       `json:"y"`
+	State    TileState `json:"state"`
+	PlacedBy string    `json:"placedBy,omitempty"`
 }
 
 type Bomb struct {
@@ -28,15 +39,15 @@ type Bomb struct {
 
 type TeamLetter struct {
 	Id       uuid.UUID `json:"id"`
-	Letter   rune      `json:"letter"`
+	Letter   string    `json:"letter"`
 	IsLocked bool      `json:"isLocked"`
 	LockedBy uuid.UUID `json:"lockedBy"`
 }
 
 type TeamState struct {
-	Score   int                      `json:"score"`
-	Letters map[uuid.UUID]TeamLetter `json:"teamLetters"`
-	Players map[uuid.UUID]*User      `json:"players"`
+	Score        int                      `json:"score"`
+	Letters      map[uuid.UUID]TeamLetter `json:"teamLetters"`
+	Placeholders map[string]PlacedTile    `json:"placeholders"`
 }
 
 type GameSettings struct {
@@ -44,34 +55,42 @@ type GameSettings struct {
 	EnableBombs  bool `json:"enableBombs"`
 }
 
-type GameState struct {
+type ServerGameState struct {
+	Board       map[string]PlacedTile
+	Bombs       map[string]Bomb
+	Teams       map[string]*TeamState
+	GameId      string
+	Settings    GameSettings
+	Host        uuid.UUID
+	GameStarted bool
+	EndTime     int64
+	Players     map[uuid.UUID]*User
+}
+
+// Used to send information to client (only about their team)
+type ClientGameState struct {
 	Board       map[string]PlacedTile `json:"board"`
 	Bombs       map[string]Bomb       `json:"bombs"`
-	Teams       map[string]*TeamState `json:"teams"`
+	Team        *TeamState            `json:"team"`
 	GameId      string                `json:"gameId"`
 	Settings    GameSettings          `json:"settings"`
 	Host        uuid.UUID             `json:"host"`
 	GameStarted bool                  `json:"gameStarted"`
 	EndTime     int64                 `json:"endTime"`
+	TotalScore  int                   `json:"totalScore"`
+	Players     map[uuid.UUID]*User   `json:"players"`
 }
 
 const ROUNDSTARTWAITTIME int = 5
 
-func NewGameState(id string) *GameState {
-	return &GameState{
-		Board: make(map[string]PlacedTile),
-		Bombs: make(map[string]Bomb),
+func NewGameState(id string) *ServerGameState {
+	return &ServerGameState{
+		Board:   make(map[string]PlacedTile),
+		Bombs:   make(map[string]Bomb),
+		Players: make(map[uuid.UUID]*User),
 		Teams: map[string]*TeamState{
-			"a": {
-				Score:   0,
-				Letters: make(map[uuid.UUID]TeamLetter),
-				Players: make(map[uuid.UUID]*User),
-			},
-			"b": {
-				Score:   0,
-				Letters: make(map[uuid.UUID]TeamLetter),
-				Players: make(map[uuid.UUID]*User),
-			},
+			"a": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
+			"b": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
 		},
 		GameId: id,
 		Settings: GameSettings{
@@ -81,13 +100,13 @@ func NewGameState(id string) *GameState {
 	}
 }
 
-func (game *GameState) PreStartGame(hub *GameHub) {
+func (game *ServerGameState) PreStartGame(hub *GameHub) {
 	for _, team := range game.Teams {
 		letters := GenerateRandomLetters(TEAMHANDSIZE)
 
 		for _, letter := range letters {
 			id := uuid.New()
-			team.Letters[id] = TeamLetter{Letter: letter, IsLocked: false, Id: id}
+			team.Letters[id] = TeamLetter{Letter: string(letter), IsLocked: false, Id: id}
 		}
 	}
 
@@ -97,11 +116,11 @@ func (game *GameState) PreStartGame(hub *GameHub) {
 
 	for x := range len(runeWord) {
 		game.Board[getTileKey((x-startX), 0)] = PlacedTile{
-			Letter: string(runeWord[x]),
-			X:      x - startX,
-			Y:      0,
-			Team:   "",
-			State:  "placed",
+			Letter:   string(runeWord[x]),
+			X:        x - startX,
+			Y:        0,
+			PlacedBy: "",
+			State:    TileStatePlaced,
 		}
 	}
 
@@ -109,6 +128,26 @@ func (game *GameState) PreStartGame(hub *GameHub) {
 	game.EndTime = time.Now().Add(duration).UnixMilli()
 
 	game.GameStarted = true
+}
+
+func (game *ServerGameState) ToClientState(team string) ClientGameState {
+	totalScore := 0
+	for _, t := range game.Teams {
+		totalScore += t.Score
+	}
+
+	return ClientGameState{
+		Board:       game.Board,
+		Bombs:       game.Bombs,
+		Team:        game.Teams[team],
+		GameId:      game.GameId,
+		Settings:    game.Settings,
+		Host:        game.Host,
+		GameStarted: game.GameStarted,
+		EndTime:     game.EndTime,
+		TotalScore:  totalScore,
+		Players:     game.Players,
+	}
 }
 
 func getTileKey(x, y int) string {

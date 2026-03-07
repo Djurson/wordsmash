@@ -1,10 +1,9 @@
 export interface PlacedTile {
   letter: string;
-  id: string;
   x: number;
   y: number;
-  team: "a" | "b";
   state: "placed" | "placeholder";
+  placedBy?: string;
 }
 
 export interface Bomb {
@@ -25,7 +24,7 @@ export type User = {
 export type TeamState = {
   score: number;
   teamLetters: Record<string, TeamLetter>;
-  players: Record<string, User>;
+  placeholders: Record<string, PlacedTile>;
 };
 
 export type TeamLetter = {
@@ -43,12 +42,14 @@ export type GameSettings = {
 export type GameState = {
   board: Record<string, PlacedTile>;
   bombs: Record<string, Bomb>;
-  teams: Record<Team, TeamState>;
+  team: TeamState;
   gameId: string;
   settings: GameSettings;
   host: string;
   gameStarted: boolean;
   endTime: number;
+  totalScore: number;
+  players: Record<string, User>;
 };
 
 export type LocalGameState = {

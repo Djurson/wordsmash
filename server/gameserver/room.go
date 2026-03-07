@@ -8,14 +8,15 @@ import (
 )
 
 type LockLetterAction struct {
-	Client   *Client
-	LetterId uuid.UUID
+	Client    *Client
+	LetterId  uuid.UUID
+	Placement map[string]PlacedTile
 }
 
 type GameRoom struct {
 	ID             string
 	Clients        map[*Client]bool
-	State          *GameState
+	State          *ServerGameState
 	Broadcast      chan []byte
 	Register       chan *Client
 	Unregister     chan *Client
@@ -25,12 +26,6 @@ type GameRoom struct {
 	StartGame      chan *Client
 	LockLetter     chan LockLetterAction
 	UnlockLetter   chan *Client
-}
-
-type User struct {
-	Username string    `json:"username"`
-	UserId   uuid.UUID `json:"userId"`
-	Team     string    `json:"team"`
 }
 
 func NewRoom(id string) *GameRoom {
@@ -64,25 +59,38 @@ func (r *GameRoom) Run() {
 			// Add the client to the map
 			r.Clients[client] = true
 
-			// Assign the client to a team
-			countA := len(r.State.Teams["a"].Players)
-			countB := len(r.State.Teams["b"].Players)
+			// Count number of players in each team
+			countA := 0
+			countB := 0
+			for _, p := range r.State.Players {
+				if p.Team == "a" {
+					countA++
+				} else {
+					countB++
+				}
+			}
+
 			assignedTeam := "a"
 			if countB < countA {
 				assignedTeam = "b"
 			}
 			client.Team = assignedTeam
 
-			r.State.Teams[assignedTeam].Players[client.Id] = &User{
+			r.State.Players[client.Id] = &User{
 				UserId:   client.Id,
 				Username: client.Username,
 				Team:     assignedTeam,
 			}
 
 			// Send out that the a new client has joined
-			finalMessage := PrepareEvent(LobbyUpdateEvent, r.State)
+			totalScore := 0
+
+			for _, team := range r.State.Teams {
+				totalScore += team.Score
+			}
+
 			for c := range r.Clients {
-				c.send <- finalMessage
+				c.send <- PrepareEvent(LobbyUpdateEvent, r.State.ToClientState(c.Team))
 			}
 
 		// A client leaves the room
@@ -103,7 +111,7 @@ func (r *GameRoom) Run() {
 				}
 				if lettersChanged {
 					r.State.Teams[client.Team].Letters = teamLetters
-					finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{Team: client.Team, TeamLetters: teamLetters})
+					finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{TeamLetters: teamLetters})
 					for c := range r.Clients {
 						if c.Team == client.Team {
 							c.send <- finalMessage
@@ -111,7 +119,7 @@ func (r *GameRoom) Run() {
 					}
 				}
 
-				delete(r.State.Teams[client.Team].Players, client.Id)
+				delete(r.State.Players, client.Id)
 				client.Team = ""
 			}
 
@@ -136,21 +144,19 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
-			finalMessage := PrepareEvent(LobbyUpdateEvent, r.State)
 			for c := range r.Clients {
-				c.send <- finalMessage
+				c.send <- PrepareEvent(LobbyUpdateEvent, r.State.ToClientState(c.Team))
 			}
 
 		case client := <-r.UpdateUsername:
 			if client.Team != "" {
-				if player, exists := r.State.Teams[client.Team].Players[client.Id]; exists {
+				if player, exists := r.State.Players[client.Id]; exists {
 					player.Username = client.Username
 				}
 			}
 
-			finalMessage := PrepareEvent(LobbyUpdateEvent, r.State)
 			for c := range r.Clients {
-				c.send <- finalMessage
+				c.send <- PrepareEvent(LobbyUpdateEvent, r.State.ToClientState(c.Team))
 			}
 
 		case message := <-r.Broadcast:
@@ -164,17 +170,18 @@ func (r *GameRoom) Run() {
 			json.Unmarshal(payload, &newTiles)
 
 			// TODO: Implement checking from what the client sends
+			// TODO: Clear Placeholders from client entries
 			// TODO: Call hub.dictionary.isvalid
 			// TODO: Implement bombs
 
 			//* For now trust the client
 			for _, tile := range newTiles {
-				tile.State = "placed"
+				tile.State = TileStatePlaced
 				r.State.Board[getTileKey(tile.X, tile.Y)] = tile
 			}
 
+			// Skicka BoardUpdate som vanligt
 			finalMessage := PrepareEvent(BoardUpdateEvent, r.State.Board)
-
 			for client := range r.Clients {
 				client.send <- finalMessage
 			}
@@ -201,12 +208,10 @@ func (r *GameRoom) Run() {
 
 			r.State.PreStartGame(hostClient.hub)
 
-			finalMessage := PrepareEvent(GameStartedEvent, r.State)
 			for c := range r.Clients {
-				c.send <- finalMessage
+				c.send <- PrepareEvent(GameStartedEvent, r.State.ToClientState(c.Team))
 			}
 
-		// * TEAM SPECIFIC UPDATES
 		case action := <-r.LockLetter:
 			client := action.Client
 			letterID := action.LetterId
@@ -229,11 +234,20 @@ func (r *GameRoom) Run() {
 
 			letter.IsLocked = true
 			letter.LockedBy = client.Id
-
 			teamLetters[letterID] = letter
 			r.State.Teams[client.Team].Letters = teamLetters
 
-			finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{Team: client.Team, TeamLetters: teamLetters})
+			for key, tile := range action.Placement {
+				tile.State = TileStatePlaceholder
+				tile.PlacedBy = client.Id.String()
+				r.State.Teams[client.Team].Placeholders[key] = tile
+			}
+
+			finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
+				TeamLetters:  teamLetters,
+				Placeholders: r.State.Teams[client.Team].Placeholders,
+			})
+
 			for c := range r.Clients {
 				if c.Team == client.Team {
 					c.send <- finalMessage
@@ -253,10 +267,23 @@ func (r *GameRoom) Run() {
 				}
 			}
 
+			placeholders := r.State.Teams[client.Team].Placeholders
+			for key, tile := range placeholders {
+				if tile.PlacedBy == client.Id.String() {
+					delete(placeholders, key)
+					changed = true
+				}
+			}
+			r.State.Teams[client.Team].Placeholders = placeholders
+
 			// Only send update if something changed
 			if changed {
 				r.State.Teams[client.Team].Letters = teamLetters
-				finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{Team: client.Team, TeamLetters: teamLetters})
+				finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
+					TeamLetters:  teamLetters,
+					Placeholders: placeholders,
+				})
+
 				for c := range r.Clients {
 					if c.Team == client.Team {
 						c.send <- finalMessage

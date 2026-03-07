@@ -47,7 +47,12 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const updateLocalGameState = useCallback((updates: Partial<LocalGameState>) => {
     setLocalGameState((prev) => {
       if (!prev) return updates as LocalGameState;
-      return { ...prev, ...updates };
+
+      const merged = { ...prev, ...updates };
+      if (updates.currentTurnTiles) {
+        merged.currentTurnTiles = { ...prev.currentTurnTiles, ...updates.currentTurnTiles };
+      }
+      return merged;
     });
   }, []);
 
@@ -127,18 +132,16 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           break;
 
         case "team_letter_updated":
-          const team: Team = payload.team;
           const letters: Record<string, TeamLetter> = payload.teamLetters;
+          const placeholders: Record<string, PlacedTile> = payload.placeholders;
           setGameState((prev) => {
             if (!prev) return prev;
             return {
-              ...prev, // Copy board, bombs, timeLeft etc.
-              teams: {
-                ...prev.teams, // Copy the other team
-                [team]: {
-                  ...prev.teams[team], // Copy the current score/players
-                  teamLetters: letters, // Only overwrite the letters with the new data
-                },
+              ...prev /* Copy board, bombs, timeLeft etc. */,
+              team: {
+                ...prev.team /* score */,
+                teamLetters: letters,
+                placeholders: placeholders,
               },
             };
           });

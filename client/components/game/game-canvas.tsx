@@ -13,7 +13,7 @@ export function GameCanvas() {
 
   if (!gamestate || !user) return;
 
-  const tiles = { ...gamestate.board, ...localGameState.currentTurnTiles };
+  const tiles = { ...gamestate.board, ...gamestate.team.placeholders, ...localGameState.currentTurnTiles };
 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -103,13 +103,13 @@ export function GameCanvas() {
       }
 
       const targetKey = getTileKey(x, y);
-      const letter = gamestate.teams[user.team].teamLetters[localGameState.selectedLetterId];
-      const newTile: PlacedTile = { letter: letter.letter, x, y, team: "a", state: "placeholder", id: localGameState.selectedLetterId };
+      const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
+      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder" };
 
-      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId });
       updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: { [targetKey]: newTile } });
+      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId, placement: { ...localGameState.currentTurnTiles, ...{ [targetKey]: newTile } } });
     },
-    [localGameState.selectedLetterId, gamestate.teams[user.team].teamLetters, gamestate.board, localGameState.currentTurnTiles, localGameState.currentTurnDirection],
+    [localGameState.selectedLetterId, gamestate.team.teamLetters, gamestate.board, localGameState.currentTurnTiles, localGameState.currentTurnDirection],
   );
 
   const hoverOccupied = hoverCell ? !!tiles[getTileKey(hoverCell.x, hoverCell.y)] : false;
@@ -141,7 +141,7 @@ export function GameCanvas() {
             zIndex: 15,
           }}
           className="pointer-events-none">
-          <GameTile letter={gamestate.teams[user.team].teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" zoom={zoom} />
+          <GameTile letter={gamestate.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" zoom={zoom} />
         </div>
       )}
 
@@ -154,7 +154,7 @@ export function GameCanvas() {
 
           return (
             <div
-              key={`${tile.letter}-${tile.team}-${tile.x}-${tile.y}`}
+              key={`${tile.letter}-${tile.state}-${tile.x}-${tile.y}`}
               style={{
                 position: "absolute",
                 left: "50%",
@@ -164,7 +164,7 @@ export function GameCanvas() {
                 transform: `translate(${px - halfTile}px, ${py - halfTile}px)`,
                 zIndex: 10,
               }}>
-              <GameTile letter={tile.letter} team={tile.team} state={tile.state} zoom={zoom} />
+              <GameTile letter={tile.letter} state={tile.state} zoom={zoom} />
             </div>
           );
         })}

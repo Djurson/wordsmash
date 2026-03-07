@@ -132,7 +132,7 @@ func (c *Client) readPump() {
 
 			// Send a response to the client with the room code
 			user := User{Username: c.Username, Team: c.Team, UserId: c.Id}
-			c.send <- PrepareEvent(GameCreatedEvent, CreatedJoinGameResponse{User: user, GameState: *room.State, Message: "Du skapade ett nytt spel!"})
+			c.send <- PrepareEvent(GameCreatedEvent, CreatedJoinGameResponse{User: user, GameState: room.State.ToClientState(c.Team), Message: "Du skapade ett nytt spel!"})
 
 		case JoinGameEvent:
 			// Get & save the username sent by the frontend, and get the room code
@@ -157,7 +157,7 @@ func (c *Client) readPump() {
 				room.Register <- c
 
 				userInfo := User{Username: c.Username, Team: c.Team, UserId: c.Id}
-				c.send <- PrepareEvent(JoinedGameEvent, CreatedJoinGameResponse{User: userInfo, GameState: *room.State, Message: "Du gick med i spelet!"})
+				c.send <- PrepareEvent(JoinedGameEvent, CreatedJoinGameResponse{User: userInfo, GameState: room.State.ToClientState(c.Team), Message: "Du gick med i spelet!"})
 			} else {
 				// Send error if the room doesn't exists
 				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Rummet finns inte."})
@@ -212,8 +212,9 @@ func (c *Client) readPump() {
 
 			if c.Room != nil {
 				c.Room.LockLetter <- LockLetterAction{
-					Client:   c,
-					LetterId: payload.LetterId,
+					Client:    c,
+					LetterId:  payload.LetterId,
+					Placement: payload.Placement,
 				}
 			}
 

@@ -67,16 +67,17 @@ type JoinGamePayload struct {
 
 // Response from server to client
 type CreatedJoinGameResponse struct {
-	GameState GameState `json:"gamestate"`
-	User      User      `json:"user"`
-	Message   string    `json:"message"`
+	GameState ClientGameState `json:"gamestate"`
+	User      User            `json:"user"`
+	Message   string          `json:"message"`
 }
 
 type UpdatedTeamLettersResponse struct {
-	Team        string                   `json:"team"`
-	TeamLetters map[uuid.UUID]TeamLetter `json:"teamLetters"`
+	TeamLetters  map[uuid.UUID]TeamLetter `json:"teamLetters"`
+	Placeholders map[string]PlacedTile    `json:"placeholders"`
 }
 
 type LockLetterPayload struct {
-	LetterId uuid.UUID `json:"letterId"`
+	LetterId  uuid.UUID             `json:"letterId"`
+	Placement map[string]PlacedTile `json:"placement"`
 }

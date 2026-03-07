@@ -51,6 +51,7 @@
   --color-tile-secondary: var(--tile-secondary);
   --color-tile-border: var(--tile-border);
   --color-tile-shadow: var(--tile-shadow);
+  --color-tile-locked: var(--tile-locked);
   --color-tile-foreground: var(--tile-foreground);
   --color-canvas-dot: var(--canvas-dot);
 
@@ -129,6 +130,7 @@
   --tile-border: #d4a017;
   --tile-shadow: #b38200;
   --tile-foreground: #334155;
+  --tile-locked: #c2c0bb;
   --canvas-dot: #d6cfbf;
 }
 
@@ -172,6 +174,7 @@
   --tile-border: #d4a017;
   --tile-shadow: #b38200;
   --tile-foreground: #334155;
+  --tile-locked: #c2c0bb;
   --canvas-dot: #d6cfbf;
 }
 
