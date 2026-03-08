@@ -6,35 +6,17 @@ import GameTile from "./game-tile";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { useGameContext } from "@/hooks/gamecontext";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { TeamLetter } from "@/lib/game/types";
 
 export function PlayerDock() {
-  const { gamestate, user, localGameState, updateLocalGameState, sendMessage } = useGameContext();
+  const { gamestate, user, localGameState, handleSelectLetter, handleCancelPlacement, handleSubmitPlacement } = useGameContext();
 
   if (!gamestate || !user) return null;
-
-  const handleSelectLetter = useCallback((key: string | null) => {
-    const newSelected = localGameState.selectedLetterId === key ? null : key;
-
-    if (newSelected && gamestate.team.teamLetters[newSelected].isLocked) return;
-
-    updateLocalGameState({ selectedLetterId: newSelected });
-  }, []);
 
   const handleTradeIn = () => {};
 
   const handleShuffle = () => {};
-
-  const handleCancelPlacement = useCallback(() => {
-    if (localGameState.selectedLetterId !== null) {
-      handleSelectLetter(null);
-      return;
-    }
-
-    sendMessage("unlock_letter", {});
-    updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
-  }, [localGameState.selectedLetterId, handleSelectLetter, sendMessage, updateLocalGameState]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -66,7 +48,7 @@ export function PlayerDock() {
                 Esc {localGameState.selectedLetterId ? "+ Esc" : ""}
               </Kbd>
             </Button>
-            <Button size="sm" variant="default" className="text-tile-foreground! px-5 flex items-center">
+            <Button size="sm" variant="default" className="text-tile-foreground! px-5 flex items-center" onClick={handleSubmitPlacement}>
               Klar{" "}
               <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/50">
                 ⏎

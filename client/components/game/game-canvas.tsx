@@ -4,12 +4,11 @@ import { useState, useRef, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ZoomControls } from "./zoom-controls";
 import GameTile from "./game-tile";
-import { PlacedTile } from "@/lib/game/types";
-import { CELL, getTileKey, isValidPlacement, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/game/utils";
+import { CELL, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/game/utils";
 import { useGameContext } from "@/hooks/gamecontext";
 
 export function GameCanvas() {
-  const { localGameState, gamestate, user, updateLocalGameState, sendMessage } = useGameContext();
+  const { localGameState, gamestate, user, handlePlaceTile } = useGameContext();
 
   if (!gamestate || !user) return;
 
@@ -91,24 +90,6 @@ export function GameCanvas() {
     const delta = e.deltaY > 0 ? -0.08 : 0.08;
     setZoom((prev) => Math.max(MAX_ZOOM_OUT, Math.min(MAX_ZOOM_IN, prev + delta)));
   }, []);
-
-  const handlePlaceTile = useCallback(
-    (x: number, y: number) => {
-      if (localGameState.selectedLetterId === null) return;
-
-      const validationResult = isValidPlacement(x, y, localGameState.currentTurnDirection, gamestate.board, localGameState.currentTurnTiles);
-      if (validationResult === false) return;
-
-      const targetKey = getTileKey(x, y);
-      const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
-      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score };
-      const updatedTurnTiles = { ...localGameState.currentTurnTiles, [targetKey]: newTile };
-
-      updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });
-      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId, placement: updatedTurnTiles });
-    },
-    [localGameState.selectedLetterId, gamestate.team.teamLetters, gamestate.board, localGameState.currentTurnTiles, localGameState.currentTurnDirection],
-  );
 
   const hoverOccupied = hoverCell ? !!tiles[getTileKey(hoverCell.x, hoverCell.y)] : false;
 

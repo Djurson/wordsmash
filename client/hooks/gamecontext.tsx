@@ -1,6 +1,7 @@
 "use client";
 
 import { GameState, LocalGameState, PlacedTile, Team, TeamLetter, User } from "@/lib/game/types";
+import { finalTesting, getTileKey, isValidPlacement } from "@/lib/game/utils";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
 import { WSRecievedEvent, WSSendEvent, WSSendEventType } from "@/lib/websocket/WSTypes";
 import { useRouter } from "next/navigation";
@@ -15,6 +16,10 @@ export interface GameContextContextProps {
   connectionError: boolean;
   localGameState: LocalGameState;
   updateLocalGameState: (updates: Partial<LocalGameState>) => void;
+  handleSelectLetter: (key: string | null) => void;
+  handleCancelPlacement: () => void;
+  handleSubmitPlacement: () => void;
+  handlePlaceTile: (x: number, y: number) => void;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -168,7 +173,67 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     sendMessage("leave_room", {});
   };
 
-  const value: GameContextContextProps = { isConnected, user, gamestate, sendMessage, leaveRoom, connectionError, localGameState, updateLocalGameState };
+  const handleSelectLetter = useCallback((key: string | null) => {
+    if (!gamestate) return;
+    const newSelected = localGameState.selectedLetterId === key ? null : key;
+
+    if (newSelected && gamestate.team.teamLetters[newSelected].isLocked) return;
+
+    updateLocalGameState({ selectedLetterId: newSelected });
+  }, []);
+
+  const handleCancelPlacement = useCallback(() => {
+    if (localGameState.selectedLetterId !== null) {
+      handleSelectLetter(null);
+      return;
+    }
+
+    sendMessage("unlock_letter", {});
+    updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
+  }, [localGameState.selectedLetterId, handleSelectLetter, sendMessage, updateLocalGameState]);
+
+  const handleSubmitPlacement = useCallback(() => {
+    if (Object.keys(localGameState.currentTurnTiles).length === 0 || !gamestate) return;
+
+    const result = finalTesting(localGameState, gamestate);
+
+    if (result === "failed") return;
+
+    sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles });
+  }, []);
+
+  const handlePlaceTile = useCallback(
+    (x: number, y: number) => {
+      if (localGameState.selectedLetterId === null || !gamestate) return;
+
+      const validationResult = isValidPlacement(x, y, localGameState.currentTurnDirection, gamestate.board, localGameState.currentTurnTiles);
+      if (validationResult === false) return;
+
+      const targetKey = getTileKey(x, y);
+      const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
+      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score };
+      const updatedTurnTiles = { ...localGameState.currentTurnTiles, [targetKey]: newTile };
+
+      updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });
+      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId, placement: updatedTurnTiles });
+    },
+    [localGameState.selectedLetterId, gamestate?.team.teamLetters, gamestate?.board, localGameState.currentTurnTiles, localGameState.currentTurnDirection],
+  );
+
+  const value: GameContextContextProps = {
+    isConnected,
+    user,
+    gamestate,
+    sendMessage,
+    leaveRoom,
+    connectionError,
+    localGameState,
+    updateLocalGameState,
+    handleSelectLetter,
+    handleCancelPlacement,
+    handleSubmitPlacement,
+    handlePlaceTile,
+  };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
