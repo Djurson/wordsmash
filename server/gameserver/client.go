@@ -29,7 +29,7 @@ const (
 	MAXTIMERMINUTES      int   = 25
 	MINTIMERMINUTES      int   = 2
 	SOCKETREADLIMIT      int64 = 1024
-	MAXMESSAGESPERSECOND int   = 15
+	MAXMESSAGESPERSECOND int   = 30
 	MAXMESSAGEWARNINGS   int   = 3
 )
 
@@ -224,9 +224,17 @@ func (c *Client) readPump() {
 			}
 
 		case SubmitTurnEvent:
-			if c.Room != nil {
-				c.Room.ProcessMove <- event.Payload
+			if c.Room == nil {
+				continue
 			}
+
+			var payload SubmitTurnPayload
+			if err := json.Unmarshal(event.Payload, &payload); err != nil {
+				log.Printf("Error reading lock_letter payload: %v", err)
+				continue
+			}
+
+			c.Room.ProcessMove <- SubmitTurnAction{Client: c, NewTiles: payload.NewTiles, NewBombs: payload.NewBombs}
 		}
 	}
 }

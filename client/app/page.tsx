@@ -53,7 +53,6 @@ export default function LobbyPage() {
     return (
       <>
         <LoadingIcon />
-        {/* <p className="absolute flex items-center justify-center text-xl font-bold mt-18 bg-card border-border">Fel med anslutning till servern, försök igen senare</p> */}
       </>
     );
   }

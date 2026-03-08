@@ -13,6 +13,12 @@ type LockLetterAction struct {
 	Placement map[string]PlacedTile
 }
 
+type SubmitTurnAction struct {
+	Client   *Client
+	NewTiles map[string]PlacedTile
+	NewBombs map[string]Bomb
+}
+
 type GameRoom struct {
 	ID             string
 	Clients        map[*Client]bool
@@ -20,7 +26,7 @@ type GameRoom struct {
 	Broadcast      chan []byte
 	Register       chan *Client
 	Unregister     chan *Client
-	ProcessMove    chan []byte
+	ProcessMove    chan SubmitTurnAction
 	UpdateSettings chan []byte
 	UpdateUsername chan *Client
 	StartGame      chan *Client
@@ -36,7 +42,7 @@ func NewRoom(id string) *GameRoom {
 		Broadcast:      make(chan []byte),
 		Register:       make(chan *Client),
 		Unregister:     make(chan *Client),
-		ProcessMove:    make(chan []byte),
+		ProcessMove:    make(chan SubmitTurnAction),
 		UpdateSettings: make(chan []byte),
 		UpdateUsername: make(chan *Client),
 		StartGame:      make(chan *Client),
@@ -165,20 +171,18 @@ func (r *GameRoom) Run() {
 			}
 
 		// A client has sent a new move
-		case payload := <-r.ProcessMove:
-			var newTiles []PlacedTile
-			json.Unmarshal(payload, &newTiles)
-
+		case submitTurnAction := <-r.ProcessMove:
 			// TODO: Implement checking from what the client sends
+			isValid, message := isValidPlacement(&submitTurnAction, &r.State.Board, &r.State.Bombs)
+
+			if !isValid {
+				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
+				continue
+			}
+
 			// TODO: Clear Placeholders from client entries
 			// TODO: Call hub.dictionary.isvalid
 			// TODO: Implement bombs
-
-			//* For now trust the client
-			for _, tile := range newTiles {
-				tile.State = TileStatePlaced
-				r.State.Board[getTileKey(tile.X, tile.Y)] = tile
-			}
 
 			// Skicka BoardUpdate som vanligt
 			finalMessage := PrepareEvent(BoardUpdateEvent, r.State.Board)
@@ -292,4 +296,22 @@ func (r *GameRoom) Run() {
 			}
 		}
 	}
+}
+
+func isValidPlacement(turnAction *SubmitTurnAction, placedTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
+	if len(turnAction.NewTiles) == 0 && len(turnAction.NewBombs) == 0 {
+		return false, "Behöver placerat ut minst en bricka eller bomb"
+	}
+
+	if len(turnAction.NewTiles) > 0 {
+
+	}
+
+	return true, ""
+}
+
+func checkTileNeighbors(turnAction *SubmitTurnAction, placedTiles *map[string]PlacedTile, currentTurnTiles *map[string]PlacedTile) bool {
+	var placedNeighbor, placeholderNeighbor bool = false, false
+
+	return placedNeighbor
 }

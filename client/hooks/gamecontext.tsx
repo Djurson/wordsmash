@@ -40,7 +40,12 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
 
-  const [localGameState, setLocalGameState] = useState<LocalGameState>({ currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null });
+  const [localGameState, setLocalGameState] = useState<LocalGameState>({
+    currentTurnTiles: {},
+    currentTurnBombs: {},
+    currentTurnDirection: null,
+    selectedLetterId: null,
+  });
 
   const updateGameState = useCallback((updates: Partial<GameState>) => {
     setGameState((prev) => {
@@ -120,11 +125,11 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           updateGameState(payload);
           setLocalGameState({
             currentTurnTiles: {},
+            currentTurnBombs: {},
             currentTurnDirection: null,
             selectedLetterId: null,
           });
           router.push("/game");
-          console.log(payload);
           break;
 
         case "left_room":
@@ -173,14 +178,17 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     sendMessage("leave_room", {});
   };
 
-  const handleSelectLetter = useCallback((key: string | null) => {
-    if (!gamestate) return;
-    const newSelected = localGameState.selectedLetterId === key ? null : key;
+  const handleSelectLetter = useCallback(
+    (key: string | null) => {
+      if (!gamestate) return;
+      const newSelected = localGameState.selectedLetterId === key ? null : key;
 
-    if (newSelected && gamestate.team.teamLetters[newSelected].isLocked) return;
+      if (newSelected && gamestate.team.teamLetters[newSelected].isLocked) return;
 
-    updateLocalGameState({ selectedLetterId: newSelected });
-  }, []);
+      updateLocalGameState({ selectedLetterId: newSelected });
+    },
+    [gamestate, localGameState],
+  );
 
   const handleCancelPlacement = useCallback(() => {
     if (localGameState.selectedLetterId !== null) {
@@ -190,7 +198,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
     sendMessage("unlock_letter", {});
     updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
-  }, [localGameState.selectedLetterId, handleSelectLetter, sendMessage, updateLocalGameState]);
+  }, [localGameState, handleSelectLetter, sendMessage, updateLocalGameState]);
 
   const handleSubmitPlacement = useCallback(() => {
     if (Object.keys(localGameState.currentTurnTiles).length === 0 || !gamestate) return;
@@ -199,12 +207,12 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
     if (result === "failed") return;
 
-    sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles });
-  }, []);
+    sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles, newBombs: localGameState.currentTurnBombs });
+  }, [localGameState, gamestate]);
 
   const handlePlaceTile = useCallback(
     (x: number, y: number) => {
-      if (localGameState.selectedLetterId === null || !gamestate) return;
+      if (localGameState.selectedLetterId === null || gamestate === null) return;
 
       const validationResult = isValidPlacement(x, y, localGameState.currentTurnDirection, gamestate.board, localGameState.currentTurnTiles);
       if (validationResult === false) return;
@@ -217,7 +225,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
       updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });
       sendMessage("lock_letter", { letterId: localGameState.selectedLetterId, placement: updatedTurnTiles });
     },
-    [localGameState.selectedLetterId, gamestate?.team.teamLetters, gamestate?.board, localGameState.currentTurnTiles, localGameState.currentTurnDirection],
+    [localGameState, gamestate, sendMessage, updateLocalGameState],
   );
 
   const value: GameContextContextProps = {

@@ -59,4 +59,5 @@ export type LocalGameState = {
   currentTurnTiles: Record<string, PlacedTile>;
   currentTurnDirection: Direction | null;
   selectedLetterId: string | null;
+  currentTurnBombs: Record<string, Bomb>;
 };

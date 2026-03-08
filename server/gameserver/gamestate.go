@@ -104,11 +104,8 @@ func NewGameState(id string) *ServerGameState {
 			"a": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
 			"b": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
 		},
-		GameId: id,
-		Settings: GameSettings{
-			TimerMinutes: 5,
-			EnableBombs:  true,
-		},
+		GameId:   id,
+		Settings: GameSettings{TimerMinutes: 5, EnableBombs: true},
 	}
 }
 

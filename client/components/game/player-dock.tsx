@@ -84,7 +84,16 @@ export function PlayerDock() {
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 + index * 0.05, type: "spring", bounce: 0.75, bounceDamping: 15 }}>
                 <div
-                  onClick={gamestate.team.teamLetters[key].isLocked ? () => {} : () => handleSelectLetter(key)}
+                  onClick={
+                    gamestate.team.teamLetters[key].isLocked
+                      ? () => {
+                          // console.log("isLocked", gamestate.team.teamLetters[key].isLocked);
+                        }
+                      : () => {
+                          // console.log("key", key);
+                          handleSelectLetter(key);
+                        }
+                  }
                   className={`cursor-pointer transition-transform duration-200 ${localGameState.selectedLetterId === key || gamestate.team.teamLetters[key].isLocked ? "-translate-y-3 scale-110 drop-shadow-lg" : "hover:-translate-y-1"}`}>
                   <GameTile letter={teamLetter.letter} state={gamestate.team.teamLetters[key].isLocked ? "locked" : "idle"} score={teamLetter.score} />
                 </div>

@@ -81,3 +81,8 @@ type LockLetterPayload struct {
 	LetterId  uuid.UUID             `json:"letterId"`
 	Placement map[string]PlacedTile `json:"placement"`
 }
+
+type SubmitTurnPayload struct {
+	NewTiles map[string]PlacedTile `json:"newTiles"`
+	NewBombs map[string]Bomb       `json:"newBombs"`
+}
