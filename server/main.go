@@ -17,6 +17,9 @@ func main() {
 		log.Fatalf("Failed to open file: %v", err)
 	}
 
+	freq := dictionary.CalculateLetterFrequency(wordMap.GetWordList())
+	gameserver.InitLetterBag(freq)
+
 	hub := gameserver.NewHub(wordMap)
 
 	// server.HandlePlayerMove("test")

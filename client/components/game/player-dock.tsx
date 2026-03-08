@@ -104,7 +104,7 @@ export function PlayerDock() {
                 <div
                   onClick={gamestate.team.teamLetters[key].isLocked ? () => {} : () => handleSelectLetter(key)}
                   className={`cursor-pointer transition-transform duration-200 ${localGameState.selectedLetterId === key || gamestate.team.teamLetters[key].isLocked ? "-translate-y-3 scale-110 drop-shadow-lg" : "hover:-translate-y-1"}`}>
-                  <GameTile letter={teamLetter.letter} state={gamestate.team.teamLetters[key].isLocked ? "locked" : "idle"} />
+                  <GameTile letter={teamLetter.letter} state={gamestate.team.teamLetters[key].isLocked ? "locked" : "idle"} score={teamLetter.score} />
                 </div>
               </motion.div>
             );

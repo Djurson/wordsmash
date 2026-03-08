@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface LetterTileProps {
   letter: string;
   state?: LetterState;
-  zoom?: number;
+  score?: number;
   delay?: number;
   onClick?: () => void;
 }
@@ -39,13 +39,13 @@ function getTileStateClasses(state: LetterState): string {
   }
 }
 
-export default function GameTile({ letter, state = "idle", zoom = 1, onClick, delay }: LetterTileProps) {
+export default function GameTile({ letter, score, state = "idle", onClick, delay }: LetterTileProps) {
   const isActive = state === "idle" || state === "selected";
   const isPlaced = state === "placed";
   const isGhost = state === "selected-hover" || state === "placeholder";
   const isInteractive = !isPlaced && !isGhost;
 
-  const sizeClasses = isInteractive ? "aspect-square size-18 text-3xl cursor-pointer" : "w-full h-full";
+  const sizeClasses = isInteractive ? "aspect-square size-18 cursor-pointer" : "w-full h-full";
   const hoverClasses =
     isInteractive && state !== "locked" ? "hover:-translate-y-1 hover:shadow-[0_6px_0_0_var(--tile-shadow),0_8px_16px_rgba(0,0,0,0.2)]" : state === "locked" ? "cursor-not-allowed" : undefined;
 
@@ -62,9 +62,9 @@ export default function GameTile({ letter, state = "idle", zoom = 1, onClick, de
       whileTap={isInteractive ? { scale: 0.95 } : undefined}
       transition={transition}
       onClick={onClick}
-      style={isPlaced || isGhost ? { fontSize: `${28 * zoom}px` } : undefined}
-      className={cn("flex items-center justify-center font-extrabold select-none transition-all duration-150 border-2", sizeClasses, getTileStateClasses(state), hoverClasses)}>
+      className={cn("relative flex items-center justify-center font-extrabold select-none transition-all duration-150 border-2 text-3xl", sizeClasses, getTileStateClasses(state), hoverClasses)}>
       <span className="leading-none tracking-tight">{letter.toUpperCase()}</span>
+      <span className={`absolute bottom-1.5 right-2 text-xs font-bold ${state === "placeholder" || state === "selected-hover" ? "text-tile-foreground/60" : " text-tile-foreground"}`}>{score}</span>
     </motion.div>
   );
 }

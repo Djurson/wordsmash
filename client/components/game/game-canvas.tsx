@@ -101,7 +101,7 @@ export function GameCanvas() {
 
       const targetKey = getTileKey(x, y);
       const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
-      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder" };
+      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score };
       const updatedTurnTiles = { ...localGameState.currentTurnTiles, [targetKey]: newTile };
 
       updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });
@@ -127,46 +127,44 @@ export function GameCanvas() {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}>
-      {localGameState.selectedLetterId && hoverCell && !hoverOccupied && (
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            width: TILE_SIZE * zoom,
-            height: TILE_SIZE * zoom,
-            transform: `translate(${offset.x + hoverCell.x * CELL * zoom - (TILE_SIZE * zoom) / 2}px, ${offset.y + hoverCell.y * CELL * zoom - (TILE_SIZE * zoom) / 2}px)`,
-            zIndex: 15,
-          }}
-          className="pointer-events-none">
-          <GameTile letter={gamestate.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" zoom={zoom} />
-        </div>
-      )}
+      <div className="absolute" style={{ left: "50%", top: "50%", transformOrigin: "0 0", transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}>
+        {localGameState.selectedLetterId && hoverCell && !hoverOccupied && (
+          <div
+            style={{
+              position: "absolute",
+              left: hoverCell.x * CELL,
+              top: hoverCell.y * CELL,
+              width: TILE_SIZE,
+              height: TILE_SIZE,
+              transform: `translate(-50%, -50%)`,
+              zIndex: 15,
+            }}
+            className="pointer-events-none">
+            <GameTile letter={gamestate.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" score={gamestate.team.teamLetters[localGameState.selectedLetterId].score} />
+          </div>
+        )}
 
-      {/* Draw the placed letters */}
-      <AnimatePresence>
-        {Object.values(tiles).map((tile) => {
-          const px = offset.x + tile.x * CELL * zoom;
-          const py = offset.y + tile.y * CELL * zoom;
-          const halfTile = (TILE_SIZE * zoom) / 2;
-
-          return (
-            <div
-              key={`${tile.letter}-${tile.state}-${tile.x}-${tile.y}`}
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                width: TILE_SIZE * zoom,
-                height: TILE_SIZE * zoom,
-                transform: `translate(${px - halfTile}px, ${py - halfTile}px)`,
-                zIndex: 10,
-              }}>
-              <GameTile letter={tile.letter} state={tile.state} zoom={zoom} />
-            </div>
-          );
-        })}
-      </AnimatePresence>
+        {/* Draw the placed letters */}
+        <AnimatePresence>
+          {Object.values(tiles).map((tile) => {
+            return (
+              <div
+                key={`${tile.letter}-${tile.state}-${tile.x}-${tile.y}`}
+                style={{
+                  position: "absolute",
+                  left: tile.x * CELL,
+                  top: tile.y * CELL,
+                  width: TILE_SIZE,
+                  height: TILE_SIZE,
+                  transform: `translate(-50%, -50%)`,
+                  zIndex: 10,
+                }}>
+                <GameTile letter={tile.letter} state={tile.state} score={tile.score} />
+              </div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
       <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(MAX_ZOOM_IN, prev + 0.2))} onZoomOut={() => setZoom((prev) => Math.max(MAX_ZOOM_OUT, prev - 0.2))} />
     </div>

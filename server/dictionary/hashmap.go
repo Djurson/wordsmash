@@ -13,6 +13,10 @@ type HashMapDictionary struct {
 	wordList []string
 }
 
+func (h *HashMapDictionary) GetWordList() []string {
+	return h.wordList
+}
+
 func (h *HashMapDictionary) RandomWord() string {
 	if len(h.wordList) == 0 {
 		return ""
@@ -27,6 +31,18 @@ func (h *HashMapDictionary) IsValid(word string) bool {
 	word = strings.ToLower(word)
 	_, exists := h.words[word]
 	return exists
+}
+
+func CalculateLetterFrequency(words []string) map[rune]int {
+	freq := make(map[rune]int)
+
+	for _, word := range words {
+		for _, r := range word {
+			freq[r]++
+		}
+	}
+
+	return freq
 }
 
 func HashMapLoadWordsFromTextFile(filename string) (*HashMapDictionary, error) {

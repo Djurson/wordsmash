@@ -53,7 +53,7 @@ export default function LobbyPage() {
     return (
       <>
         <LoadingIcon />
-        {/* <p className="absolute items-center justify-center flex mt-18 font-bold text-xl bg-card border-border">Fel med anslutning till servern, försök igen senare</p> */}
+        {/* <p className="absolute flex items-center justify-center text-xl font-bold mt-18 bg-card border-border">Fel med anslutning till servern, försök igen senare</p> */}
       </>
     );
   }
@@ -115,8 +115,8 @@ export default function LobbyPage() {
               </div>
 
               <div className="flex flex-col w-full gap-5 lg:flex-1 lg:justify-between">
-                <div className="flex gap-2 p-6 border shadow-sm rounded-2xl bg-card border-border items-end">
-                  <div className="flex flex-col gap-3 flex-1">
+                <div className="flex items-end gap-2 p-6 border shadow-sm rounded-2xl bg-card border-border">
+                  <div className="flex flex-col flex-1 gap-3">
                     <Label className="text-sm font-semibold text-foreground" htmlFor="username">
                       Namn
                     </Label>

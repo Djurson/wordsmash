@@ -119,6 +119,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
             selectedLetterId: null,
           });
           router.push("/game");
+          console.log(payload);
           break;
 
         case "left_room":

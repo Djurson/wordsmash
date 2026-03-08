@@ -57,7 +57,7 @@ export default function Page() {
               backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
               backgroundColor: "var(--background, --tile-secondary)",
               backgroundSize: `${CELL}px ${CELL}px`,
-              backgroundPosition: `calc(50% + ${CELL / 2}px) calc(50% + ${CELL / 2}px)`,
+              backgroundPosition: `calc(50% + ${CELL}px) calc(50% + ${CELL / 2}px)`,
             }}
           />
           <Dialog defaultOpen>
@@ -66,7 +66,7 @@ export default function Page() {
                 <DialogTitle>Get Ready</DialogTitle>
                 <DialogDescription className="hidden"></DialogDescription>
               </DialogHeader>
-              <div className="text-3xl md:text-6xl font-extrabold tabular-nums tracking-tight w-full flex-1 text-center">{`${seconds.toString().padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`}</div>
+              <div className="flex-1 w-full text-3xl font-extrabold tracking-tight text-center md:text-6xl tabular-nums">{`${seconds.toString().padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`}</div>
             </DialogContent>
           </Dialog>
         </>

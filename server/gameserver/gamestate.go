@@ -17,10 +17,18 @@ const (
 	TileStatePlaceholder TileState = "placeholder"
 )
 
+var letterBag []Letter
+var letterScores map[rune]int
+
 type User struct {
 	Username string    `json:"username"`
 	UserId   uuid.UUID `json:"userId"`
 	Team     string    `json:"team"`
+}
+
+type Letter struct {
+	Rune  rune
+	Score int
 }
 
 type PlacedTile struct {
@@ -29,6 +37,7 @@ type PlacedTile struct {
 	Y        int       `json:"y"`
 	State    TileState `json:"state"`
 	PlacedBy string    `json:"placedBy,omitempty"`
+	Score    int       `json:"score"`
 }
 
 type Bomb struct {
@@ -42,6 +51,7 @@ type TeamLetter struct {
 	Letter   string    `json:"letter"`
 	IsLocked bool      `json:"isLocked"`
 	LockedBy uuid.UUID `json:"lockedBy"`
+	Score    int       `json:"score"`
 }
 
 type TeamState struct {
@@ -108,7 +118,7 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 
 		for _, letter := range letters {
 			id := uuid.New()
-			team.Letters[id] = TeamLetter{Letter: string(letter), IsLocked: false, Id: id}
+			team.Letters[id] = TeamLetter{Letter: string(letter.Rune), IsLocked: false, Id: id, Score: letter.Score}
 		}
 	}
 
@@ -117,12 +127,15 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 	startX := int(len(runeWord) / 2)
 
 	for x := range len(runeWord) {
+		r := runeWord[x]
+
 		game.Board[getTileKey((x-startX), 0)] = PlacedTile{
-			Letter:   string(runeWord[x]),
+			Letter:   string(r),
 			X:        x - startX,
 			Y:        0,
 			PlacedBy: "",
 			State:    TileStatePlaced,
+			Score:    letterScores[r],
 		}
 	}
 
@@ -159,13 +172,65 @@ func getTileKey(x, y int) string {
 	return fmt.Sprintf("%d,%d", x, y)
 }
 
-func GenerateRandomLetters(count int) []rune {
-	letters := []rune("abcdefghijklmnopqrstuvwxyzåäö")
+func scoreFromFrequency(count int, maxCount int) int {
+	ratio := float64(count) / float64(maxCount)
+
+	// Common letters score less -> rare letters score more
+	switch {
+
+	case ratio > 0.50:
+		return 1
+	case ratio > 0.25:
+		return 2
+	case ratio > 0.10:
+		return 3
+	case ratio > 0.04:
+		return 4
+	case ratio > 0.01:
+		return 6
+	default:
+		return 8
+	}
+}
+
+func InitLetterBag(freq map[rune]int) {
+	bag := make([]Letter, 0)
+	letterScores = make(map[rune]int)
+
+	// Finds the max count for the most common letter
+	maxCount := 0
+	for _, count := range freq {
+		if count > maxCount {
+			maxCount = count
+		}
+	}
+
+	for r, count := range freq {
+		weight := count / 5000
+		if weight < 1 {
+			weight = 1
+		}
+
+		score := scoreFromFrequency(count, maxCount)
+		letterScores[r] = score
+
+		for i := 0; i < weight; i++ {
+			bag = append(bag, Letter{Rune: r, Score: score})
+		}
+	}
+
+	letterBag = bag
+	fmt.Printf("Letter bag generated: %d unique, %d total tiles.\n", len(freq), len(letterBag))
+}
+
+func GenerateRandomLetters(count int) []Letter {
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-	hand := make([]rune, count)
+
+	hand := make([]Letter, count)
+
 	for i := 0; i < count; i++ {
-		randomIndex := seededRand.Intn(len(letters))
-		hand[i] = rune(letters[randomIndex])
+		randomIndex := seededRand.Intn(len(letterBag))
+		hand[i] = letterBag[randomIndex]
 	}
 
 	return hand

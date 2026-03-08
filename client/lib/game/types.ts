@@ -3,6 +3,7 @@ export interface PlacedTile {
   x: number;
   y: number;
   state: "placed" | "placeholder";
+  score: number;
   placedBy?: string;
 }
 
@@ -32,6 +33,7 @@ export type TeamLetter = {
   letter: string;
   isLocked: boolean;
   lockedBy: string;
+  score: number;
 };
 
 export type GameSettings = {
