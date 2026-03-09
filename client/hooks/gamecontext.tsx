@@ -1,15 +1,17 @@
 "use client";
 
-import { GameState, LocalGameState, PlacedTile, Team, TeamLetter, User } from "@/lib/game/types";
+import { GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
 import { finalTesting, getTileKey, isValidPlacement } from "@/lib/game/utils";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
 import { WSRecievedEvent, WSSendEvent, WSSendEventType } from "@/lib/websocket/WSTypes";
 import { useRouter } from "next/navigation";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
+export type SendMessageType = <T extends WSSendEventType>(type: T, payload: Extract<WSSendEvent, { type: T }>["payload"]) => void;
+
 export interface GameContextContextProps {
   isConnected: boolean;
-  sendMessage: (type: WSSendEventType, payload: any) => void;
+  sendMessage: SendMessageType;
   user: User | null;
   gamestate: GameState | null;
   leaveRoom: () => void;
@@ -69,7 +71,8 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://${process.env.NEXT_PUBLIC_WS_PATH}/ws`);
+    const url = process.env.NEXT_PUBLIC_WS_PATH ? `wss://${process.env.NEXT_PUBLIC_WS_PATH}/ws` : `ws://${process.env.NEXT_PUBLIC_LOCAL_WS_PATH}/ws`;
+    const ws = new WebSocket(url);
 
     ws.onopen = () => {
       setWebSocket(ws);
@@ -154,15 +157,15 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     };
 
     return () => ws.close();
-  }, [updateGameState]);
+  }, [updateGameState, router]);
 
-  const sendMessage = useCallback(
-    (type: WSSendEventType, payload: any) => {
+  const sendMessage: SendMessageType = useCallback(
+    (type, payload) => {
       if (!websocket || websocket.readyState !== WebSocket.OPEN) {
         ToastError("Ej ansluten till servern");
         return;
       }
-      const event: WSSendEvent = { type, payload };
+      const event = { type, payload };
       websocket.send(JSON.stringify(event));
     },
     [websocket],
@@ -181,7 +184,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
       updateLocalGameState({ selectedLetterId: newSelected });
     },
-    [gamestate, localGameState],
+    [gamestate, localGameState, updateLocalGameState],
   );
 
   const handleCancelPlacement = useCallback(() => {
@@ -203,7 +206,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
     sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles, newBombs: localGameState.currentTurnBombs });
     updateLocalGameState({ currentTurnBombs: {}, currentTurnTiles: {}, selectedLetterId: null, currentTurnDirection: null });
-  }, [localGameState, gamestate]);
+  }, [localGameState, gamestate, sendMessage, updateLocalGameState]);
 
   const handlePlaceTile = useCallback(
     (x: number, y: number) => {

@@ -12,8 +12,6 @@ import { TeamLetter } from "@/lib/game/types";
 export function PlayerDock() {
   const { gamestate, user, localGameState, handleSelectLetter, handleCancelPlacement, handleSubmitPlacement } = useGameContext();
 
-  if (!gamestate || !user) return null;
-
   const handleTradeIn = () => {};
 
   const handleShuffle = () => {};
@@ -28,6 +26,8 @@ export function PlayerDock() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [handleCancelPlacement]);
+
+  if (!gamestate || !user) return null;
 
   return (
     <motion.div

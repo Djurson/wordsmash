@@ -32,7 +32,7 @@ export default function Page() {
 
     requestRef.current = requestAnimationFrame(calculateTimeLeft);
     return () => cancelAnimationFrame(requestRef.current!);
-  }, [gamestate?.startTime, gamestate?.gameStarted, gamestate?.endTime]);
+  }, [gamestate]);
 
   const totalSeconds = Math.floor(countdown / 1000);
   const seconds = totalSeconds % 60;
@@ -43,7 +43,7 @@ export default function Page() {
       router.push("/");
       return;
     }
-  }, [gamestate, router]);
+  }, [gamestate, router, user]);
 
   if (!gamestate) return null;
 

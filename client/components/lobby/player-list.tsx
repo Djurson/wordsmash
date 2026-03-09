@@ -44,7 +44,11 @@ export function PlayerList() {
   const teamBPlayers: User[] = [];
 
   Object.keys(gamestate.players).map((key) => {
-    gamestate.players[key].team === "a" ? teamAPlayers.push(gamestate.players[key]) : teamBPlayers.push(gamestate.players[key]);
+    if (gamestate.players[key].team === "a") {
+      teamAPlayers.push(gamestate.players[key]);
+    } else {
+      teamBPlayers.push(gamestate.players[key]);
+    }
   });
 
   return (

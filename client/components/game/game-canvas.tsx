@@ -10,9 +10,7 @@ import { useGameContext } from "@/hooks/gamecontext";
 export function GameCanvas() {
   const { localGameState, gamestate, user, handlePlaceTile } = useGameContext();
 
-  if (!gamestate || !user) return;
-
-  const tiles = { ...gamestate.board, ...gamestate.team.placeholders, ...localGameState.currentTurnTiles };
+  const tiles = { ...(gamestate?.board ?? {}), ...(gamestate?.team.placeholders ?? {}), ...localGameState.currentTurnTiles };
 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -83,7 +81,7 @@ export function GameCanvas() {
         handlePlaceTile(cell.x, cell.y);
       }
     },
-    [localGameState.selectedLetterId, screenToGrid, tiles],
+    [localGameState.selectedLetterId, screenToGrid, handlePlaceTile],
   );
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -92,6 +90,8 @@ export function GameCanvas() {
   }, []);
 
   const hoverOccupied = hoverCell ? !!tiles[getTileKey(hoverCell.x, hoverCell.y)] : false;
+
+  if (!gamestate || !user) return;
 
   return (
     <div
@@ -121,7 +121,7 @@ export function GameCanvas() {
               zIndex: 15,
             }}
             className="pointer-events-none">
-            <GameTile letter={gamestate.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" score={gamestate.team.teamLetters[localGameState.selectedLetterId].score} />
+            <GameTile letter={gamestate?.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" score={gamestate.team.teamLetters[localGameState.selectedLetterId].score} />
           </div>
         )}
 

@@ -101,8 +101,8 @@ export function finalTesting(localGameState: LocalGameState, gamestate: GameStat
   }
 
   let hasPlacedNeighbor = false;
-  let xs: number[] = [];
-  let ys: number[] = [];
+  const xs: number[] = [];
+  const ys: number[] = [];
 
   for (const key of tileKeys) {
     const { x, y } = seperateTileKey(key);

@@ -27,7 +27,7 @@ export function TopHUD() {
 
     requestRef.current = requestAnimationFrame(calculateTimeLeft);
     return () => cancelAnimationFrame(requestRef.current!);
-  }, [gamestate?.endTime, gamestate?.gameStarted]);
+  }, [gamestate]);
 
   const totalSeconds = Math.floor(timeLeft / 1000);
   const minutes = Math.floor(totalSeconds / 60);
