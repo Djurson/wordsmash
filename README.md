@@ -89,5 +89,3 @@ The web client will be available at `http://localhost:3000`.
 4. The host sets the timer and starts the game.
 5. Select a letter from your player dock and click on the board to place a placeholder.
 6. Once your word is complete, hit Submit. The server will validate the word, award points, and deal replacement letters!
-
-[Swedish Words](https://github.com/dqvist12/alla-svenska-ord/blob/main/svenska-ord.txt)
