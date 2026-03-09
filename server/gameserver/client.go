@@ -19,13 +19,18 @@ var upgrader = websocket.Upgrader{
 
 	CheckOrigin: func(r *http.Request) bool {
 
-		origin := r.Header.Get("Origin")
+		origin := strings.TrimRight(r.Header.Get("Origin"), "/")
 
-		if origin == "http://localhost:3000" {
+		frontend := strings.TrimRight(os.Getenv("FRONTEND_URL"), "/")
+		preview := strings.TrimRight(os.Getenv("FRONTEND_GIT_MAIN_URL"), "/")
+
+		log.Println("WS origin:", origin)
+
+		if origin == frontend || origin == preview {
 			return true
 		}
 
-		if origin == os.Getenv("FRONTEND_URL") || origin == os.Getenv("FRONTEND_GIT_MAIN_URL") {
+		if origin == "http://localhost:3000" {
 			return true
 		}
 
