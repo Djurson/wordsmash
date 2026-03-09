@@ -81,17 +81,16 @@ func (c *Client) readPump() {
 		}
 
 		messageCount++
-		messageWarnings++
-
 		if messageCount > MAXMESSAGESPERSECOND {
-			log.Printf("Warning: Client %s send packages to quickly! Ignoring for now...", c.Id)
+			messageWarnings++
+			messageCount = 0
 
-			if messageWarnings < MAXMESSAGEWARNINGS {
-				continue
+			log.Printf("Warning: Client %s sent packages too quickly!", c.Id)
+
+			if messageWarnings >= MAXMESSAGEWARNINGS {
+				break
 			}
-
-			// If the max warnings have been reached -> Disconnect
-			break
+			continue
 		}
 
 		// Read what type of event

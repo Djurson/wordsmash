@@ -1,4 +1,5 @@
 export interface PlacedTile {
+  Id: string;
   letter: string;
   x: number;
   y: number;

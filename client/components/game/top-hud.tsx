@@ -47,7 +47,7 @@ export function TopHUD() {
       className="fixed z-50 flex flex-col items-center w-10/12 max-w-2xl mt-2 space-y-2">
       <div className="flex flex-col w-full px-4 py-3 border shadow-lg bg-card/80 backdrop-blur-xl border-border rounded-2xl md:px-6 md:py-4 gap-2">
         <div className="flex items-center justify-between">
-          <TeamDisplay team="a" />
+          <TeamDisplay team="a" teamScore={teamAScore} />
           {/* Timer */}
           <div className="flex flex-col items-center">
             <div className={cn("text-3xl md:text-4xl font-extrabold tabular-nums tracking-tight", isUrgent ? "text-destructive animate-pulse" : "text-foreground")}>
@@ -59,7 +59,7 @@ export function TopHUD() {
             </div>
           </div>
 
-          <TeamDisplay team="b" />
+          <TeamDisplay team="b" teamScore={gamestate.totalScore - teamAScore} />
         </div>
         <div className="flex w-full overflow-hidden rounded-xl bg-tile-accent">
           <div className="h-2 bg-tile-primary rounded-xl" style={{ width: `${teamAScore === 0 ? 50 : (teamAScore / gamestate.totalScore) * 100}%` }} />
@@ -76,20 +76,24 @@ export function TopHUD() {
   );
 }
 
-function TeamDisplay({ team }: { team: "a" | "b" }) {
+function TeamDisplay({ team, teamScore }: { team: "a" | "b"; teamScore: number }) {
   return (
-    <div className="flex items-center gap-3">
-      {team === "a" ? (
-        <>
-          <div className="rounded-full size-6 bg-tile-primary" />
-          <span className="text-base font-bold text-foreground">Team A</span>
-        </>
-      ) : (
-        <>
-          <span className="text-base font-bold text-foreground">Team B</span>
-          <div className="rounded-full size-6 bg-tile-accent" />
-        </>
-      )}
+    <div className="flex justify-between items-center gap-8">
+      {team === "b" && <p className="text-sm font-bold text-foreground">Poäng: {teamScore}</p>}
+      <div className="flex items-center gap-3">
+        {team === "a" ? (
+          <>
+            <div className="rounded-full size-6 bg-tile-primary" />
+            <span className="text-base font-bold text-foreground">Team A</span>
+          </>
+        ) : (
+          <>
+            <span className="text-base font-bold text-foreground">Team B</span>
+            <div className="rounded-full size-6 bg-tile-accent" />
+          </>
+        )}
+      </div>
+      {team === "a" && <p className="text-sm font-bold text-foreground">Poäng: {teamScore}</p>}
     </div>
   );
 }

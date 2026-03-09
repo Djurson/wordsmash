@@ -98,14 +98,8 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           break;
 
         case "lobby_updated":
-          // The whole gamestate is sent from the server when the lobby is updated
-          updateGameState(payload);
-          break;
-
         case "board_updated":
-          console.log("board_updated:", payload);
-          // The server only sends the board
-          updateGameState({ board: payload });
+          updateGameState(payload);
           break;
 
         case "error":
@@ -208,6 +202,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     if (result === "failed") return;
 
     sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles, newBombs: localGameState.currentTurnBombs });
+    updateLocalGameState({ currentTurnBombs: {}, currentTurnTiles: {}, selectedLetterId: null, currentTurnDirection: null });
   }, [localGameState, gamestate]);
 
   const handlePlaceTile = useCallback(
@@ -219,7 +214,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
       const targetKey = getTileKey(x, y);
       const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
-      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score };
+      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score, Id: letter.id };
       const updatedTurnTiles = { ...localGameState.currentTurnTiles, [targetKey]: newTile };
 
       updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });

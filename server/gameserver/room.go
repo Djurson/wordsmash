@@ -3,6 +3,7 @@ package gameserver
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -172,22 +173,79 @@ func (r *GameRoom) Run() {
 
 		// A client has sent a new move
 		case submitTurnAction := <-r.ProcessMove:
-			// TODO: Implement checking from what the client sends
 			isValid, message := isValidPlacement(&submitTurnAction, &r.State.Board, &r.State.Bombs)
-
 			if !isValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
 				continue
 			}
 
-			// TODO: Clear Placeholders from client entries
-			// TODO: Call hub.dictionary.isvalid
-			// TODO: Implement bombs
+			wordsCreated, moveScore := extractWordsAndScore(&submitTurnAction.NewTiles, &r.State.Board)
 
-			// Skicka BoardUpdate som vanligt
-			finalMessage := PrepareEvent(BoardUpdateEvent, r.State.Board)
+			if len(wordsCreated) == 0 {
+				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Du måste bilda ett ord på minst 2 bokstäver."})
+				continue
+			}
+
+			// Loop through and validate the words
+			wordsValid := true
+			for _, word := range wordsCreated {
+				if !submitTurnAction.Client.hub.Dictionary.IsValid(word) {
+					wordsValid = false
+					break
+				}
+
+			}
+
+			if !wordsValid {
+				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bildat ett ogiltigt ord."})
+				continue
+			}
+
+			// Update team scoring
+			r.State.Teams[submitTurnAction.Client.Team].Score += moveScore
+
+			// Clear placeholders
+			placeholders := r.State.Teams[submitTurnAction.Client.Team].Placeholders
+			for key, tile := range placeholders {
+				if tile.PlacedBy == submitTurnAction.Client.Id.String() {
+					delete(placeholders, key)
+				}
+			}
+			r.State.Teams[submitTurnAction.Client.Team].Placeholders = placeholders
+
+			// Add the tiles to the board
+			for _, tile := range submitTurnAction.NewTiles {
+				tile.State = TileStatePlaced
+				r.State.Board[getTileKey(tile.X, tile.Y)] = tile
+			}
+
+			teamLetters := r.State.Teams[submitTurnAction.Client.Team].Letters
+			for _, tile := range submitTurnAction.NewTiles {
+				delete(teamLetters, tile.Id)
+			}
+
+			// TODO: Implement bombs
+			newLettersNeeded := len(submitTurnAction.NewTiles)
+			drawnLetters := GenerateRandomLetters(newLettersNeeded)
+
+			for _, drawnLetter := range drawnLetters {
+				newID := uuid.New()
+				teamLetters[newID] = TeamLetter{Id: newID, Letter: string(drawnLetter.Rune), IsLocked: false, LockedBy: uuid.Nil, Score: drawnLetter.Score}
+			}
+
+			r.State.Teams[submitTurnAction.Client.Team].Letters = teamLetters
 			for client := range r.Clients {
-				client.send <- finalMessage
+				client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
+			}
+
+			teamMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
+				TeamLetters:  teamLetters,
+				Placeholders: r.State.Teams[submitTurnAction.Client.Team].Placeholders,
+			})
+			for client := range r.Clients {
+				if client.Team == submitTurnAction.Client.Team {
+					client.send <- teamMessage
+				}
 			}
 
 		case payload := <-r.UpdateSettings:
@@ -283,10 +341,7 @@ func (r *GameRoom) Run() {
 			// Only send update if something changed
 			if changed {
 				r.State.Teams[client.Team].Letters = teamLetters
-				finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
-					TeamLetters:  teamLetters,
-					Placeholders: placeholders,
-				})
+				finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{TeamLetters: teamLetters, Placeholders: placeholders})
 
 				for c := range r.Clients {
 					if c.Team == client.Team {
@@ -298,20 +353,205 @@ func (r *GameRoom) Run() {
 	}
 }
 
-func isValidPlacement(turnAction *SubmitTurnAction, placedTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
+/* Same implementation as client/lib/utils.ts */
+func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
 	if len(turnAction.NewTiles) == 0 && len(turnAction.NewBombs) == 0 {
-		return false, "Behöver placerat ut minst en bricka eller bomb"
+		return false, "Behöver placera ut minst en bricka eller bomb."
 	}
 
 	if len(turnAction.NewTiles) > 0 {
+		hasPlacedNeighbor := false
+		var xs []int
+		var ys []int
 
+		for key, tile := range turnAction.NewTiles {
+			// Check overlap with already placed tiles
+			if _, exists := (*board)[key]; exists {
+				return false, "En av rutorna är redan upptagen på brädet."
+			}
+
+			// Does the key match the coordinates
+			if key != getTileKey(tile.X, tile.Y) {
+				return false, "Ogiltig data: Koordinaterna stämmer inte överens."
+			}
+
+			xs = append(xs, tile.X)
+			ys = append(ys, tile.Y)
+
+			// Does the tile touch any placed brackets
+			if checkTileNeighbors(tile.X, tile.Y, board) {
+				hasPlacedNeighbor = true
+			}
+		}
+
+		if len(*board) > 0 && !hasPlacedNeighbor {
+			return false, "Ditt ord måste sitta ihop med de befintliga brickorna på brädet."
+		}
+
+		// Direction checking
+		if len(turnAction.NewTiles) > 1 {
+			isHorizontal := true
+			isVertical := true
+
+			firstX, firstY := xs[0], ys[0]
+
+			// Check if they share the same row or column
+			for i := 1; i < len(xs); i++ {
+				if xs[i] != firstX {
+					isVertical = false
+				}
+				if ys[i] != firstY {
+					isHorizontal = false
+				}
+			}
+
+			if !isHorizontal && !isVertical {
+				return false, "Brickorna måste ligga på en rak horisontell eller vertikal linje."
+			}
+
+			// Check if there are any gaps
+			if isHorizontal {
+				sort.Ints(xs)
+				minX, maxX := xs[0], xs[len(xs)-1]
+
+				for x := minX; x <= maxX; x++ {
+					checkKey := getTileKey(x, firstY)
+					_, inNewTiles := turnAction.NewTiles[checkKey]
+					_, inBoard := (*board)[checkKey]
+
+					if !inNewTiles && !inBoard {
+						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop."
+					}
+				}
+			} else if isVertical {
+				sort.Ints(ys)
+				minY, maxY := ys[0], ys[len(ys)-1]
+
+				for y := minY; y <= maxY; y++ {
+					checkKey := getTileKey(firstX, y)
+					_, inNewTiles := turnAction.NewTiles[checkKey]
+					_, inBoard := (*board)[checkKey]
+
+					if !inNewTiles && !inBoard {
+						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop."
+					}
+				}
+			}
+		}
 	}
+
+	// TODO: Add new separate checking for Bombs
 
 	return true, ""
 }
 
-func checkTileNeighbors(turnAction *SubmitTurnAction, placedTiles *map[string]PlacedTile, currentTurnTiles *map[string]PlacedTile) bool {
-	var placedNeighbor, placeholderNeighbor bool = false, false
+func checkTileNeighbors(x int, y int, board *map[string]PlacedTile) bool {
+	neighborsKeys := []string{
+		getTileKey(x+1, y),
+		getTileKey(x-1, y),
+		getTileKey(x, y+1),
+		getTileKey(x, y-1),
+	}
 
-	return placedNeighbor
+	for _, key := range neighborsKeys {
+		if _, exists := (*board)[key]; exists {
+			return true
+		}
+	}
+
+	return false
+}
+
+func extractWordsAndScore(newTiles *map[string]PlacedTile, board *map[string]PlacedTile) ([]string, int) {
+	var words []string
+	totalScore := 0
+
+	// Combine the boards
+	fullBoard := make(map[string]PlacedTile)
+	for k, v := range *board {
+		fullBoard[k] = v
+	}
+	for k, v := range *newTiles {
+		fullBoard[k] = v
+	}
+
+	// Get the first tile in the new tiles
+	var firstPlacedTile PlacedTile
+	for _, t := range *newTiles {
+		firstPlacedTile = t
+		break
+	}
+
+	isHorizontal := true
+	for _, t := range *newTiles {
+		if t.Y != firstPlacedTile.Y {
+			isHorizontal = false
+			break
+		}
+	}
+
+	if len(*newTiles) == 1 {
+		isHorizontal = true
+	}
+
+	// Extract the main word
+	mainWord, mainScore := extractWordAt(firstPlacedTile.X, firstPlacedTile.Y, isHorizontal, &fullBoard)
+	if len(mainWord) > 1 {
+		words = append(words, mainWord)
+		totalScore += mainScore
+	}
+
+	// Extract cross words
+	for _, tile := range *newTiles {
+		crossWord, crossScore := extractWordAt(tile.X, tile.Y, !isHorizontal, &fullBoard)
+		if len(crossWord) > 1 {
+			words = append(words, crossWord)
+			totalScore += crossScore
+		}
+	}
+
+	return words, totalScore
+}
+
+func extractWordAt(startX, startY int, horizontal bool, fullBoard *map[string]PlacedTile) (string, int) {
+	word := ""
+	score := 0
+	length := 0
+
+	x, y := startX, startY
+
+	// Go back to the begining of the word
+	for {
+		prevX, prevY := x, y
+		if horizontal {
+			prevX--
+		} else {
+			prevY--
+		}
+		if _, exists := (*fullBoard)[getTileKey(prevX, prevY)]; !exists {
+			break
+		}
+		x, y = prevX, prevY
+	}
+
+	// Move forward and collect characters
+	for {
+		key := getTileKey(x, y)
+		tile, exists := (*fullBoard)[key]
+		if !exists {
+			break
+		}
+
+		word += tile.Letter
+		score += tile.Score
+		length += 1
+
+		if horizontal {
+			x++
+		} else {
+			y++
+		}
+	}
+
+	return word, score
 }

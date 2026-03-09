@@ -32,6 +32,7 @@ type Letter struct {
 }
 
 type PlacedTile struct {
+	Id       uuid.UUID `json:"id"`
 	Letter   string    `json:"letter"`
 	X        int       `json:"x"`
 	Y        int       `json:"y"`
@@ -41,9 +42,10 @@ type PlacedTile struct {
 }
 
 type Bomb struct {
-	X        int    `json:"x"`
-	Y        int    `json:"y"`
-	PlacedBy string `json:"placedBy"`
+	Id       uuid.UUID `json:"id"`
+	X        int       `json:"x"`
+	Y        int       `json:"y"`
+	PlacedBy string    `json:"placedBy"`
 }
 
 type TeamLetter struct {
@@ -133,6 +135,7 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 			PlacedBy: "",
 			State:    TileStatePlaced,
 			Score:    letterScores[r],
+			Id:       uuid.New(),
 		}
 	}
 
