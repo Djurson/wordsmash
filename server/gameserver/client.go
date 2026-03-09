@@ -19,10 +19,10 @@ var upgrader = websocket.Upgrader{
 
 	CheckOrigin: func(r *http.Request) bool {
 
-		origin := strings.TrimRight(r.Header.Get("Origin"), "/")
+		origin := r.Header.Get("Origin")
 
-		frontend := strings.TrimRight(os.Getenv("FRONTEND_URL"), "/")
-		preview := strings.TrimRight(os.Getenv("FRONTEND_GIT_MAIN_URL"), "/")
+		frontend := os.Getenv("FRONTEND_URL")
+		preview := os.Getenv("FRONTEND_GIT_MAIN_URL")
 
 		log.Println("WS origin:", origin)
 
