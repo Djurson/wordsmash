@@ -3,6 +3,8 @@ import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { GameContextProvider } from "@/hooks/gamecontext";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const notoSans = Noto_Sans({ variable: "--font-sans" });
 
@@ -21,6 +23,8 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <GameContextProvider>{children}</GameContextProvider>
         <Toaster position="top-right" />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

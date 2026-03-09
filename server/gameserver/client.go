@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -16,8 +17,20 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 
-	// TODO: Change to specific
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+
+		origin := r.Header.Get("Origin")
+
+		if origin == "http://localhost:3000" {
+			return true
+		}
+
+		if origin == os.Getenv("FRONTEND_URL") || origin == os.Getenv("FRONTEND_GIT_MAIN_URL") {
+			return true
+		}
+
+		return false
+	},
 }
 
 var (
