@@ -219,6 +219,48 @@ func (r *GameRoom) Run() {
 				r.State.Board[getTileKey(tile.X, tile.Y)] = tile
 			}
 
+			// Remove placeholders (if the collide)
+			for teamName, teamState := range r.State.Teams {
+				if teamName == submitTurnAction.Client.Team {
+					continue
+				}
+
+				teamWasPudlad := false
+				placeholders := teamState.Placeholders
+				letters := teamState.Letters
+
+				for key, pTile := range placeholders {
+					// Check for collision
+					if _, exists := r.State.Board[key]; exists {
+
+						// Unlock letter
+						if letter, exists := letters[pTile.Id]; exists {
+							letter.IsLocked = false
+							letter.LockedBy = uuid.Nil
+							letters[pTile.Id] = letter
+						}
+
+						delete(placeholders, key)
+						teamWasPudlad = true
+					}
+				}
+
+				if teamWasPudlad {
+					r.State.Teams[teamName].Placeholders = placeholders
+					r.State.Teams[teamName].Letters = letters
+
+					teamMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
+						TeamLetters:  letters,
+						Placeholders: placeholders,
+					})
+					for c := range r.Clients {
+						if c.Team == teamName {
+							c.send <- teamMessage
+						}
+					}
+				}
+			}
+
 			teamLetters := r.State.Teams[submitTurnAction.Client.Team].Letters
 			for _, tile := range submitTurnAction.NewTiles {
 				delete(teamLetters, tile.Id)

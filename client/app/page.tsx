@@ -45,7 +45,7 @@ export default function LobbyPage() {
 
   const handleStartGame = () => {
     if (user?.userId === gamestate?.host) {
-      sendMessage("start_game", {});
+      sendMessage("start_game", null);
     }
   };
 

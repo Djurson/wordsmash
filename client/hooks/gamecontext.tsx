@@ -3,11 +3,11 @@
 import { GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
 import { finalTesting, getTileKey, isValidPlacement } from "@/lib/game/utils";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
-import { WSRecievedEvent, WSSendEvent, WSSendEventType } from "@/lib/websocket/WSTypes";
+import { WSRecievedEvent, WSSendEventType, WSSendPayloadMap } from "@/lib/websocket/WSTypes";
 import { useRouter } from "next/navigation";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
-export type SendMessageType = <T extends WSSendEventType>(type: T, payload: Extract<WSSendEvent, { type: T }>["payload"]) => void;
+export type SendMessageType = <T extends WSSendEventType>(type: T, payload: WSSendPayloadMap[T]) => void;
 
 export interface GameContextContextProps {
   isConnected: boolean;
@@ -101,8 +101,31 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           break;
 
         case "lobby_updated":
-        case "board_updated":
           updateGameState(payload);
+          break;
+
+        case "board_updated":
+          const newBoard = payload.board;
+          updateGameState({ board: newBoard });
+          setLocalGameState((prevLocal) => {
+            let collision = false;
+
+            // Loop through the local placeholders
+            for (const key in prevLocal.currentTurnTiles) {
+              // Is there collision?
+              if (newBoard[key]) {
+                collision = true;
+                break;
+              }
+            }
+
+            if (collision) {
+              ToastError("Någon hann före! Dina brickor rensades.");
+              return { currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, currentTurnBombs: prevLocal.currentTurnBombs };
+            }
+
+            return prevLocal;
+          });
           break;
 
         case "error":
@@ -172,7 +195,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   );
 
   const leaveRoom = () => {
-    sendMessage("leave_room", {});
+    sendMessage("leave_room", null);
   };
 
   const handleSelectLetter = useCallback(
@@ -193,7 +216,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    sendMessage("unlock_letter", {});
+    sendMessage("unlock_letter", null);
     updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
   }, [localGameState, handleSelectLetter, sendMessage, updateLocalGameState]);
 
