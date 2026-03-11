@@ -87,21 +87,26 @@ func (r *GameRoom) Run() {
 			}
 			client.Team = assignedTeam
 
-			r.State.Players[client.Id] = &User{
+			newUser := User{
 				UserId:   client.Id,
 				Username: client.Username,
 				Team:     assignedTeam,
 			}
 
-			// Send out that the a new client has joined
-			totalScore := 0
+			r.State.Players[client.Id] = &newUser
 
-			for _, team := range r.State.Teams {
-				totalScore += team.Score
+			joinResponse := CreatedJoinGameResponse{
+				GameState: r.State.ToClientState(client.Team),
+				User:      newUser,
+				Message:   "Du gick med i spelet!",
 			}
+			client.send <- PrepareEvent(JoinedGameEvent, joinResponse)
 
+			// Send out that the a new client has joined
 			for c := range r.Clients {
-				c.send <- PrepareEvent(LobbyUpdateEvent, r.State.ToClientState(c.Team))
+				if c.Id != client.Id {
+					c.send <- PrepareEvent(LobbyUpdateEvent, r.State.ToClientState(c.Team))
+				}
 			}
 
 		// A client leaves the room
@@ -474,6 +479,9 @@ func (r *GameRoom) Run() {
 					for client := range r.Clients {
 						client.send <- gameOverMessage
 					}
+
+					id := r.State.GameId
+					r.State = NewGameState(id)
 				}
 			}
 		}

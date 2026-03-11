@@ -172,9 +172,6 @@ func (c *Client) readPump() {
 				// Client joins the room
 				c.Room = room
 				room.Register <- c
-
-				userInfo := User{Username: c.Username, Team: c.Team, UserId: c.Id}
-				c.send <- PrepareEvent(JoinedGameEvent, CreatedJoinGameResponse{User: userInfo, GameState: room.State.ToClientState(c.Team), Message: "Du gick med i spelet!"})
 			} else {
 				// Send error if the room doesn't exists
 				c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Rummet finns inte."})

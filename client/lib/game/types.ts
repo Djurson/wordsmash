@@ -73,5 +73,5 @@ export type FinalGameStats = {
   mostPlacedTiles: Stat;
   mostPoints: Stat;
   teamPoints: Record<string, number>;
-  winner: string;
+  winner: Team | "tie";
 };

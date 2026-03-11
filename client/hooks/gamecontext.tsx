@@ -159,6 +159,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
         case "left_room":
           ToastError(payload.message);
           setGameState(null);
+          router.push("/");
           break;
 
         case "team_letter_updated":

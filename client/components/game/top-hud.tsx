@@ -3,12 +3,15 @@
 import { useGameContext } from "@/hooks/gamecontext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export function TopHUD() {
-  const { gamestate, user, localGameState } = useGameContext();
+  const { gamestate, user, localGameState, finalStats } = useGameContext();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const requestRef = useRef<number>(0);
+  const router = useRouter();
 
   useEffect(() => {
     if (!gamestate) return;
@@ -45,7 +48,7 @@ export function TopHUD() {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 800, damping: 20 }}
       className="fixed z-50 flex flex-col items-center w-10/12 max-w-2xl mt-2 space-y-2">
-      <div className="flex flex-col w-full px-4 py-3 border shadow-lg bg-card/80 backdrop-blur-xl border-border rounded-2xl md:px-6 md:py-4 gap-2">
+      <div className="flex flex-col w-full gap-2 px-4 py-3 border shadow-lg bg-card/80 backdrop-blur-xl border-border rounded-2xl md:px-6 md:py-4">
         <div className="flex items-center justify-between">
           <TeamDisplay team="a" teamScore={teamAScore} />
           {/* Timer */}
@@ -65,12 +68,22 @@ export function TopHUD() {
           <div className="h-2 bg-tile-primary rounded-xl" style={{ width: `${teamAScore === 0 && gamestate.totalScore === 0 ? 50 : (teamAScore / gamestate.totalScore) * 100}%` }} />
         </div>
       </div>
-      <div className="z-30 px-4 py-2 text-xs font-medium border rounded-full bg-white/90 shadow-sm backdrop-blur-md border-slate-200 text-slate-500">
-        {localGameState.selectedLetterId
-          ? /* Show letter if a letter is selected */
-            `Klicka på brädet för att placera "${gamestate.team.teamLetters[localGameState.selectedLetterId].letter}"`
-          : /* Show zoom / pan text if no letter is selected */
-            "Dra för att panorera · Skrolla för att zooma"}
+      <div
+        className={`z-30 px-4 py-2 text-xs font-medium border rounded-full shadow-sm bg-white/90 backdrop-blur-md border-slate-200 text-slate-500 duration-300 ease-in-out ${finalStats ? "cursor-pointer hover:bg-tile-secondary hover:border-tile-border" : ""}`}
+        onClick={() => {
+          if (finalStats) router.push("/");
+        }}>
+        {localGameState.selectedLetterId && !finalStats ? (
+          /* Show letter if a letter is selected */
+          `Klicka på brädet för att placera "${gamestate.team.teamLetters[localGameState.selectedLetterId].letter}"`
+        ) : !finalStats /* Show zoom / pan text if no letter is selected */ ? (
+          "Dra för att panorera · Skrolla för att zooma"
+        ) : (
+          <div className="flex gap-2">
+            <ArrowLeft className="size-4" />
+            Tillbaka
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -78,7 +91,7 @@ export function TopHUD() {
 
 function TeamDisplay({ team, teamScore }: { team: "a" | "b"; teamScore: number }) {
   return (
-    <div className="flex justify-between items-center gap-8">
+    <div className="flex items-center justify-between gap-8">
       {team === "b" && <p className="text-sm font-bold text-foreground">Poäng: {teamScore}</p>}
       <div className="flex items-center gap-3">
         {team === "a" ? (

@@ -6,13 +6,20 @@ import { ArrowLeft, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function ShowFinalStats() {
-  const { finalStats, leaveRoom } = useGameContext();
+  const { finalStats, leaveRoom, gamestate, user } = useGameContext();
   const router = useRouter();
+
+  if (!gamestate || !user || !finalStats) return;
+
+  console.log(user.team);
 
   return (
     <div className="flex flex-col items-center w-full gap-5">
-      <div className="text-center">
-        <p className="text-2xl font-bold tracking-tight">{finalStats?.winner === "tie" ? "Oavgjort" : `Lag ${finalStats?.winner.toUpperCase()} vann`}</p>
+      <div className="flex flex-col items-center justify-center gap-1 text-center">
+        <p className="text-2xl font-bold tracking-tight">{finalStats.winner === "tie" ? "Oavgjort" : user.team === finalStats.winner ? "Ni vann!" : "Ni förlorade"}</p>
+        {finalStats.winner !== "tie" && (
+          <span className="text-base font-semibold text-muted-foreground">{user.team === "a" ? gamestate.team.score : gamestate.totalScore - gamestate.team.score} poäng</span>
+        )}
       </div>
 
       <div className="flex flex-col w-full gap-3">
@@ -20,8 +27,8 @@ export function ShowFinalStats() {
           <span className="text-sm text-muted-foreground">Mest insamlade poäng</span>
 
           <div className="flex items-center gap-4 font-medium">
-            <span className="text-lg font-bold">{finalStats?.mostPoints.username}</span>
-            <span className="text-muted-foreground">{finalStats?.mostPoints.value}</span>
+            <span className="text-lg font-bold">{finalStats.mostPoints.username}</span>
+            <span className="text-muted-foreground">{finalStats.mostPoints.value}</span>
           </div>
         </div>
 
@@ -29,23 +36,17 @@ export function ShowFinalStats() {
           <span className="text-sm text-muted-foreground">Flest placerade brickor</span>
 
           <div className="flex items-center gap-4 font-medium">
-            <span className="text-lg font-bold">{finalStats?.mostPlacedTiles.username}</span>
-            <span className="text-muted-foreground">{finalStats?.mostPlacedTiles.value}</span>
+            <span className="text-lg font-bold">{finalStats.mostPlacedTiles.username}</span>
+            <span className="text-muted-foreground">{finalStats.mostPlacedTiles.value}</span>
           </div>
         </div>
       </div>
       <div className="flex flex-col gap-3">
-        <Button className="flex items-center gap-2 px-5 py-6 text-base">
+        <Button className="flex items-center gap-2 px-5 py-6 text-base" onClick={() => router.push("/")}>
           <Users />
           Tillbaka till matchlobby
         </Button>
-        <Button
-          className="flex items-center gap-2 px-5 py-5 text-sm"
-          variant="outline"
-          onClick={() => {
-            leaveRoom();
-            router.push("/");
-          }}>
+        <Button className="flex items-center gap-2 px-5 py-5 text-sm" variant="outline" onClick={() => leaveRoom()}>
           <ArrowLeft />
           Lämna
         </Button>
