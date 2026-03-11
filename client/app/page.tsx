@@ -20,7 +20,7 @@ import { LoadingIcon } from "@/components/game/loading";
 import { HowToPlay } from "@/components/lobby/how-to-play";
 
 export default function LobbyPage() {
-  const { gamestate, sendMessage, leaveRoom, user, connectionError } = useGameContext();
+  const { gamestate, sendMessage, leaveRoom, user, connectionError, isConnected } = useGameContext();
 
   const [tab, setTab] = useState<string>("create");
   const [joinCode, setJoinCode] = useState("");
@@ -72,40 +72,54 @@ export default function LobbyPage() {
 
       <MenuHeader />
 
-      <div className="z-10 flex flex-col items-center justify-start flex-1 w-full gap-4">
+      <div className="z-10 flex flex-col items-center justify-start flex-1 w-full ">
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 1200, damping: 40, delay: 0.8 }}
           className={`w-full ${gamestate ? "max-w-4xl" : "max-w-md"}`}>
           {!gamestate ? (
-            <div className="w-full max-w-md">
-              <Tabs value={tab} onValueChange={setTab} className="flex flex-col w-full gap-3">
-                <TabsList className="w-full">
-                  <TabsTrigger value="create" className="flex-1">
-                    <Sparkles className="w-4 h-4" />
-                    Skapa Spel
-                  </TabsTrigger>
-                  <TabsTrigger value="join" className="flex-1">
-                    <UserPlus className="w-4 h-4" />
-                    Gå Med
-                  </TabsTrigger>
-                </TabsList>
+            <div className="space-y-4">
+              <div className="w-full max-w-md">
+                <Tabs value={tab} onValueChange={setTab} className="flex flex-col w-full gap-3">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="create" className="flex-1">
+                      <Sparkles className="w-4 h-4" />
+                      Skapa Spel
+                    </TabsTrigger>
+                    <TabsTrigger value="join" className="flex-1">
+                      <UserPlus className="w-4 h-4" />
+                      Gå Med
+                    </TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="create">
-                  <CreateGameTab
-                    settings={settings}
-                    handleCreate={handleCreate}
-                    onSettingsChange={(newsettings) => setSettings(newsettings)}
-                    onUsernameChange={(e) => setUsername(e)}
-                    username={username}
-                  />
-                </TabsContent>
+                  <TabsContent value="create">
+                    <CreateGameTab
+                      settings={settings}
+                      handleCreate={handleCreate}
+                      onSettingsChange={(newsettings) => setSettings(newsettings)}
+                      onUsernameChange={(e) => setUsername(e)}
+                      username={username}
+                    />
+                  </TabsContent>
 
-                <TabsContent value="join">
-                  <JoinTab joinCode={joinCode} onCodeChange={(e) => setJoinCode(e)} onJoin={handleJoin} onUsernameChange={(e) => setUsername(e)} username={username} />
-                </TabsContent>
-              </Tabs>
+                  <TabsContent value="join">
+                    <JoinTab joinCode={joinCode} onCodeChange={(e) => setJoinCode(e)} onJoin={handleJoin} onUsernameChange={(e) => setUsername(e)} username={username} />
+                  </TabsContent>
+                </Tabs>
+              </div>
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 1200, damping: 40, delay: isConnected ? 0 : 1 }}
+                className={`w-full ${gamestate ? "max-w-4xl" : "max-w-md"}`}>
+                <HowToPlay>
+                  <div className="flex items-center justify-center gap-2 px-6 py-3 border shadow-sm cursor-pointer rounded-2xl bg-card border-border text-muted-foreground hover:bg-tile-secondary">
+                    <p>Hur spelar jag</p>
+                    <Info className="text-muted-foreground" />
+                  </div>
+                </HowToPlay>
+              </motion.div>
             </div>
           ) : (
             <div className="flex flex-col w-full max-w-4xl gap-6 lg:flex-row">
@@ -145,21 +159,19 @@ export default function LobbyPage() {
                     Tillbaka
                   </Button>
                 </div>
+                {gamestate && (
+                  <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 1200, damping: 40 }} className={`lg:flex-1`}>
+                    <HowToPlay>
+                      <div className="flex items-center justify-center gap-2 px-6 py-3 border shadow-sm cursor-pointer rounded-2xl bg-card border-border text-muted-foreground hover:bg-tile-secondary">
+                        <p>Hur spelar jag</p>
+                        <Info className="text-muted-foreground" />
+                      </div>
+                    </HowToPlay>
+                  </motion.div>
+                )}
               </div>
             </div>
           )}
-        </motion.div>
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 1200, damping: 40, delay: 1 }}
-          className={`w-full ${gamestate ? "max-w-4xl" : "max-w-md"}`}>
-          <HowToPlay>
-            <div className="flex items-center justify-center gap-2 px-6 py-3 border shadow-sm cursor-pointer rounded-2xl bg-card border-border text-muted-foreground hover:bg-tile-secondary">
-              <p>Hur spelar jag</p>
-              <Info className="text-muted-foreground" />
-            </div>
-          </HowToPlay>
         </motion.div>
       </div>
     </main>
