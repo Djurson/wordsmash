@@ -312,7 +312,7 @@ func ServeWs(hub *GameHub, w http.ResponseWriter, r *http.Request) {
 	go client.writePump()
 	go client.readPump()
 
-	client.send <- PrepareEvent(ConnectedToServerEvent, map[string]string{"message": "Välkommen till WordSmash!"})
+	client.send <- PrepareEvent(ConnectedToServerEvent, map[string]string{"message": "Välkommen till Word Smash!"})
 }
 
 func (c *Client) pongHandler(pongMessage string) error {

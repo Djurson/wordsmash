@@ -1,6 +1,6 @@
-# WordSmash
+# Word Smash
 
-WordSmash is a real-time, team-based multiplayer word game inspired by classics like Scrabble and Wordfeud, but built for collaborative team play. Players join a lobby, split into two teams (Team A and Team B), and compete by placing letters on an interactive, zoomable canvas.
+Word Smash is a real-time, team-based multiplayer word game inspired by classics like Scrabble and Wordfeud, but built for collaborative team play. Players join a lobby, split into two teams (Team A and Team B), and compete by placing letters on an interactive, zoomable canvas.
 
 The game features lightning-fast synchronization, instant word validation against a Swedish dictionary, and dynamic scoring based on actual letter frequencies.
 

@@ -9,7 +9,7 @@ export function HowToPlay({ children }: { children: ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto md:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-extrabold">Så spelar du WordSmash</DialogTitle>
+          <DialogTitle className="text-xl font-extrabold">Så spelar du Word Smash</DialogTitle>
           <DialogDescription>Ett snabbt och samarbetsbaserat ordspel minst 2 spelare</DialogDescription>
         </DialogHeader>
 
