@@ -10,7 +10,7 @@ import { useEffect } from "react";
 import { TeamLetter } from "@/lib/game/types";
 
 export function PlayerDock() {
-  const { gamestate, user, localGameState, handleSelectLetter, handleCancelPlacement, handleSubmitPlacement } = useGameContext();
+  const { gamestate, user, localGameState, handleSelectLetter, handleCancelPlacement, handleSubmitPlacement, handleRemoveSingleTileByLetterId } = useGameContext();
 
   const handleTradeIn = () => {};
 
@@ -76,6 +76,14 @@ export function PlayerDock() {
         <div className="flex items-center justify-center gap-2 md:gap-3">
           {Object.keys(gamestate.team.teamLetters).map((key, index) => {
             const teamLetter: TeamLetter = gamestate.team.teamLetters[key];
+
+            const isLockedByMe = teamLetter.isLocked && teamLetter.lockedBy === user.userId;
+            const onRemove = isLockedByMe
+              ? (e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  handleRemoveSingleTileByLetterId(teamLetter.id);
+                }
+              : undefined;
             return (
               <motion.div
                 layout
@@ -95,7 +103,7 @@ export function PlayerDock() {
                         }
                   }
                   className={`cursor-pointer transition-transform duration-200 ${localGameState.selectedLetterId === key || gamestate.team.teamLetters[key].isLocked ? "-translate-y-3 scale-110 drop-shadow-lg" : "hover:-translate-y-1"}`}>
-                  <GameTile letter={teamLetter.letter} state={gamestate.team.teamLetters[key].isLocked ? "locked" : "idle"} score={teamLetter.score} />
+                  <GameTile letter={teamLetter.letter} state={gamestate.team.teamLetters[key].isLocked ? "locked" : "idle"} score={teamLetter.score} onRemove={onRemove} />
                 </div>
               </motion.div>
             );

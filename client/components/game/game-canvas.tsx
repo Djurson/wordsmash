@@ -8,7 +8,7 @@ import { CELL, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/ga
 import { useGameContext } from "@/hooks/gamecontext";
 
 export function GameCanvas() {
-  const { localGameState, gamestate, user, handlePlaceTile } = useGameContext();
+  const { localGameState, gamestate, user, handlePlaceTile, handleRemoveSingleTile } = useGameContext();
 
   const tiles = { ...(gamestate?.board ?? {}), ...(gamestate?.team.placeholders ?? {}), ...localGameState.currentTurnTiles };
 

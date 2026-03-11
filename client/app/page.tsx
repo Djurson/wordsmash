@@ -59,7 +59,7 @@ export default function LobbyPage() {
   }
 
   return (
-    <main className="flex flex-col items-center w-full gap-8 min-h-dvh bg-background">
+    <main className="flex flex-col items-center w-full gap-14 min-h-dvh bg-background">
       <div
         className="fixed inset-0 overflow-hidden touch-none"
         style={{

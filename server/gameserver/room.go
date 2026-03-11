@@ -15,6 +15,12 @@ type LockLetterAction struct {
 	Placement map[string]PlacedTile
 }
 
+type UnlockSingleLetterAction struct {
+	Client   *Client
+	LetterId uuid.UUID
+	TileKey  string
+}
+
 type SubmitTurnAction struct {
 	Client   *Client
 	NewTiles map[string]PlacedTile
@@ -22,34 +28,36 @@ type SubmitTurnAction struct {
 }
 
 type GameRoom struct {
-	ID             string
-	Clients        map[*Client]bool
-	State          *ServerGameState
-	Broadcast      chan []byte
-	Register       chan *Client
-	Unregister     chan *Client
-	ProcessMove    chan SubmitTurnAction
-	UpdateSettings chan []byte
-	UpdateUsername chan *Client
-	StartGame      chan *Client
-	LockLetter     chan LockLetterAction
-	UnlockLetter   chan *Client
+	ID                 string
+	Clients            map[*Client]bool
+	State              *ServerGameState
+	Broadcast          chan []byte
+	Register           chan *Client
+	Unregister         chan *Client
+	ProcessMove        chan SubmitTurnAction
+	UpdateSettings     chan []byte
+	UpdateUsername     chan *Client
+	StartGame          chan *Client
+	LockLetter         chan LockLetterAction
+	UnlockLetter       chan *Client
+	UnlockSingleLetter chan UnlockSingleLetterAction
 }
 
 func NewRoom(id string) *GameRoom {
 	return &GameRoom{
-		ID:             id,
-		Clients:        make(map[*Client]bool),
-		State:          NewGameState(id),
-		Broadcast:      make(chan []byte),
-		Register:       make(chan *Client),
-		Unregister:     make(chan *Client),
-		ProcessMove:    make(chan SubmitTurnAction),
-		UpdateSettings: make(chan []byte),
-		UpdateUsername: make(chan *Client),
-		StartGame:      make(chan *Client),
-		LockLetter:     make(chan LockLetterAction),
-		UnlockLetter:   make(chan *Client),
+		ID:                 id,
+		Clients:            make(map[*Client]bool),
+		State:              NewGameState(id),
+		Broadcast:          make(chan []byte),
+		Register:           make(chan *Client),
+		Unregister:         make(chan *Client),
+		ProcessMove:        make(chan SubmitTurnAction),
+		UpdateSettings:     make(chan []byte),
+		UpdateUsername:     make(chan *Client),
+		StartGame:          make(chan *Client),
+		LockLetter:         make(chan LockLetterAction),
+		UnlockLetter:       make(chan *Client),
+		UnlockSingleLetter: make(chan UnlockSingleLetterAction),
 	}
 }
 
@@ -480,6 +488,48 @@ func (r *GameRoom) Run() {
 					}
 
 					r.State.ResetStatsAfterGameFinish()
+				}
+			}
+
+		case action := <-r.UnlockSingleLetter:
+			client := action.Client
+			if r.State.GameOver {
+				continue
+			}
+
+			teamLetters := r.State.Teams[client.Team].Letters
+			changed := false
+
+			if letter, exists := teamLetters[action.LetterId]; exists {
+				if letter.IsLocked && letter.LockedBy == client.Id {
+					letter.IsLocked = false
+					letter.LockedBy = uuid.Nil
+					teamLetters[action.LetterId] = letter
+					changed = true
+				}
+			}
+
+			placeholders := r.State.Teams[client.Team].Placeholders
+			if tile, exists := placeholders[action.TileKey]; exists {
+				if tile.PlacedBy == client.Id.String() {
+					delete(placeholders, action.TileKey)
+					changed = true
+				}
+			}
+
+			if changed {
+				r.State.Teams[client.Team].Letters = teamLetters
+				r.State.Teams[client.Team].Placeholders = placeholders
+
+				finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
+					TeamLetters:  teamLetters,
+					Placeholders: placeholders,
+				})
+
+				for c := range r.Clients {
+					if c.Team == client.Team {
+						c.send <- finalMessage
+					}
 				}
 			}
 		}

@@ -17,13 +17,13 @@ export function MenuHeader() {
             ))}
           </div>
         </div>
-        <motion.div
+        {/* <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 800, damping: 20, delay: 0.5 }}
           className="z-30 px-4 py-2 font-medium border rounded-full shadow-sm bg-white/90 backdrop-blur-md border-slate-200 text-slate-500">
           <p className="text-sm font-medium text-muted-foreground">Bananagrams fast tillsammans med vänner!</p>
-        </motion.div>
+        </motion.div> */}
       </div>
     </header>
   );

@@ -21,6 +21,7 @@ export type WSSendPayloadMap = {
   submit_turn: { newTiles: Record<string, PlacedTile>; newBombs: Record<string, Bomb> };
   leave_room: null;
   start_game: null;
+  unlock_single_letter: { letterId: string; tileKey: string };
   unlock_letter: null;
 };
 

@@ -249,6 +249,15 @@ func (c *Client) readPump() {
 			}
 
 			c.Room.ProcessMove <- SubmitTurnAction{Client: c, NewTiles: payload.NewTiles, NewBombs: payload.NewBombs}
+
+		case UnlockSingleLetterEvent:
+			var payload UnlockSingleLetterPayload
+			json.Unmarshal(event.Payload, &payload)
+			c.hub.Rooms[c.Room.ID].UnlockSingleLetter <- UnlockSingleLetterAction{
+				Client:   c,
+				LetterId: payload.LetterId,
+				TileKey:  payload.TileKey,
+			}
 		}
 	}
 }

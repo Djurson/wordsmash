@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { CircleX } from "lucide-react";
 
 interface LetterTileProps {
   letter: string;
@@ -7,6 +8,7 @@ interface LetterTileProps {
   score?: number;
   delay?: number;
   onClick?: () => void;
+  onRemove?: (e: React.MouseEvent) => void;
 }
 
 type LetterState = "idle" | "placed" | "selected" | "selected-hover" | "placeholder" | "secondary" | "locked";
@@ -39,7 +41,7 @@ function getTileStateClasses(state: LetterState): string {
   }
 }
 
-export default function GameTile({ letter, score, state = "idle", onClick, delay }: LetterTileProps) {
+export default function GameTile({ letter, score, state = "idle", onClick, delay, onRemove }: LetterTileProps) {
   const isActive = state === "idle" || state === "selected";
   const isPlaced = state === "placed";
   const isGhost = state === "selected-hover" || state === "placeholder";
@@ -65,6 +67,13 @@ export default function GameTile({ letter, score, state = "idle", onClick, delay
       className={cn("relative flex items-center justify-center font-extrabold select-none transition-all duration-150 border-2 text-3xl", sizeClasses, getTileStateClasses(state), hoverClasses)}>
       <span className="leading-none tracking-tight">{letter.toUpperCase()}</span>
       <span className={`absolute bottom-1.5 right-2 text-xs font-bold ${state === "placeholder" || state === "selected-hover" ? "text-tile-foreground/60" : " text-tile-foreground"}`}>{score}</span>
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          className="absolute z-20 p-1 transition-all duration-300 ease-in-out rounded-full shadow-md cursor-pointer text-tile-foreground bg-tile-locked -top-2 -right-2 shadow-tile-foreground/60 hover:scale-110 hover:bg-red-600 hover:text-white">
+          <CircleX className="size-4" />
+        </button>
+      )}
     </motion.div>
   );
 }

@@ -20,6 +20,8 @@ export interface GameContextContextProps {
   updateLocalGameState: (updates: Partial<LocalGameState>) => void;
   handleSelectLetter: (key: string | null) => void;
   handleCancelPlacement: () => void;
+  handleRemoveSingleTile: (tileKey: string, letterId: string) => void;
+  handleRemoveSingleTileByLetterId: (letterId: string) => void;
   handleSubmitPlacement: () => void;
   handlePlaceTile: (x: number, y: number) => void;
   finalStats: FinalGameStats | null;
@@ -235,9 +237,61 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    sendMessage("unlock_letter", null);
-    updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
-  }, [localGameState, handleSelectLetter, sendMessage, updateLocalGameState]);
+    const keys = Object.keys(localGameState.currentTurnTiles);
+    if (keys.length === 0) {
+      sendMessage("unlock_letter", null);
+      updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
+      return;
+    }
+
+    keys.forEach((key, index) => {
+      setTimeout(() => {
+        setLocalGameState((prev) => {
+          const newTiles = { ...prev.currentTurnTiles };
+          delete newTiles[key];
+
+          const isLast = index === keys.length - 1;
+          if (isLast) {
+            sendMessage("unlock_letter", null);
+          }
+
+          return {
+            ...prev,
+            currentTurnTiles: newTiles,
+            currentTurnDirection: isLast ? null : prev.currentTurnDirection,
+            selectedLetterId: isLast ? null : prev.selectedLetterId,
+          };
+        });
+      }, index * 100);
+    });
+  }, [localGameState.selectedLetterId, localGameState.currentTurnTiles, handleSelectLetter, sendMessage, updateLocalGameState]);
+
+  const handleRemoveSingleTile = useCallback(
+    (tileKey: string, letterId: string) => {
+      setLocalGameState((prev) => {
+        const newTiles = { ...prev.currentTurnTiles };
+        delete newTiles[tileKey];
+
+        let newDir = prev.currentTurnDirection;
+        if (Object.keys(newTiles).length <= 1) newDir = null;
+
+        return { ...prev, currentTurnTiles: newTiles, currentTurnDirection: newDir };
+      });
+
+      sendMessage("unlock_single_letter", { letterId, tileKey });
+    },
+    [sendMessage],
+  );
+
+  const handleRemoveSingleTileByLetterId = useCallback(
+    (letterId: string) => {
+      const tileKey = Object.keys(localGameState.currentTurnTiles).find((key) => localGameState.currentTurnTiles[key].Id === letterId);
+      if (tileKey) {
+        handleRemoveSingleTile(tileKey, letterId);
+      }
+    },
+    [localGameState.currentTurnTiles, handleRemoveSingleTile],
+  );
 
   const handleSubmitPlacement = useCallback(() => {
     if (Object.keys(localGameState.currentTurnTiles).length === 0 || !gamestate) return;
@@ -282,6 +336,8 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleSubmitPlacement,
     handlePlaceTile,
     finalStats,
+    handleRemoveSingleTileByLetterId,
+    handleRemoveSingleTile,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

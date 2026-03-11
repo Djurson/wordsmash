@@ -9,26 +9,27 @@ import (
 type EventType string
 
 const (
-	GameCreatedEvent       EventType = "game_created"        // Go (server) -> React (client)
-	JoinedGameEvent        EventType = "joined_game"         // Go (server) -> React (client)
-	ErrorEvent             EventType = "error"               // Go (server) -> React (client)
-	LobbyUpdateEvent       EventType = "lobby_updated"       // Go (server) -> React (client)
-	GameStartedEvent       EventType = "game_started"        // Go (server) -> React (client)
-	BoardUpdateEvent       EventType = "board_updated"       // Go (server) -> React (client)
-	ConnectedToServerEvent EventType = "server_connected"    // Go (server) -> React (client)
-	SettingsUpdatedEvent   EventType = "updated_settings"    // Go (server) -> React (client)
-	LeftRoomEvent          EventType = "left_room"           // Go (server) -> React (client)
-	UpdatedTeamLetterEvent EventType = "team_letter_updated" // Go (server) -> React (client)
-	GameOverEvent          EventType = "game_over"           // Go (server) -> React (client)
-	CreateGameEvent        EventType = "create_game"         // React (client) -> Go (server)
-	JoinGameEvent          EventType = "join_game"           // React (client) -> Go (server)
-	SubmitTurnEvent        EventType = "submit_turn"         // React (client) -> Go (server)
-	UpdateSettingsEvent    EventType = "update_settings"     // React (client) -> Go (server)
-	UpdateUsernameEvent    EventType = "update_username"     // React (client) -> Go (server)
-	LeaveRoomEvent         EventType = "leave_room"          // React (client) -> Go (server)
-	StartGameEvent         EventType = "start_game"          // React (client) -> Go (server)
-	LockLetterEvent        EventType = "lock_letter"         // React (client) -> Go (server)
-	UnlockLetterEvent      EventType = "unlock_letter"       // React (client) -> Go (server)
+	GameCreatedEvent        EventType = "game_created"         // Go (server) -> React (client)
+	JoinedGameEvent         EventType = "joined_game"          // Go (server) -> React (client)
+	ErrorEvent              EventType = "error"                // Go (server) -> React (client)
+	LobbyUpdateEvent        EventType = "lobby_updated"        // Go (server) -> React (client)
+	GameStartedEvent        EventType = "game_started"         // Go (server) -> React (client)
+	BoardUpdateEvent        EventType = "board_updated"        // Go (server) -> React (client)
+	ConnectedToServerEvent  EventType = "server_connected"     // Go (server) -> React (client)
+	SettingsUpdatedEvent    EventType = "updated_settings"     // Go (server) -> React (client)
+	LeftRoomEvent           EventType = "left_room"            // Go (server) -> React (client)
+	UpdatedTeamLetterEvent  EventType = "team_letter_updated"  // Go (server) -> React (client)
+	GameOverEvent           EventType = "game_over"            // Go (server) -> React (client)
+	CreateGameEvent         EventType = "create_game"          // React (client) -> Go (server)
+	JoinGameEvent           EventType = "join_game"            // React (client) -> Go (server)
+	SubmitTurnEvent         EventType = "submit_turn"          // React (client) -> Go (server)
+	UpdateSettingsEvent     EventType = "update_settings"      // React (client) -> Go (server)
+	UpdateUsernameEvent     EventType = "update_username"      // React (client) -> Go (server)
+	LeaveRoomEvent          EventType = "leave_room"           // React (client) -> Go (server)
+	StartGameEvent          EventType = "start_game"           // React (client) -> Go (server)
+	LockLetterEvent         EventType = "lock_letter"          // React (client) -> Go (server)
+	UnlockLetterEvent       EventType = "unlock_letter"        // React (client) -> Go (server)
+	UnlockSingleLetterEvent EventType = "unlock_single_letter" // React (client) -> Go (server)
 )
 
 type Event struct {
@@ -98,4 +99,9 @@ type FinalGameStats struct {
 	MostPoints      Stat           `json:"mostPoints"`
 	TeamPoints      map[string]int `json:"teamPoints"`
 	Winner          string         `json:"winner"`
+}
+
+type UnlockSingleLetterPayload struct {
+	LetterId uuid.UUID `json:"letterId"`
+	TileKey  string    `json:"tileKey"`
 }
