@@ -157,7 +157,6 @@ func (r *GameRoom) Run() {
 				for c := range r.Clients {
 					c.send <- message
 				}
-				continue
 			}
 
 			for c := range r.Clients {
