@@ -87,3 +87,15 @@ type SubmitTurnPayload struct {
 	NewTiles map[string]PlacedTile `json:"newTiles"`
 	NewBombs map[string]Bomb       `json:"newBombs"`
 }
+
+type Stat struct {
+	Username string `json:"username"`
+	Value    int    `json:"value"`
+}
+
+type FinalGameStats struct {
+	MostPlacedTiles Stat           `json:"mostPlacedTiles"`
+	MostPoints      Stat           `json:"mostPoints"`
+	TeamPoints      map[string]int `json:"teamPoints"`
+	Winner          string         `json:"winner"`
+}

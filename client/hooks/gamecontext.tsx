@@ -1,6 +1,6 @@
 "use client";
 
-import { GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
+import { FinalGameStats, GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
 import { finalTesting, getTileKey, isValidPlacement } from "@/lib/game/utils";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
 import { WSRecievedEvent, WSSendEventType, WSSendPayloadMap } from "@/lib/websocket/WSTypes";
@@ -22,6 +22,7 @@ export interface GameContextContextProps {
   handleCancelPlacement: () => void;
   handleSubmitPlacement: () => void;
   handlePlaceTile: (x: number, y: number) => void;
+  finalStats: FinalGameStats | null;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -41,6 +42,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [gamestate, setGameState] = useState<GameState | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
+  const [finalStats, setFinalStats] = useState<FinalGameStats | null>(null);
 
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
@@ -150,6 +152,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
             currentTurnDirection: null,
             selectedLetterId: null,
           });
+          setFinalStats(null);
           router.push("/game");
           break;
 
@@ -175,7 +178,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           break;
 
         case "game_over":
-          updateGameState(payload);
+          setFinalStats(payload);
+          updateGameState({ gameOver: true });
+
           ToastSucess("Tiden är ute! Spelet är över.");
 
           setLocalGameState({
@@ -185,6 +190,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
             selectedLetterId: null,
           });
           break;
+
         default:
           console.log("Ohanterat event från server:", type);
           break;
@@ -274,6 +280,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleCancelPlacement,
     handleSubmitPlacement,
     handlePlaceTile,
+    finalStats,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -70,22 +70,21 @@ export default function Page() {
             </DialogContent>
           </Dialog>
         </>
-      ) : gamestate.gameStarted && gamestate.gameOver === false ? (
+      ) : (
         <>
           <TopHUD />
           <GameCanvas />
           <PlayerDock />
+          <Dialog defaultOpen>
+            <DialogContent className="gap-2!" overlayBlur={true}>
+              <DialogHeader>
+                <DialogTitle>Tiden har gått ut</DialogTitle>
+                <DialogDescription className="hidden"></DialogDescription>
+              </DialogHeader>
+              <div></div>
+            </DialogContent>
+          </Dialog>
         </>
-      ) : (
-        <div
-          className="fixed inset-0 overflow-hidden touch-none"
-          style={{
-            backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
-            backgroundColor: "var(--background, --tile-secondary)",
-            backgroundSize: `${CELL}px ${CELL}px`,
-            backgroundPosition: `calc(50% + ${CELL}px) calc(50% + ${CELL / 2}px)`,
-          }}
-        />
       )}
     </main>
   );

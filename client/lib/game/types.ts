@@ -63,3 +63,15 @@ export type LocalGameState = {
   selectedLetterId: string | null;
   currentTurnBombs: Record<string, Bomb>;
 };
+
+export type Stat = {
+  username: string;
+  value: number;
+};
+
+export type FinalGameStats = {
+  mostPlacedTiles: Stat;
+  mostPoints: Stat;
+  teamPoints: Record<string, number>;
+  winner: string;
+};

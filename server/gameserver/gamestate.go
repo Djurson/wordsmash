@@ -21,9 +21,11 @@ var letterBag []Letter
 var letterScores map[rune]int
 
 type User struct {
-	Username string    `json:"username"`
-	UserId   uuid.UUID `json:"userId"`
-	Team     string    `json:"team"`
+	Username    string    `json:"username"`
+	UserId      uuid.UUID `json:"userId"`
+	Team        string    `json:"team"`
+	Score       int       `json:"score"`
+	TilesPlaced int       `json:"tilesPlaced"`
 }
 
 type Letter struct {

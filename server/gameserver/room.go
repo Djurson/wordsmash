@@ -177,7 +177,7 @@ func (r *GameRoom) Run() {
 
 		// A client has sent a new move
 		case submitTurnAction := <-r.ProcessMove:
-			if r.State.EndTime < time.Now().UnixMilli() {
+			if r.State.GameOver {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
 				continue
 			}
@@ -221,6 +221,11 @@ func (r *GameRoom) Run() {
 				}
 			}
 			r.State.Teams[submitTurnAction.Client.Team].Placeholders = placeholders
+
+			if player, exists := r.State.Players[submitTurnAction.Client.Id]; exists {
+				player.Score += moveScore
+				player.TilesPlaced += len(submitTurnAction.NewTiles)
+			}
 
 			// Add the tiles to the board
 			for _, tile := range submitTurnAction.NewTiles {
@@ -335,7 +340,7 @@ func (r *GameRoom) Run() {
 			}
 
 		case action := <-r.LockLetter:
-			if r.State.EndTime < time.Now().UnixMilli() {
+			if r.State.GameOver {
 				action.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
 				continue
 			}
@@ -382,7 +387,7 @@ func (r *GameRoom) Run() {
 			}
 
 		case client := <-r.UnlockLetter:
-			if r.State.EndTime < time.Now().UnixMilli() {
+			if r.State.GameOver {
 				client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
 				continue
 			}
@@ -419,14 +424,53 @@ func (r *GameRoom) Run() {
 					}
 				}
 			}
-			// TODO: FIX THIS
 		case <-ticker.C:
 			if r.State.GameStarted && !r.State.GameOver {
 				now := time.Now().UnixMilli()
 				if now >= r.State.EndTime {
 					r.State.GameOver = true
 
-					gameOverMessage := PrepareEvent(GameOverEvent, r.State.ToClientState(""))
+					var topTileUser, topScoreUser *User
+
+					for _, player := range r.State.Players {
+						if topTileUser == nil || player.TilesPlaced > topTileUser.TilesPlaced {
+							topTileUser = player
+						}
+						if topScoreUser == nil || player.Score > topScoreUser.Score {
+							topScoreUser = player
+						}
+					}
+
+					mostPlacedTiles := Stat{Username: "Ingen", Value: 0}
+					if topTileUser != nil && topTileUser.TilesPlaced > 0 {
+						mostPlacedTiles = Stat{Username: topTileUser.Username, Value: topTileUser.TilesPlaced}
+					}
+
+					mostPoints := Stat{Username: "Ingen", Value: 0}
+					if topScoreUser != nil && topScoreUser.Score > 0 {
+						mostPoints = Stat{Username: topScoreUser.Username, Value: topScoreUser.Score}
+					}
+
+					teamPoints := map[string]int{
+						"a": r.State.Teams["a"].Score,
+						"b": r.State.Teams["b"].Score,
+					}
+
+					winner := "tie"
+					if teamPoints["a"] > teamPoints["b"] {
+						winner = "a"
+					} else if teamPoints["b"] > teamPoints["a"] {
+						winner = "b"
+					}
+
+					finalStats := FinalGameStats{
+						MostPlacedTiles: mostPlacedTiles,
+						MostPoints:      mostPoints,
+						TeamPoints:      teamPoints,
+						Winner:          winner,
+					}
+
+					gameOverMessage := PrepareEvent(GameOverEvent, finalStats)
 					for client := range r.Clients {
 						client.send <- gameOverMessage
 					}
