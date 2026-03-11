@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function Page() {
-  const { gamestate, user, gameover } = useGameContext();
+  const { gamestate, user } = useGameContext();
   const router = useRouter();
 
   const [countdown, setCountDown] = useState<number>(0);
@@ -70,7 +70,7 @@ export default function Page() {
             </DialogContent>
           </Dialog>
         </>
-      ) : gameover === false ? (
+      ) : gamestate.gameStarted && gamestate.gameOver === false ? (
         <>
           <TopHUD />
           <GameCanvas />

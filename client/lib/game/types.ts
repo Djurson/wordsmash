@@ -50,6 +50,7 @@ export type GameState = {
   settings: GameSettings;
   host: string;
   gameStarted: boolean;
+  gameOver: boolean;
   endTime: number;
   startTime: number;
   totalScore: number;

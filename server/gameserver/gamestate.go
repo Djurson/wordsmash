@@ -75,6 +75,7 @@ type ServerGameState struct {
 	Settings    GameSettings
 	Host        uuid.UUID
 	GameStarted bool
+	GameOver    bool
 	EndTime     int64
 	StartTime   int64
 	Players     map[uuid.UUID]*User
@@ -89,6 +90,7 @@ type ClientGameState struct {
 	Settings    GameSettings          `json:"settings"`
 	Host        uuid.UUID             `json:"host"`
 	GameStarted bool                  `json:"gameStarted"`
+	GameOver    bool                  `json:"gameOver"`
 	EndTime     int64                 `json:"endTime"`
 	StartTime   int64                 `json:"startTime"`
 	TotalScore  int                   `json:"totalScore"`
@@ -161,6 +163,7 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 		Settings:    game.Settings,
 		Host:        game.Host,
 		GameStarted: game.GameStarted,
+		GameOver:    game.GameOver,
 		EndTime:     game.EndTime,
 		StartTime:   game.StartTime,
 		TotalScore:  totalScore,

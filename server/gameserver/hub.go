@@ -113,13 +113,3 @@ func (h *GameHub) DeleteRoom(code string) {
 
 	delete(h.Rooms, code)
 }
-
-func (s *GameHub) HandlePlayerMove(word string) {
-	if s.Dictionary.IsValid(word) {
-		// TODO: Handle correct word
-		fmt.Printf("Ordet finns! \n")
-	} else {
-		// TODO: Handle non correct words
-		fmt.Printf("Ordet finns inte! \n")
-	}
-}

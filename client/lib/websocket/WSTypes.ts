@@ -3,7 +3,7 @@ import { Bomb, GameSettings, GameState, PlacedTile, TeamLetter, User } from "../
 /* RECIEVED FROM THE BACkEND */
 export type WSRecievedEvent =
   | { type: "game_created" | "joined_game"; payload: { gamestate: GameState; user: User; message: string } }
-  | { type: "lobby_updated" | "board_updated" | "game_started"; payload: GameState }
+  | { type: "lobby_updated" | "board_updated" | "game_started" | "game_over"; payload: GameState }
   | { type: "updated_settings"; payload: GameSettings }
   | { type: "error" | "server_connected" | "left_room"; payload: { message: string } }
   | { type: "team_letter_updated"; payload: { teamLetters: Record<string, TeamLetter>; placeholders: Record<string, PlacedTile> } };

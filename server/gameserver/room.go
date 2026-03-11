@@ -54,6 +54,9 @@ func NewRoom(id string) *GameRoom {
 }
 
 func (r *GameRoom) Run() {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
 	for {
 		select {
 
@@ -413,6 +416,19 @@ func (r *GameRoom) Run() {
 				for c := range r.Clients {
 					if c.Team == client.Team {
 						c.send <- finalMessage
+					}
+				}
+			}
+			// TODO: FIX THIS
+		case <-ticker.C:
+			if r.State.GameStarted && !r.State.GameOver {
+				now := time.Now().UnixMilli()
+				if now >= r.State.EndTime {
+					r.State.GameOver = true
+
+					gameOverMessage := PrepareEvent(GameOverEvent, r.State.ToClientState(""))
+					for client := range r.Clients {
+						client.send <- gameOverMessage
 					}
 				}
 			}

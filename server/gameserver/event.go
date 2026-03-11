@@ -19,6 +19,7 @@ const (
 	SettingsUpdatedEvent   EventType = "updated_settings"    // Go (server) -> React (client)
 	LeftRoomEvent          EventType = "left_room"           // Go (server) -> React (client)
 	UpdatedTeamLetterEvent EventType = "team_letter_updated" // Go (server) -> React (client)
+	GameOverEvent          EventType = "game_over"           // Go (server) -> React (client)
 	CreateGameEvent        EventType = "create_game"         // React (client) -> Go (server)
 	JoinGameEvent          EventType = "join_game"           // React (client) -> Go (server)
 	SubmitTurnEvent        EventType = "submit_turn"         // React (client) -> Go (server)

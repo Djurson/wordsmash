@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 export function TopHUD() {
-  const { gamestate, user, localGameState, handleSetGameOver } = useGameContext();
+  const { gamestate, user, localGameState } = useGameContext();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const requestRef = useRef<number>(0);
 
@@ -18,7 +18,6 @@ export function TopHUD() {
 
       if (difference <= 0) {
         setTimeLeft(0);
-        handleSetGameOver(true);
         return;
       }
 
@@ -28,7 +27,7 @@ export function TopHUD() {
 
     requestRef.current = requestAnimationFrame(calculateTimeLeft);
     return () => cancelAnimationFrame(requestRef.current!);
-  }, [gamestate, handleSetGameOver]);
+  }, [gamestate]);
 
   const totalSeconds = Math.floor(timeLeft / 1000);
   const minutes = Math.floor(totalSeconds / 60);

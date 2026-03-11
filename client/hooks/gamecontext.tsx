@@ -14,8 +14,6 @@ export interface GameContextContextProps {
   sendMessage: SendMessageType;
   user: User | null;
   gamestate: GameState | null;
-  gameover: boolean;
-  handleSetGameOver: (value: boolean) => void;
   leaveRoom: () => void;
   connectionError: boolean;
   localGameState: LocalGameState;
@@ -43,7 +41,6 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [gamestate, setGameState] = useState<GameState | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
-  const [gameover, setGameOver] = useState(false);
 
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
@@ -177,6 +174,17 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           });
           break;
 
+        case "game_over":
+          updateGameState(payload);
+          ToastSucess("Tiden är ute! Spelet är över.");
+
+          setLocalGameState({
+            currentTurnTiles: {},
+            currentTurnBombs: {},
+            currentTurnDirection: null,
+            selectedLetterId: null,
+          });
+          break;
         default:
           console.log("Ohanterat event från server:", type);
           break;
@@ -224,10 +232,6 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
   }, [localGameState, handleSelectLetter, sendMessage, updateLocalGameState]);
 
-  const handleSetGameOver = (value: boolean) => {
-    setGameOver(value);
-  };
-
   const handleSubmitPlacement = useCallback(() => {
     if (Object.keys(localGameState.currentTurnTiles).length === 0 || !gamestate) return;
 
@@ -270,8 +274,6 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleCancelPlacement,
     handleSubmitPlacement,
     handlePlaceTile,
-    handleSetGameOver,
-    gameover,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
