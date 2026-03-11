@@ -2,6 +2,7 @@
 
 import { GameCanvas } from "@/components/game/game-canvas";
 import { PlayerDock } from "@/components/game/player-dock";
+import { ShowFinalStats } from "@/components/game/show-final-stats";
 import { TopHUD } from "@/components/game/top-hud";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useGameContext } from "@/hooks/gamecontext";
@@ -75,15 +76,17 @@ export default function Page() {
           <TopHUD />
           <GameCanvas />
           <PlayerDock />
-          <Dialog defaultOpen>
-            <DialogContent className="gap-2!" overlayBlur={true}>
-              <DialogHeader>
-                <DialogTitle>Tiden har gått ut</DialogTitle>
-                <DialogDescription className="hidden"></DialogDescription>
-              </DialogHeader>
-              <div></div>
-            </DialogContent>
-          </Dialog>
+          {gamestate.gameOver && (
+            <Dialog defaultOpen>
+              <DialogContent className="gap-2!" overlayBlur={true}>
+                <DialogHeader>
+                  <DialogTitle>Tiden har gått ut</DialogTitle>
+                  <DialogDescription className="hidden"></DialogDescription>
+                </DialogHeader>
+                <ShowFinalStats />
+              </DialogContent>
+            </Dialog>
+          )}
         </>
       )}
     </main>

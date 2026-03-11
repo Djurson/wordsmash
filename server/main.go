@@ -33,11 +33,6 @@ func main() {
 
 	hub := gameserver.NewHub(wordMap)
 
-	fmt.Println(os.Getenv("FRONTEND_URL"))
-	fmt.Println(os.Getenv("FRONTEND_GIT_MAIN_URL"))
-	// server.HandlePlayerMove("test")
-	// server.HandlePlayerMove("fuehufheufheuhfe")
-
 	go hub.Run()
 
 	router := routes.DefineRoutes(hub)
