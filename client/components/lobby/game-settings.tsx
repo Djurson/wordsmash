@@ -36,7 +36,7 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
           Speltid
         </div>
         <div className="flex items-center gap-4">
-          <Slider value={[settings.timerMinutes]} onValueChange={([v]) => update("timerMinutes", v)} min={2} max={25} step={1} disabled={!(gamestate?.host === user?.userId)} className="flex-1" />
+          <Slider value={[settings.timerMinutes]} onValueChange={([v]) => update("timerMinutes", v)} min={1} max={25} step={1} disabled={!(gamestate?.host === user?.userId)} className="flex-1" />
           <span className="w-12 text-sm font-bold text-right text-foreground tabular-nums">{settings.timerMinutes} min</span>
         </div>
       </div>

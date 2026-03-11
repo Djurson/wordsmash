@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -59,7 +60,7 @@ func (r *GameRoom) Run() {
 		// A client joins the room
 		case client := <-r.Register:
 			if r.State.GameStarted {
-				client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Spelet har redan börjat, kan inte ansluta."})
+				client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Spelet har redan börjat, kan inte ansluta"})
 				continue
 			}
 
@@ -173,6 +174,11 @@ func (r *GameRoom) Run() {
 
 		// A client has sent a new move
 		case submitTurnAction := <-r.ProcessMove:
+			if r.State.EndTime < time.Now().UnixMilli() {
+				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
+				continue
+			}
+
 			isValid, message := isValidPlacement(&submitTurnAction, &r.State.Board, &r.State.Bombs)
 			if !isValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
@@ -182,7 +188,7 @@ func (r *GameRoom) Run() {
 			wordsCreated, moveScore := extractWordsAndScore(&submitTurnAction.NewTiles, &r.State.Board)
 
 			if len(wordsCreated) == 0 {
-				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Du måste bilda ett ord på minst 2 bokstäver."})
+				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Du måste bilda ett ord på minst 2 bokstäver"})
 				continue
 			}
 
@@ -197,7 +203,7 @@ func (r *GameRoom) Run() {
 			}
 
 			if !wordsValid {
-				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bildat ett ogiltigt ord."})
+				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bildat ett ogiltigt ord"})
 				continue
 			}
 
@@ -291,6 +297,10 @@ func (r *GameRoom) Run() {
 			}
 
 		case payload := <-r.UpdateSettings:
+			if r.State.GameStarted {
+				continue
+			}
+
 			var newSettings GameSettings
 			json.Unmarshal(payload, &newSettings)
 
@@ -305,8 +315,13 @@ func (r *GameRoom) Run() {
 
 		// Start game
 		case hostClient := <-r.StartGame:
+			if r.State.GameStarted {
+				hostClient.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Spelet har redan startat"})
+				continue
+			}
+
 			if r.State.Host != hostClient.Id {
-				hostClient.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bara spelledaren kan starta spelet."})
+				hostClient.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bara spelledaren kan starta spelet"})
 				continue
 			}
 
@@ -317,6 +332,11 @@ func (r *GameRoom) Run() {
 			}
 
 		case action := <-r.LockLetter:
+			if r.State.EndTime < time.Now().UnixMilli() {
+				action.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
+				continue
+			}
+
 			client := action.Client
 			letterID := action.LetterId
 
@@ -359,6 +379,11 @@ func (r *GameRoom) Run() {
 			}
 
 		case client := <-r.UnlockLetter:
+			if r.State.EndTime < time.Now().UnixMilli() {
+				client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
+				continue
+			}
+
 			teamLetters := r.State.Teams[client.Team].Letters
 			changed := false
 
@@ -398,7 +423,7 @@ func (r *GameRoom) Run() {
 /* Same implementation as client/lib/utils.ts */
 func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
 	if len(turnAction.NewTiles) == 0 && len(turnAction.NewBombs) == 0 {
-		return false, "Behöver placera ut minst en bricka eller bomb."
+		return false, "Behöver placera ut minst en bricka eller bomb"
 	}
 
 	if len(turnAction.NewTiles) > 0 {
@@ -409,12 +434,12 @@ func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile
 		for key, tile := range turnAction.NewTiles {
 			// Check overlap with already placed tiles
 			if _, exists := (*board)[key]; exists {
-				return false, "En av rutorna är redan upptagen på brädet."
+				return false, "En av rutorna är redan upptagen på brädet"
 			}
 
 			// Does the key match the coordinates
 			if key != getTileKey(tile.X, tile.Y) {
-				return false, "Ogiltig data: Koordinaterna stämmer inte överens."
+				return false, "Ogiltig data: Koordinaterna stämmer inte överens"
 			}
 
 			xs = append(xs, tile.X)
@@ -426,8 +451,8 @@ func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile
 			}
 		}
 
-		if len(*board) > 0 && !hasPlacedNeighbor {
-			return false, "Ditt ord måste sitta ihop med de befintliga brickorna på brädet."
+		if !hasPlacedNeighbor {
+			return false, "Ditt ord måste sitta ihop med de befintliga brickorna på brädet"
 		}
 
 		// Direction checking
@@ -448,7 +473,7 @@ func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile
 			}
 
 			if !isHorizontal && !isVertical {
-				return false, "Brickorna måste ligga på en rak horisontell eller vertikal linje."
+				return false, "Brickorna måste ligga på en rak horisontell eller vertikal linje"
 			}
 
 			// Check if there are any gaps
@@ -462,7 +487,7 @@ func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile
 					_, inBoard := (*board)[checkKey]
 
 					if !inNewTiles && !inBoard {
-						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop."
+						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop"
 					}
 				}
 			} else if isVertical {
@@ -475,7 +500,7 @@ func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile
 					_, inBoard := (*board)[checkKey]
 
 					if !inNewTiles && !inBoard {
-						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop."
+						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop"
 					}
 				}
 			}

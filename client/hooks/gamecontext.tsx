@@ -14,6 +14,8 @@ export interface GameContextContextProps {
   sendMessage: SendMessageType;
   user: User | null;
   gamestate: GameState | null;
+  gameover: boolean;
+  handleSetGameOver: (value: boolean) => void;
   leaveRoom: () => void;
   connectionError: boolean;
   localGameState: LocalGameState;
@@ -41,6 +43,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [gamestate, setGameState] = useState<GameState | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
+  const [gameover, setGameOver] = useState(false);
 
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
@@ -105,8 +108,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           break;
 
         case "board_updated":
+          const gamestate = payload;
           const newBoard = payload.board;
-          updateGameState({ board: newBoard });
+          updateGameState(gamestate);
           setLocalGameState((prevLocal) => {
             let collision = false;
 
@@ -220,6 +224,10 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
   }, [localGameState, handleSelectLetter, sendMessage, updateLocalGameState]);
 
+  const handleSetGameOver = (value: boolean) => {
+    setGameOver(value);
+  };
+
   const handleSubmitPlacement = useCallback(() => {
     if (Object.keys(localGameState.currentTurnTiles).length === 0 || !gamestate) return;
 
@@ -262,6 +270,8 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleCancelPlacement,
     handleSubmitPlacement,
     handlePlaceTile,
+    handleSetGameOver,
+    gameover,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

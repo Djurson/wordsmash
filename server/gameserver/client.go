@@ -45,7 +45,7 @@ var (
 
 const (
 	MAXTIMERMINUTES      int   = 25
-	MINTIMERMINUTES      int   = 2
+	MINTIMERMINUTES      int   = 1
 	SOCKETREADLIMIT      int64 = 1024
 	MAXMESSAGESPERSECOND int   = 30
 	MAXMESSAGEWARNINGS   int   = 3

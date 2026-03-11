@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 export function TopHUD() {
-  const { gamestate, user, localGameState } = useGameContext();
+  const { gamestate, user, localGameState, handleSetGameOver } = useGameContext();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const requestRef = useRef<number>(0);
 
@@ -18,6 +18,7 @@ export function TopHUD() {
 
       if (difference <= 0) {
         setTimeLeft(0);
+        handleSetGameOver(true);
         return;
       }
 
@@ -27,7 +28,7 @@ export function TopHUD() {
 
     requestRef.current = requestAnimationFrame(calculateTimeLeft);
     return () => cancelAnimationFrame(requestRef.current!);
-  }, [gamestate]);
+  }, [gamestate, handleSetGameOver]);
 
   const totalSeconds = Math.floor(timeLeft / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -62,7 +63,7 @@ export function TopHUD() {
           <TeamDisplay team="b" teamScore={gamestate.totalScore - teamAScore} />
         </div>
         <div className="flex w-full overflow-hidden rounded-xl bg-tile-accent">
-          <div className="h-2 bg-tile-primary rounded-xl" style={{ width: `${teamAScore === 0 ? 50 : (teamAScore / gamestate.totalScore) * 100}%` }} />
+          <div className="h-2 bg-tile-primary rounded-xl" style={{ width: `${teamAScore === 0 && gamestate.totalScore === 0 ? 50 : (teamAScore / gamestate.totalScore) * 100}%` }} />
         </div>
       </div>
       <div className="z-30 px-4 py-2 text-xs font-medium border rounded-full bg-white/90 shadow-sm backdrop-blur-md border-slate-200 text-slate-500">
@@ -84,11 +85,11 @@ function TeamDisplay({ team, teamScore }: { team: "a" | "b"; teamScore: number }
         {team === "a" ? (
           <>
             <div className="rounded-full size-6 bg-tile-primary" />
-            <span className="text-base font-bold text-foreground">Team A</span>
+            <span className="text-base font-bold text-foreground">Lag A</span>
           </>
         ) : (
           <>
-            <span className="text-base font-bold text-foreground">Team B</span>
+            <span className="text-base font-bold text-foreground">Lag B</span>
             <div className="rounded-full size-6 bg-tile-accent" />
           </>
         )}

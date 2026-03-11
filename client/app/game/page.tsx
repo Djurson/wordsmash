@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function Page() {
-  const { gamestate, user } = useGameContext();
+  const { gamestate, user, gameover } = useGameContext();
   const router = useRouter();
 
   const [countdown, setCountDown] = useState<number>(0);
@@ -70,12 +70,22 @@ export default function Page() {
             </DialogContent>
           </Dialog>
         </>
-      ) : (
+      ) : gameover === false ? (
         <>
           <TopHUD />
           <GameCanvas />
           <PlayerDock />
         </>
+      ) : (
+        <div
+          className="fixed inset-0 overflow-hidden touch-none"
+          style={{
+            backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
+            backgroundColor: "var(--background, --tile-secondary)",
+            backgroundSize: `${CELL}px ${CELL}px`,
+            backgroundPosition: `calc(50% + ${CELL}px) calc(50% + ${CELL / 2}px)`,
+          }}
+        />
       )}
     </main>
   );

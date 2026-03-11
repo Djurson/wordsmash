@@ -82,7 +82,6 @@ export function checkIfTileHasNeighbor(requestX: number, requestY: number, place
     currentTurnPlacements[getTileKey(requestX, requestY - 1)];
 
   if (!hasPlaceholderNeighbor) {
-    ToastError("Måste placeras vid en befintlig bricka!");
     placeholderNeighbor = false;
   }
 
