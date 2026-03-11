@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="sv" className={notoSans.variable}>
-      <body className="font-sans antialiased">
+      <body className="w-full font-sans antialiased">
         <GameContextProvider>{children}</GameContextProvider>
         <Toaster position="top-right" />
         <Analytics />

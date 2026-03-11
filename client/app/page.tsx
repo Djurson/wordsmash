@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Play, SendHorizonal, Sparkles, UserPlus } from "lucide-react";
+import { ArrowLeft, CircleQuestionMark, Info, Play, SendHorizonal, Sparkles, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGameContext } from "@/hooks/gamecontext";
 import { CELL } from "@/lib/game/utils";
 import { GameSettings } from "@/lib/game/types";
 import { LoadingIcon } from "@/components/game/loading";
+import { HowToPlay } from "@/components/lobby/how-to-play";
 
 export default function LobbyPage() {
   const { gamestate, sendMessage, leaveRoom, user, connectionError } = useGameContext();
@@ -58,7 +59,7 @@ export default function LobbyPage() {
   }
 
   return (
-    <main className="flex flex-col items-center gap-8 min-h-dvh bg-background">
+    <main className="flex flex-col items-center w-full gap-8 min-h-dvh bg-background">
       <div
         className="fixed inset-0 overflow-hidden touch-none"
         style={{
@@ -71,7 +72,7 @@ export default function LobbyPage() {
 
       <MenuHeader />
 
-      <div className="z-10 flex items-start justify-center flex-1 w-full pb-10">
+      <div className="z-10 flex flex-col items-center justify-start flex-1 w-full gap-4">
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -147,6 +148,18 @@ export default function LobbyPage() {
               </div>
             </div>
           )}
+        </motion.div>
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 1200, damping: 40, delay: 1 }}
+          className={`w-full ${gamestate ? "max-w-4xl" : "max-w-md"}`}>
+          <HowToPlay>
+            <div className="flex items-center justify-center gap-2 px-6 py-3 border shadow-sm cursor-pointer rounded-2xl bg-card border-border text-muted-foreground hover:bg-tile-secondary">
+              <p>Hur spelar jag</p>
+              <Info className="text-muted-foreground" />
+            </div>
+          </HowToPlay>
         </motion.div>
       </div>
     </main>

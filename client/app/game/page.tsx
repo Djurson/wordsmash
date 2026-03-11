@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function Page() {
-  const { gamestate, user } = useGameContext();
+  const { gamestate, user, finalStats } = useGameContext();
   const router = useRouter();
 
   const [countdown, setCountDown] = useState<number>(0);
@@ -76,7 +76,7 @@ export default function Page() {
           <TopHUD />
           <GameCanvas />
           <PlayerDock />
-          {gamestate.gameOver && (
+          {gamestate.gameOver && finalStats && (
             <Dialog defaultOpen>
               <DialogContent className="gap-2!" overlayBlur={true}>
                 <DialogHeader>
