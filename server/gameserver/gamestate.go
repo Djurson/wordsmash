@@ -116,21 +116,6 @@ func NewGameState(id string) *ServerGameState {
 }
 
 func (game *ServerGameState) PreStartGame(hub *GameHub) {
-	game.Board = make(map[string]PlacedTile)
-	game.Bombs = make(map[string]Bomb)
-	game.GameOver = false
-
-	for _, team := range game.Teams {
-		team.Score = 0
-		team.Letters = make(map[uuid.UUID]TeamLetter)
-		team.Placeholders = make(map[string]PlacedTile)
-	}
-
-	for _, p := range game.Players {
-		p.Score = 0
-		p.TilesPlaced = 0
-	}
-
 	for _, team := range game.Teams {
 		letters := GenerateRandomLetters(TEAMHANDSIZE)
 
@@ -254,4 +239,25 @@ func GenerateRandomLetters(count int) []Letter {
 	}
 
 	return hand
+}
+
+func (game *ServerGameState) ResetStatsAfterGameFinish() {
+	game.Board = make(map[string]PlacedTile)
+	game.Bombs = make(map[string]Bomb)
+	game.GameOver = false
+
+	game.GameStarted = false
+	game.EndTime = 0
+	game.StartTime = 0
+
+	for _, team := range game.Teams {
+		team.Score = 0
+		team.Letters = make(map[uuid.UUID]TeamLetter)
+		team.Placeholders = make(map[string]PlacedTile)
+	}
+
+	for _, p := range game.Players {
+		p.Score = 0
+		p.TilesPlaced = 0
+	}
 }

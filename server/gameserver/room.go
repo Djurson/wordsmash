@@ -479,8 +479,7 @@ func (r *GameRoom) Run() {
 						client.send <- gameOverMessage
 					}
 
-					id := r.State.GameId
-					r.State = NewGameState(id)
+					r.State.ResetStatsAfterGameFinish()
 				}
 			}
 		}
