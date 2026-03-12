@@ -208,7 +208,7 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
-			isValid, message := isValidPlacement(submitTurnAction, &r.State.Board)
+			isValid, message := isValidPlacement(submitTurnAction, &r.State.Board, &r.State.Roadblocks)
 			if !isValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
 				continue
@@ -557,7 +557,7 @@ func (r *GameRoom) Run() {
 }
 
 /* Same implementation as client/lib/utils.ts */
-func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile) (bool, string) {
+func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile, roadblocks *map[string]Roadblock) (bool, string) {
 	if len(turnAction.NewTiles) == 0 && len(turnAction.NewBombs) == 0 {
 		return false, "Behöver placera ut minst en bricka eller bomb"
 	}
@@ -643,7 +643,7 @@ func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile
 		}
 	}
 
-	// TODO: Add new separate checking for Bombs
+	// TODO: Add new separate checking for roadblocks
 
 	return true, ""
 }
