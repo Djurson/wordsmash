@@ -267,8 +267,7 @@ func (r *GameRoom) Run() {
 				}
 
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
-				placeholders := removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
-				r.State.Teams[submitTurnAction.Client.Team].Placeholders = placeholders
+				removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
 
 				// Remove letters from the hand
 				teamLetters := r.State.Teams[submitTurnAction.Client.Team].Letters
@@ -320,8 +319,7 @@ func (r *GameRoom) Run() {
 			r.State.Teams[submitTurnAction.Client.Team].Score += moveScore
 
 			// Clear placeholders
-			placeholders := removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
-			r.State.Teams[submitTurnAction.Client.Team].Placeholders = placeholders
+			removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
 
 			player := r.State.Players[submitTurnAction.Client.Id]
 			player.Score += moveScore
@@ -457,7 +455,6 @@ func (r *GameRoom) Run() {
 			}
 
 			placeholders := removePlaceholdersPlacedByClient(client, r.State)
-			r.State.Teams[client.Team].Placeholders = placeholders
 
 			// Only send update if something changed
 			if changed {
@@ -534,7 +531,7 @@ func (r *GameRoom) Run() {
 			switch action.Type {
 			case BombEffect:
 				teamState := r.State.Teams[action.Client.Team]
-				placed, message := tryPlaceBomb(action, &r.State.Bombs, teamState)
+				placed, message := tryPlaceBomb(action, &r.State.Bombs, teamState, &r.State.Board)
 
 				if !placed {
 					action.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
@@ -554,8 +551,35 @@ func (r *GameRoom) Run() {
 				continue
 
 			case RoadblockEffect:
-				// TODO: Implement placing roadblocks
-				// TODO: Increment user roadblocks
+				teamState := r.State.Teams[action.Client.Team]
+				combinedBoards := combineBoards(&teamState.Placeholders, &r.State.Board)
+				placed, message, affectedTeams := tryPlaceRoadblock(action, &combinedBoards, &r.State.Roadblocks, r.State)
+
+				if !placed {
+					action.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
+				} else {
+					user := r.State.Players[action.Client.Id]
+					user.PlacedRoadBlocks++
+					teamState.Roadblocks--
+
+					// Update so the other teams gets their placeholder updates
+					for _, affectedTeam := range affectedTeams {
+						teamMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
+							TeamLetters:  r.State.Teams[affectedTeam].Letters,
+							Placeholders: r.State.Teams[affectedTeam].Placeholders,
+						})
+						for c := range r.Clients {
+							if c.Team == affectedTeam {
+								c.send <- teamMessage
+							}
+						}
+					}
+
+					// Update so everyone sees the roadblocks
+					for client := range r.Clients {
+						client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
+					}
+				}
 				continue
 			}
 		}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -284,16 +285,22 @@ func combineBoards(newTiles, board *map[string]PlacedTile) map[string]PlacedTile
 	return fullBoard
 }
 
-func tryPlaceBomb(action *SubmitSpecialEffectAction, bombs *map[string]Bomb, teamState *TeamState) (bool, string) {
+// tryPlaceBomb tries to place a bomb at a given set of coordinates, it returns
+// a bool (true) if it was placed and (false) if it wasn't and an "error" message for the frontend
+func tryPlaceBomb(action *SubmitSpecialEffectAction, bombs *map[string]Bomb, teamState *TeamState, tilemap *map[string]PlacedTile) (bool, string) {
 	if teamState.Bombs <= 0 {
 		return false, "Ditt lag har inga bomber kvar att placera"
 	}
 
 	key := getTileKey(action.X, action.Y)
 
+	if _, exists := (*tilemap)[key]; !exists {
+		return false, "Du måste placera en bomb på en befintlig bricka"
+	}
+
 	if existingBomb, isBomb := (*bombs)[key]; isBomb {
 		if existingBomb.Team == action.Client.Team {
-			return false, "Ni har redan placerat en bomb på den här rutan"
+			return false, "Det finns redan en placerad bomb på den här rutan"
 		}
 	}
 
@@ -302,6 +309,8 @@ func tryPlaceBomb(action *SubmitSpecialEffectAction, bombs *map[string]Bomb, tea
 	return true, ""
 }
 
+// removePlaceholdersPlacedByClient removes all placeholders placed by a specific client
+// and returns the updated map[string]PlacedTile (used for if placed tiles collides with other teams placeholders)
 func removePlaceholdersPlacedByClient(c *Client, game *ServerGameState) map[string]PlacedTile {
 	placeholders := game.Teams[c.Team].Placeholders
 
@@ -314,6 +323,7 @@ func removePlaceholdersPlacedByClient(c *Client, game *ServerGameState) map[stri
 	return placeholders
 }
 
+// removePlaceholdersByLetterId removes placedholders based on a given letter id
 func removePlaceholdersByLetterId(id uuid.UUID, teamState *TeamState) {
 	for key, placeholder := range teamState.Placeholders {
 		if placeholder.Id == id {
@@ -322,6 +332,8 @@ func removePlaceholdersByLetterId(id uuid.UUID, teamState *TeamState) {
 	}
 }
 
+// removeCollidingPlaceholders removes all colliding placeholders after a correct word
+// has been entered by another team
 func removeCollidingPlaceholders(submitTeam string, room *GameRoom) {
 	for teamName, teamState := range room.State.Teams {
 		if teamName == submitTeam {
@@ -363,4 +375,51 @@ func removeCollidingPlaceholders(submitTeam string, room *GameRoom) {
 			}
 		}
 	}
+}
+
+// tryPlaceRoadblock tries to place a roadblock at a given set of coordinates, it returns
+// a bool (true) if it was placed and (false) if it wasn't and an "error" message for the frontend
+func tryPlaceRoadblock(action *SubmitSpecialEffectAction, tilemap *map[string]PlacedTile, roadblocks *map[string]Roadblock, game *ServerGameState) (bool, string, []string) {
+	teamState := game.Teams[action.Client.Team]
+
+	if teamState.Roadblocks <= 0 {
+		return false, "Ditt lag har inga spärrar kvar att placera", nil
+	}
+
+	key := getTileKey(action.X, action.Y)
+
+	if _, exists := (*tilemap)[key]; exists {
+		return false, "Det finns redan placerade brickor på den här rutan", nil
+	}
+
+	if _, exists := (*roadblocks)[key]; exists {
+		return false, "Det finns redan placerade spärrar på den här rutan", nil
+	}
+
+	var affectedTeams []string // Håll koll på vilka motståndarlag vi störde
+
+	for teamName, team := range game.Teams {
+		if teamState == team {
+			continue
+		}
+
+		// Unlock the other teams placeholder
+		if tile, exists := team.Placeholders[key]; exists {
+			if letter, letterExists := team.Letters[tile.Id]; letterExists {
+				letter.IsLocked = false
+				letter.LockedBy = uuid.Nil
+				team.Letters[tile.Id] = letter
+			}
+
+			delete(team.Placeholders, key)
+			affectedTeams = append(affectedTeams, teamName)
+		}
+	}
+
+	duration := time.Duration(game.Settings.RoadblockDuration) * time.Second
+	expiresAt := time.Now().Add(duration).UnixMilli()
+
+	(*roadblocks)[key] = Roadblock{X: action.X, Y: action.Y, ExpiresAt: expiresAt, PlacedBy: action.Client.Id}
+
+	return true, "", affectedTeams
 }
