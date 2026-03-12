@@ -1,9 +1,7 @@
 package gameserver
 
 import (
-	"fmt"
 	"log"
-	"math/rand"
 	"sync"
 	"time"
 )
@@ -80,21 +78,6 @@ func (h *GameHub) Run() {
 			log.Printf("[Hub] Status — Open rooms: %d | Players in rooms: %d | Connected clients: %d", len(h.Rooms), h.totalPlayers(), len(h.clients))
 		}
 	}
-}
-
-// generateGameCode generates and returns a random, two-segment alphanumeric room code (e.g., ABCD-1234).
-func generateGameCode() string {
-	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-
-	segment := func() string {
-		b := make([]byte, 4)
-		for i := range b {
-			b[i] = chars[rand.Intn(len(chars))]
-		}
-		return string(b)
-	}
-
-	return fmt.Sprintf("%s-%s", segment(), segment())
 }
 
 // CreateUniqueRoom generates a unique game code, creates a new GameRoom,

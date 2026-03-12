@@ -1,0 +1,79 @@
+package gameserver
+
+import (
+	"encoding/json"
+	"fmt"
+	"math/rand"
+)
+
+// getTileKey formats the given x and y coordinates into a comma-separated string,
+// which is used as the unique key in the board maps.
+func getTileKey(x, y int) string {
+	return fmt.Sprintf("%d,%d", x, y)
+}
+
+// generateGameCode generates and returns a random, two-segment alphanumeric room code (e.g., ABCD-1234).
+func generateGameCode() string {
+	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+	segment := func() string {
+		b := make([]byte, 4)
+		for i := range b {
+			b[i] = chars[rand.Intn(len(chars))]
+		}
+		return string(b)
+	}
+
+	return fmt.Sprintf("%s-%s", segment(), segment())
+}
+
+// PrepareEvent wraps a given payload into an Event structure with the specified EventType.
+// It returns the JSON-marshaled byte slice of the final event, ready to be sent over the socket.
+func PrepareEvent(eventType EventType, payload any) []byte {
+	payloadBytes, _ := json.Marshal(payload)
+
+	updateEvent := Event{
+		Type:    eventType,
+		Payload: payloadBytes,
+	}
+
+	finalMessage, _ := json.Marshal(updateEvent)
+
+	return finalMessage
+}
+
+// combineBoards merges the newly placed tiles with the existing board tiles
+// to create a unified view of the board for word traversal and validation.
+func combineBoards(newTiles, board *map[string]PlacedTile) map[string]PlacedTile {
+	fullBoard := make(map[string]PlacedTile)
+	for k, v := range *board {
+		fullBoard[k] = v
+	}
+	for k, v := range *newTiles {
+		fullBoard[k] = v
+	}
+	return fullBoard
+}
+
+// scoreFromFrequency calculates a letter's score based on its frequency count relative
+// to the most common letter (maxCount). Rarer letters return higher scores.
+func scoreFromFrequency(count int, maxCount int) int {
+	ratio := float64(count) / float64(maxCount)
+
+	// Common letters score less -> rare letters score more
+	switch {
+
+	case ratio > 0.50:
+		return 1
+	case ratio > 0.25:
+		return 2
+	case ratio > 0.10:
+		return 3
+	case ratio > 0.04:
+		return 4
+	case ratio > 0.01:
+		return 6
+	default:
+		return 8
+	}
+}
