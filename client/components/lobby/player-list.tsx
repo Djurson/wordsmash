@@ -23,11 +23,11 @@ function PlayerCard({ username, isHost, userId }: User & { isHost: boolean }) {
       <PlayerAvatar name={username} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center">
-          <span className={`text-base truncate text-foreground ${user.userId === userId ? "font-extrabold" : "font-bold"}`}>{username}</span>
+          <span className={`text-base truncate text-foreground ${user.userId === userId ? "font-extrabold" : "font-bold"}`}>{user.userId === userId ? "Du" : username}</span>
         </div>
       </div>
       {isHost && (
-        <div className="flex items-center p-2 bg-primary/15 rounded-md">
+        <div className="flex items-center p-2 rounded-md bg-primary/15">
           <Crown className="size-6 text-primary shrink-0 stroke-3 " />
         </div>
       )}
@@ -36,9 +36,9 @@ function PlayerCard({ username, isHost, userId }: User & { isHost: boolean }) {
 }
 
 export function PlayerList() {
-  const { gamestate } = useGameContext();
+  const { gamestate, user } = useGameContext();
 
-  if (!gamestate) return;
+  if (!gamestate || !user) return;
 
   const teamAPlayers: User[] = [];
   const teamBPlayers: User[] = [];
@@ -52,7 +52,7 @@ export function PlayerList() {
   });
 
   return (
-    <div className="p-6 border shadow-sm rounded-2xl bg-card border-border flex-1">
+    <div className="flex-1 p-6 border shadow-sm rounded-2xl bg-card border-border">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <p className="text-base font-extrabold text-foreground">Lag A</p>

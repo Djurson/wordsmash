@@ -2,7 +2,7 @@
 
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Timer, Bomb } from "lucide-react";
+import { Timer, Bomb, Construction } from "lucide-react";
 import { GameSettings } from "@/lib/game/types";
 import { useGameContext } from "@/hooks/gamecontext";
 
@@ -15,8 +15,15 @@ const POWER_UPS = [
   {
     key: "enableBombs" as const,
     label: "Bomber",
-    description: "Placera bomber på ordbrickor",
+    description: "Placera bomber på brickor",
     icon: Bomb,
+    color: "#38bdf8",
+  },
+  {
+    key: "enableRoadblocks" as const,
+    label: "Spärrar",
+    description: "Placera spärrar på spelplanen",
+    icon: Construction,
     color: "#38bdf8",
   },
 ];
@@ -40,10 +47,28 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
           <span className="w-12 text-sm font-bold text-right text-foreground tabular-nums">{settings.timerMinutes} min</span>
         </div>
       </div>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Timer className="w-4 h-4 text-muted-foreground" />
+          Spärrtid
+        </div>
+        <div className="flex items-center gap-4">
+          <Slider
+            value={[settings.blockTime]}
+            onValueChange={([v]) => update("blockTime", v)}
+            min={5}
+            max={30}
+            step={1}
+            disabled={!(gamestate?.host === user?.userId) || !settings.enableRoadblocks}
+            className="flex-1"
+          />
+          <span className="w-12 text-sm font-bold text-right text-foreground tabular-nums">{settings.blockTime} sek</span>
+        </div>
+      </div>
 
       <div className="flex flex-col gap-2.5">
         <span className="text-sm font-semibold text-foreground">Special regler</span>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {POWER_UPS.map((powerUp) => {
             const Icon = powerUp.icon;
             const enabled = settings[powerUp.key];

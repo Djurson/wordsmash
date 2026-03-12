@@ -11,7 +11,8 @@ import (
 type TileState string
 
 const (
-	TEAMHANDSIZE int = 15
+	TEAMHANDSIZE       int = 15
+	ROUNDSTARTWAITTIME int = 5
 
 	TileStatePlaced      TileState = "placed"
 	TileStatePlaceholder TileState = "placeholder"
@@ -50,6 +51,14 @@ type Bomb struct {
 	PlacedBy string    `json:"placedBy"`
 }
 
+type Roadblock struct {
+	Id         uuid.UUID `json:"id"`
+	X          int       `json:"x"`
+	Y          int       `json:"y"`
+	PlacedBy   string    `json:"placedBy"`
+	PlacedTime int64     `json:"placedTime"`
+}
+
 type TeamLetter struct {
 	Id       uuid.UUID `json:"id"`
 	Letter   string    `json:"letter"`
@@ -62,16 +71,21 @@ type TeamState struct {
 	Score        int                      `json:"score"`
 	Letters      map[uuid.UUID]TeamLetter `json:"teamLetters"`
 	Placeholders map[string]PlacedTile    `json:"placeholders"`
+	Roadblocks   int                      `json:"roadblocks"`
+	Bombs        int                      `json:"bombs"`
 }
 
 type GameSettings struct {
-	TimerMinutes int  `json:"timerMinutes"`
-	EnableBombs  bool `json:"enableBombs"`
+	TimerMinutes     int  `json:"timerMinutes"`
+	EnableBombs      bool `json:"enableBombs"`
+	EnableRoadblocks bool `json:"enableRoadblocks"`
+	BlockTime        int  `json:"blockTime"`
 }
 
 type ServerGameState struct {
 	Board       map[string]PlacedTile
 	Bombs       map[string]Bomb
+	Roadblocks  map[string]Roadblock
 	Teams       map[string]*TeamState
 	GameId      string
 	Settings    GameSettings
@@ -87,6 +101,7 @@ type ServerGameState struct {
 type ClientGameState struct {
 	Board       map[string]PlacedTile `json:"board"`
 	Bombs       map[string]Bomb       `json:"bombs"`
+	Roadblocks  map[string]Roadblock  `json:"roadblocks"`
 	Team        *TeamState            `json:"team"`
 	GameId      string                `json:"gameId"`
 	Settings    GameSettings          `json:"settings"`
@@ -99,13 +114,12 @@ type ClientGameState struct {
 	Players     map[uuid.UUID]*User   `json:"players"`
 }
 
-const ROUNDSTARTWAITTIME int = 5
-
 func NewGameState(id string) *ServerGameState {
 	return &ServerGameState{
-		Board:   make(map[string]PlacedTile),
-		Bombs:   make(map[string]Bomb),
-		Players: make(map[uuid.UUID]*User),
+		Board:      make(map[string]PlacedTile),
+		Bombs:      make(map[string]Bomb),
+		Roadblocks: make(map[string]Roadblock),
+		Players:    make(map[uuid.UUID]*User),
 		Teams: map[string]*TeamState{
 			"a": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
 			"b": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
@@ -160,6 +174,7 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 	return ClientGameState{
 		Board:       game.Board,
 		Bombs:       game.Bombs,
+		Roadblocks:  game.Roadblocks,
 		Team:        game.Teams[team],
 		GameId:      game.GameId,
 		Settings:    game.Settings,
@@ -244,6 +259,7 @@ func GenerateRandomLetters(count int) []Letter {
 func (game *ServerGameState) ResetStatsAfterGameFinish() {
 	game.Board = make(map[string]PlacedTile)
 	game.Bombs = make(map[string]Bomb)
+	game.Roadblocks = make(map[string]Roadblock)
 	game.GameOver = false
 
 	game.GameStarted = false

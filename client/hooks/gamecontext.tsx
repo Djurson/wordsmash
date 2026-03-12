@@ -285,7 +285,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
   const handleRemoveSingleTileByLetterId = useCallback(
     (letterId: string) => {
-      const tileKey = Object.keys(localGameState.currentTurnTiles).find((key) => localGameState.currentTurnTiles[key].Id === letterId);
+      const tileKey = Object.keys(localGameState.currentTurnTiles).find((key) => localGameState.currentTurnTiles[key].id === letterId);
       if (tileKey) {
         handleRemoveSingleTile(tileKey, letterId);
       }
@@ -313,7 +313,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
       const targetKey = getTileKey(x, y);
       const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
-      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score, Id: letter.id };
+      const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score, id: letter.id };
       const updatedTurnTiles = { ...localGameState.currentTurnTiles, [targetKey]: newTile };
 
       updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });

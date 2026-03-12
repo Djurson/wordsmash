@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Repeat1, Shuffle } from "lucide-react";
+import { Bomb, Construction, Repeat1, Shuffle } from "lucide-react";
 import GameTile from "./game-tile";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -56,20 +56,24 @@ export function PlayerDock() {
             </Button>
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
+              disabled={gamestate.team.roadblocks === 0}
               onClick={handleShuffle}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-primary/10 transition-colors border border-border active:scale-95"
-              aria-label="Blanda brickor">
-              <Shuffle className="w-3.5 h-3.5" />
-              Blanda
-            </button>
-            <button
+              aria-label="Roadblocks">
+              <Construction className="size-5" />
+              Spärrar
+              <span className="text-sm text-muted-foreground">{gamestate.team.roadblocks ?? 0}</span>
+            </Button>
+            <Button
               onClick={handleTradeIn}
+              disabled={gamestate.team.roadblocks === 0}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tile-secondary text-foreground text-sm font-medium hover:bg-tile-secondary/10 transition-colors border border-border active:scale-95"
-              aria-label="Byt in">
-              <Repeat1 className="w-3.5 h-3.5" />
-              Byt in
-            </button>
+              aria-label="Bomber">
+              <Bomb className="size-5" />
+              Bomber
+              <span className="text-sm text-muted-foreground">{gamestate.team.bombs ?? 0}</span>
+            </Button>
           </div>
         </div>
 

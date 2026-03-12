@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, CircleQuestionMark, Info, Play, SendHorizonal, Sparkles, UserPlus } from "lucide-react";
+import { ArrowLeft, Info, Play, SendHorizonal, Sparkles, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGameContext } from "@/hooks/gamecontext";
@@ -25,7 +25,7 @@ export default function LobbyPage() {
   const [tab, setTab] = useState<string>("create");
   const [joinCode, setJoinCode] = useState("");
   const [username, setUsername] = useState("");
-  const [settings, setSettings] = useState(gamestate?.settings ?? { timerMinutes: 5, enableBombs: true });
+  const [settings, setSettings] = useState(gamestate?.settings ?? { timerMinutes: 5, enableBombs: true, enableRoadblocks: true, blockTime: 10 });
 
   const handleSettingChange = (newSettings: GameSettings) => {
     setSettings(newSettings);
@@ -51,11 +51,7 @@ export default function LobbyPage() {
   };
 
   if (connectionError) {
-    return (
-      <>
-        <LoadingIcon />
-      </>
-    );
+    return <LoadingIcon />;
   }
 
   return (

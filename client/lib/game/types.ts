@@ -1,5 +1,5 @@
 export interface PlacedTile {
-  Id: string;
+  id: string;
   letter: string;
   x: number;
   y: number;
@@ -9,9 +9,18 @@ export interface PlacedTile {
 }
 
 export interface Bomb {
+  id: string;
   x: number;
   y: number;
   placedBy: string;
+}
+
+export interface Roadblock {
+  id: string;
+  x: number;
+  y: number;
+  placedBy: string;
+  placedTime: number;
 }
 
 export type Direction = "vertical" | "horizontal";
@@ -27,6 +36,8 @@ export type TeamState = {
   score: number;
   teamLetters: Record<string, TeamLetter>;
   placeholders: Record<string, PlacedTile>;
+  bombs: number;
+  roadblocks: number;
 };
 
 export type TeamLetter = {
@@ -40,11 +51,14 @@ export type TeamLetter = {
 export type GameSettings = {
   timerMinutes: number;
   enableBombs: boolean;
+  enableRoadblocks: boolean;
+  blockTime: number;
 };
 
 export type GameState = {
   board: Record<string, PlacedTile>;
   bombs: Record<string, Bomb>;
+  roadblocks: Record<string, Roadblock>;
   team: TeamState;
   gameId: string;
   settings: GameSettings;
