@@ -1,4 +1,4 @@
-import { Bomb, Target, Timer, Users, Zap } from "lucide-react";
+import { Bomb, Construction, Target, Timer, Users, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { ReactNode } from "react";
 import { Kbd } from "../ui/kbd";
@@ -7,13 +7,12 @@ export function HowToPlay({ children }: { children: ReactNode }) {
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto md:max-w-2xl">
+      <DialogContent className="md:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold">Så spelar du Word Smash</DialogTitle>
           <DialogDescription>Ett snabbt och samarbetsbaserat ordspel minst 2 spelare</DialogDescription>
         </DialogHeader>
-
-        <div className="flex flex-col gap-6 mt-2">
+        <div className="flex flex-col gap-6 overflow-y-auto max-h-[70vh]">
           {/* Basic gameplay */}
           <section className="flex flex-col gap-3">
             <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
@@ -66,18 +65,27 @@ export function HowToPlay({ children }: { children: ReactNode }) {
           </section>
 
           {/* Power-ups */}
-          <section className="flex flex-col gap-3">
+          <section className="flex flex-col w-full gap-3">
             <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
               <Zap className="w-4 h-4 text-tile-foreground" />
               Power-ups
             </h3>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3 p-3 border-2 rounded-lg border-tile-primary bg-tile-primary/5">
+            <div className="flex flex-col w-full gap-3">
+              <div className="flex items-center w-[98%] gap-3 p-3 border-2 rounded-lg border-tile-primary bg-tile-primary/5">
                 <Bomb className="p-2 rounded-lg stroke-2 size-10 border-tile-primary bg-tile-primary/20 shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">Bomber</p>
                   <p className="text-xs text-muted-foreground">
                     Placera bomber på brickor som redan ligger på spelplanen. Nästa gång brickan används i ett ord sprängs brickorna bort. Men se upp, du kan inte se var du har placerat dina bomber.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center w-[98%] gap-3 p-3 border-2 rounded-lg border-tile-primary bg-tile-primary/5">
+                <Construction className="p-2 rounded-lg stroke-2 size-10 border-tile-primary bg-tile-primary/20 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Spärrar</p>
+                  <p className="text-xs text-muted-foreground">
+                    Placera spärrar på tomma rutor för att tillfälligt blockera dem. Ingen bricka kan placeras där förrän spärren försvinner efter några sekunder.
                   </p>
                 </div>
               </div>

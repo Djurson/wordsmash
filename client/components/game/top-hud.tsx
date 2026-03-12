@@ -48,7 +48,7 @@ export function TopHUD() {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 800, damping: 20 }}
       className="fixed z-50 flex flex-col items-center w-10/12 max-w-2xl mt-2 space-y-2">
-      <div className="flex flex-col w-full gap-2 px-4 py-3 border shadow-lg bg-card/80 backdrop-blur-xl border-border rounded-2xl md:px-6 md:py-4">
+      <div className="flex flex-col w-full px-4 py-3 border shadow-lg gap-2 bg-card/80 backdrop-blur-xl border-border rounded-2xl md:px-6 md:py-4">
         <div className="flex items-center justify-between">
           <TeamDisplay team="a" teamScore={teamAScore} />
           {/* Timer */}

@@ -26,6 +26,7 @@ export interface GameContextContextProps {
   handlePlaceTile: (x: number, y: number) => void;
   finalStats: FinalGameStats | null;
   handleSelectPowerup: (type: "bomb" | "roadblock" | null) => void;
+  handleSpecialAbilityPlacement: (type: "bomb" | "roadblock", x: number, y: number) => void;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -127,7 +128,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
             if (collision) {
               ToastError("Någon hann före! Dina brickor rensades.");
-              return { currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, selectedSpecialAbility: null, selectedPowerup: null };
+              return { currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, selectedPowerup: null };
             }
 
             return prevLocal;
@@ -295,10 +296,16 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
   const handleSelectPowerup = useCallback(
     (type: "bomb" | "roadblock" | null) => {
-      let locGame: Partial<LocalGameState> = localGameState;
+      // Om användaren klickar på samma powerup igen, stäng av den (toggle)
+      const newType = localGameState.selectedPowerup === type ? null : type;
 
-      if (type !== null) {
-        sendMessage("unlock_letter", null);
+      let locGame: Partial<LocalGameState> = { ...localGameState };
+
+      if (newType !== null) {
+        if (Object.keys(localGameState.currentTurnTiles).length > 0) {
+          sendMessage("unlock_letter", null);
+        }
+
         locGame = {
           currentTurnDirection: null,
           currentTurnTiles: {},
@@ -306,9 +313,21 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      updateLocalGameState({ ...locGame, selectedPowerup: type });
+      updateLocalGameState({ ...locGame, selectedPowerup: newType });
     },
     [localGameState, sendMessage, updateLocalGameState],
+  );
+
+  const handleSpecialAbilityPlacement = useCallback(
+    (type: "bomb" | "roadblock", x: number, y: number) => {
+      if (type === "bomb") {
+        sendMessage("submit_bomb", { x: x, y: y });
+      } else if (type === "roadblock") {
+        sendMessage("submit_roadblock", { x: x, y: y });
+      }
+      updateLocalGameState({ selectedPowerup: null });
+    },
+    [sendMessage, updateLocalGameState],
   );
 
   const value: GameContextContextProps = {
@@ -328,6 +347,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleRemoveSingleTileByLetterId,
     handleRemoveSingleTile,
     handleSelectPowerup,
+    handleSpecialAbilityPlacement,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

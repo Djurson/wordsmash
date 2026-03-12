@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import GameTile from "@/components/game/game-tile";
+import { HowToPlay } from "./how-to-play";
+import { Info } from "lucide-react";
 
 export function MenuHeader() {
   return (
@@ -17,13 +19,16 @@ export function MenuHeader() {
             ))}
           </div>
         </div>
-        {/* <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 800, damping: 20, delay: 0.5 }}
-          className="z-30 px-4 py-2 font-medium border rounded-full shadow-sm bg-white/90 backdrop-blur-md border-slate-200 text-slate-500">
-          <p className="text-sm font-medium text-muted-foreground">Bananagrams fast tillsammans med vänner!</p>
-        </motion.div> */}
+        <HowToPlay>
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 800, damping: 20, delay: 0.5 }}
+            className="z-30 flex items-center justify-center px-4 py-2 font-medium border rounded-full cursor-pointer shadow-sm bg-white/90 backdrop-blur-md border-slate-200 text-slate-500 gap-2">
+            <p className="text-sm font-medium text-muted-foreground">Hur spelar jag?</p>
+            <Info className="text-muted-foreground size-5" />
+          </motion.div>
+        </HowToPlay>
       </div>
     </header>
   );

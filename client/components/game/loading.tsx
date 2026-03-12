@@ -5,7 +5,7 @@ const TILES = ["W", "O", "R", "D", "S", "M", "A", "S", "H"];
 export function LoadingIcon() {
   return (
     <div
-      className="fixed inset-0 overflow-hidden touch-none min-h-screen flex items-center justify-center"
+      className="fixed inset-0 flex items-center justify-center min-h-screen overflow-hidden touch-none"
       style={{
         backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
         backgroundColor: "var(--background, var(--tile-secondary))",
@@ -20,7 +20,7 @@ export function LoadingIcon() {
             style={{
               animationDelay: `${i * 0.1}s`,
             }}>
-            <span className="font-bold text-3xl text-tile-foreground select-none">{letter}</span>
+            <span className="text-3xl font-bold select-none text-tile-foreground">{letter}</span>
           </div>
         ))}
       </div>

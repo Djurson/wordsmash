@@ -2,8 +2,10 @@ package gameserver
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"sync"
+	"time"
 )
 
 type Dictionary interface {
@@ -33,11 +35,15 @@ func NewHub(dict Dictionary) *GameHub {
 }
 
 func (h *GameHub) Run() {
+	statusTicker := time.NewTicker(30 * time.Second)
+	defer statusTicker.Stop()
+
 	for {
 		select {
 		// New Client Joins
 		case client := <-h.register:
 			h.clients[client] = true
+			log.Printf("[Hub] Client connected (id=%s). Connected: %d | Rooms open: %d | Players in rooms: %d", client.Id, len(h.clients), len(h.Rooms), h.totalPlayers())
 
 		// Client Disconnects
 		case client := <-h.unregister:
@@ -49,6 +55,7 @@ func (h *GameHub) Run() {
 				}
 				delete(h.clients, client)
 				close(client.send)
+				log.Printf("[Hub] Client disconnected (id=%s). Connected: %d | Rooms open: %d | Players in rooms: %d", client.Id, len(h.clients), len(h.Rooms), h.totalPlayers())
 			}
 
 		// Send message
@@ -62,6 +69,10 @@ func (h *GameHub) Run() {
 					delete(h.clients, client)
 				}
 			}
+
+		// Periodic status log
+		case <-statusTicker.C:
+			log.Printf("[Hub] Status — Open rooms: %d | Players in rooms: %d | Connected clients: %d", len(h.Rooms), h.totalPlayers(), len(h.clients))
 		}
 	}
 }
@@ -94,11 +105,21 @@ func (h *GameHub) CreateUniqueRoom() string {
 			h.Rooms[code] = newRoom
 
 			go newRoom.Run()
+			log.Printf("[Hub] Room created (code=%s). Open rooms: %d", code, len(h.Rooms))
+			// totalPlayers not counted here — room is empty at creation
 			break
 		}
 	}
 
 	return code
+}
+
+func (h *GameHub) totalPlayers() int {
+	total := 0
+	for _, room := range h.Rooms {
+		total += len(room.Clients)
+	}
+	return total
 }
 
 func (h *GameHub) GetRoom(code string) *GameRoom {
@@ -112,4 +133,5 @@ func (h *GameHub) DeleteRoom(code string) {
 	defer h.RoomsMutex.Unlock()
 
 	delete(h.Rooms, code)
+	log.Printf("[Hub] Room deleted (code=%s). Open rooms: %d | Players in rooms: %d", code, len(h.Rooms), h.totalPlayers())
 }

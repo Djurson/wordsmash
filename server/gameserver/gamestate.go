@@ -52,11 +52,11 @@ type Bomb struct {
 }
 
 type Roadblock struct {
-	Id         uuid.UUID `json:"id"`
-	X          int       `json:"x"`
-	Y          int       `json:"y"`
-	PlacedBy   string    `json:"placedBy"`
-	PlacedTime int64     `json:"placedTime"`
+	Id        uuid.UUID `json:"id"`
+	X         int       `json:"x"`
+	Y         int       `json:"y"`
+	PlacedBy  string    `json:"placedBy"`
+	ExpiresAt int64     `json:"expiresAt"`
 }
 
 type TeamLetter struct {
@@ -79,7 +79,7 @@ type GameSettings struct {
 	TimerMinutes      int  `json:"timerMinutes"`
 	EnableBombs       bool `json:"enableBombs"`
 	EnableRoadblocks  bool `json:"enableRoadblocks"`
-	RoadblockDuration int  `json:"blockTime"`
+	RoadblockDuration int  `json:"roadblockDuration"`
 }
 
 type ServerGameState struct {

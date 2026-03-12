@@ -52,23 +52,32 @@ export function PlayerDock() {
             </Button>
           </div>
           <div className="flex gap-2">
+            {/* Roadblock Button */}
             <Button
               disabled={gamestate.team.roadblocks === 0}
               onClick={() => handleSelectPowerup("roadblock")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-primary/10 transition-colors border border-border active:scale-95"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border active:scale-95 ${
+                localGameState.selectedPowerup === "roadblock" ? "bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30" : "bg-secondary text-foreground hover:bg-primary/10 border-border"
+              }`}
               aria-label="Roadblocks">
               <Construction className="size-5" />
               Spärrar
-              <span className="text-sm text-muted-foreground">{gamestate.team.roadblocks ?? 0}</span>
+              <span className={`text-sm ${localGameState.selectedPowerup === "roadblock" ? "text-red-500" : "text-muted-foreground"}`}>{gamestate.team.roadblocks ?? 0}</span>
             </Button>
+
+            {/* Bomb Button */}
             <Button
               disabled={gamestate.team.bombs === 0}
               onClick={() => handleSelectPowerup("bomb")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tile-secondary text-foreground text-sm font-medium hover:bg-tile-secondary/10 transition-colors border border-border active:scale-95"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border active:scale-95 ${
+                localGameState.selectedPowerup === "bomb"
+                  ? "bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30"
+                  : "bg-tile-secondary text-foreground hover:bg-tile-secondary/10 border-border"
+              }`}
               aria-label="Bomber">
               <Bomb className="size-5" />
               Bomber
-              <span className="text-sm text-muted-foreground">{gamestate.team.bombs ?? 0}</span>
+              <span className={`text-sm ${localGameState.selectedPowerup === "bomb" ? "text-red-500" : "text-muted-foreground"}`}>{gamestate.team.bombs ?? 0}</span>
             </Button>
           </div>
         </div>

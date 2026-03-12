@@ -75,13 +75,14 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
             return (
               <div
                 key={powerUp.key}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border-2 border-border ease-in-out duration-150 ${enabled ? "border-tile-primary bg-tile-primary/5 border-2" : ""}`}>
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-card border-2 border-border ease-in-out duration-150 ${enabled ? "border-tile-primary bg-tile-primary/5 border-2" : ""}`}
+                onClick={() => (gamestate?.host === user?.userId ? update(powerUp.key, !settings[powerUp.key]) : undefined)}>
                 <div className={`p-2 rounded-lg flex items-center justify-center shrink-0 ${enabled ? "border-tile-primary bg-tile-primary/20" : ""}`}>
                   <Icon className={`w-5 h-5 ${enabled ? "text-tile-foreground stroke-3" : "text-muted-foreground"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-foreground">{powerUp.label}</div>
-                  <div className="text-xs text-muted-foreground">{powerUp.description}</div>
+                  {!gamestate && <div className="text-xs text-muted-foreground">{powerUp.description}</div>}
                 </div>
                 <Switch checked={enabled} onCheckedChange={(e) => update(powerUp.key, e)} disabled={!(gamestate?.host === user?.userId)} />
               </div>

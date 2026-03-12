@@ -19,7 +19,7 @@ function PlayerCard({ username, isHost, userId }: User & { isHost: boolean }) {
   if (!user) return null;
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 transition-all border rounded-xl bg-card border-border hover:border-primary/30">
+    <div className="flex items-center px-4 py-3 border gap-4 transition-all rounded-xl bg-card border-border hover:border-primary/30">
       <PlayerAvatar name={username} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center">

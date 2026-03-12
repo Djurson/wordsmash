@@ -3,6 +3,7 @@ package gameserver
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sort"
 	"time"
 
@@ -110,6 +111,8 @@ func (r *GameRoom) Run() {
 			}
 			client.send <- PrepareEvent(JoinedGameEvent, joinResponse)
 
+			log.Printf("[Room %s] Player '%s' joined (team=%s). Players in room: %d", r.ID, client.Username, assignedTeam, len(r.Clients))
+
 			// Send out that the a new client has joined
 			for c := range r.Clients {
 				if c.Id != client.Id {
@@ -147,8 +150,11 @@ func (r *GameRoom) Run() {
 				client.Team = ""
 			}
 
+			log.Printf("[Room %s] Player '%s' left. Players remaining: %d", r.ID, client.Username, len(r.Clients))
+
 			// Delete the room if there are no other clients
 			if len(r.Clients) == 0 {
+				log.Printf("[Room %s] Room is empty, closing.", r.ID)
 				client.hub.DeleteRoom(r.ID)
 				return
 			}
@@ -346,6 +352,7 @@ func (r *GameRoom) Run() {
 			}
 
 			r.State.PreStartGame(hostClient.hub)
+			log.Printf("[Room %s] Game started. Players: %d", r.ID, len(r.Clients))
 
 			for c := range r.Clients {
 				c.send <- PrepareEvent(GameStartedEvent, r.State.ToClientState(c.Team))
@@ -482,6 +489,7 @@ func (r *GameRoom) Run() {
 						Winner:          winner,
 					}
 
+					log.Printf("[Room %s] Game over. Winner: %s. Score — A: %d, B: %d", r.ID, winner, teamPoints["a"], teamPoints["b"])
 					gameOverMessage := PrepareEvent(GameOverEvent, finalStats)
 					for client := range r.Clients {
 						client.send <- gameOverMessage

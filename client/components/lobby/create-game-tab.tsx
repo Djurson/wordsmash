@@ -15,7 +15,7 @@ interface CreateGameTabProps {
 
 export function CreateGameTab({ ...props }: CreateGameTabProps) {
   return (
-    <div className="flex flex-col gap-5 p-6 border shadow-sm rounded-2xl bg-card border-border">
+    <div className="flex flex-col p-6 border gap-5 shadow-sm rounded-2xl bg-card border-border">
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-extrabold text-foreground">Skapa Ett Nytt Spel</h2>
         <p className="text-sm text-muted-foreground">Skapa ett spel och låt dina vänner gå med</p>

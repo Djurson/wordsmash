@@ -4,11 +4,11 @@ import { useState, useRef, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ZoomControls } from "./zoom-controls";
 import GameTile from "./game-tile";
-import { CELL, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE } from "@/lib/game/utils";
+import { CELL, getTileKey, MAX_ZOOM_IN, MAX_ZOOM_OUT, TILE_SIZE, ZOOM_STEP } from "@/lib/game/utils";
 import { useGameContext } from "@/hooks/gamecontext";
 
 export function GameCanvas() {
-  const { localGameState, gamestate, user, handlePlaceTile, handleRemoveSingleTile } = useGameContext();
+  const { localGameState, gamestate, user, handlePlaceTile, handleSpecialAbilityPlacement } = useGameContext();
 
   const tiles = { ...(gamestate?.board ?? {}), ...(gamestate?.team.placeholders ?? {}), ...localGameState.currentTurnTiles };
 
@@ -52,7 +52,7 @@ export function GameCanvas() {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (localGameState.selectedLetterId) {
+      if (localGameState.selectedLetterId || localGameState.selectedPowerup) {
         const cell = screenToGrid(e.clientX, e.clientY);
         setHoverCell(cell);
       } else {
@@ -68,7 +68,7 @@ export function GameCanvas() {
 
       setOffset({ x: offsetStartRef.current.x + dx, y: offsetStartRef.current.y + dy });
     },
-    [isPanning, localGameState.selectedLetterId, screenToGrid],
+    [isPanning, localGameState.selectedLetterId, localGameState.selectedPowerup, screenToGrid],
   );
 
   const handlePointerUp = useCallback(
@@ -76,12 +76,15 @@ export function GameCanvas() {
       setIsPanning(false);
       containerRef.current?.releasePointerCapture(e.pointerId);
 
-      if (!hasDragged.current && localGameState.selectedLetterId) {
+      if (!hasDragged.current) {
         const cell = screenToGrid(e.clientX, e.clientY);
-        handlePlaceTile(cell.x, cell.y);
+
+        if (localGameState.selectedLetterId) handlePlaceTile(cell.x, cell.y);
+        else if (localGameState.selectedPowerup === "bomb") handleSpecialAbilityPlacement("bomb", cell.x, cell.y);
+        else if (localGameState.selectedPowerup === "roadblock") handleSpecialAbilityPlacement("roadblock", cell.x, cell.y);
       }
     },
-    [localGameState.selectedLetterId, screenToGrid, handlePlaceTile],
+    [localGameState.selectedLetterId, screenToGrid, handlePlaceTile, handleSpecialAbilityPlacement],
   );
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -89,14 +92,17 @@ export function GameCanvas() {
     setZoom((prev) => Math.max(MAX_ZOOM_OUT, Math.min(MAX_ZOOM_IN, prev + delta)));
   }, []);
 
-  const hoverOccupied = hoverCell ? !!tiles[getTileKey(hoverCell.x, hoverCell.y)] : false;
+  const hoverKey = hoverCell ? getTileKey(hoverCell.x, hoverCell.y) : null;
+  const hoverOccupied = hoverKey ? !!tiles[hoverKey] : false;
+  const hoverBlocked = hoverKey ? !!gamestate?.roadblocks && !!gamestate.roadblocks[hoverKey] : false;
+  const isHoldingTool = localGameState.selectedLetterId || localGameState.selectedPowerup;
 
   if (!gamestate || !user) return;
 
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 overflow-hidden touch-none ${isPanning ? "cursor-grabbing" : localGameState.selectedLetterId ? "cursor-crosshair" : "cursor-grab"}`}
+      className={`fixed inset-0 overflow-hidden touch-none ${isPanning ? "cursor-grabbing" : isHoldingTool ? "cursor-crosshair" : "cursor-grab"}`}
       style={{
         backgroundImage: "radial-gradient(circle, var(--canvas-dot, #cbd5e1) 1.5px, transparent 1.5px)",
         backgroundColor: "var(--background, --tile-secondary))",
@@ -109,45 +115,47 @@ export function GameCanvas() {
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}>
       <div className="absolute" style={{ left: "50%", top: "50%", transformOrigin: "0 0", transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}>
-        {localGameState.selectedLetterId && hoverCell && !hoverOccupied && (
+        {/* --- GHOST PREVIEWS --- */}
+        {hoverCell && (
           <div
-            style={{
-              position: "absolute",
-              left: hoverCell.x * CELL,
-              top: hoverCell.y * CELL,
-              width: TILE_SIZE,
-              height: TILE_SIZE,
-              transform: `translate(-50%, -50%)`,
-              zIndex: 15,
-            }}
+            style={{ position: "absolute", left: hoverCell.x * CELL, top: hoverCell.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 15 }}
             className="pointer-events-none">
-            <GameTile letter={gamestate?.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" score={gamestate.team.teamLetters[localGameState.selectedLetterId].score} />
+            {/* 1. Preview Letter Tile */}
+            {localGameState.selectedLetterId && !hoverOccupied && !hoverBlocked && (
+              <GameTile letter={gamestate.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" score={gamestate.team.teamLetters[localGameState.selectedLetterId].score} />
+            )}
+
+            {/* 2. Preview Roadblock */}
+            {localGameState.selectedPowerup === "roadblock" && !hoverOccupied && !hoverBlocked && <GameTile state="roadblock-hover" />}
+
+            {/* 3. Preview Bomb */}
+            {localGameState.selectedPowerup === "bomb" && hoverOccupied && <GameTile state="bomb-hover" />}
           </div>
         )}
 
+        {/* Draw all roadblocks */}
+        <AnimatePresence>
+          {gamestate.roadblocks &&
+            Object.values(gamestate.roadblocks).map((rb) => (
+              <div key={`rb-${rb.x}-${rb.y}`} style={{ position: "absolute", left: rb.x * CELL, top: rb.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 9 }}>
+                <GameTile state="roadblock" expiresAt={rb.expiresAt} />
+              </div>
+            ))}
+        </AnimatePresence>
+
         {/* Draw the placed letters */}
         <AnimatePresence>
-          {Object.values(tiles).map((tile) => {
-            return (
-              <div
-                key={`${tile.letter}-${tile.state}-${tile.x}-${tile.y}`}
-                style={{
-                  position: "absolute",
-                  left: tile.x * CELL,
-                  top: tile.y * CELL,
-                  width: TILE_SIZE,
-                  height: TILE_SIZE,
-                  transform: `translate(-50%, -50%)`,
-                  zIndex: 10,
-                }}>
-                <GameTile letter={tile.letter} state={tile.state} score={tile.score} />
-              </div>
-            );
-          })}
+          {Object.values(tiles).map((tile) => (
+            <div
+              key={`${tile.letter}-${tile.state}-${tile.x}-${tile.y}`}
+              style={{ position: "absolute", left: tile.x * CELL, top: tile.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 10 }}>
+              <GameTile letter={tile.letter} state={tile.state} score={tile.score} />
+            </div>
+          ))}
         </AnimatePresence>
       </div>
 
-      <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(MAX_ZOOM_IN, prev + 0.2))} onZoomOut={() => setZoom((prev) => Math.max(MAX_ZOOM_OUT, prev - 0.2))} />
+      <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(MAX_ZOOM_IN, prev + ZOOM_STEP))} onZoomOut={() => setZoom((prev) => Math.max(MAX_ZOOM_OUT, prev - ZOOM_STEP))} />
     </div>
   );
 }

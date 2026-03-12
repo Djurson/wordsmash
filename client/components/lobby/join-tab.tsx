@@ -24,7 +24,7 @@ export function JoinTab({ ...props }: JoinTabProps) {
   const isJoinCodeValid = formattedJoinCode.length === 9;
 
   return (
-    <div className="flex flex-col gap-5 p-6 border shadow-sm rounded-2xl bg-card border-border">
+    <div className="flex flex-col p-6 border gap-5 shadow-sm rounded-2xl bg-card border-border">
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-extrabold text-foreground">Gå Med I Ett Spel</h2>
         <p className="text-sm text-muted-foreground">Skriv in koden din vän delat med dig</p>

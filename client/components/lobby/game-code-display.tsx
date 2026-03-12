@@ -20,7 +20,8 @@ export function GameCodeDisplay() {
     <div className="p-6 border shadow-sm rounded-2xl bg-card border-border">
       <div className="flex flex-col items-center gap-4">
         <div className="flex flex-col items-center gap-1">
-          <h2 className="text-lg font-extrabold text-foreground">Spelkod</h2>
+          {/* <h2 className="text-lg font-extrabold text-foreground">Spelkod</h2> */}
+          {copied && <span className="absolute px-4 py-1.5 text-xs font-medium rounded-md text-tile-foreground bg-tile-primary z-100 mt-4.5">Kopierat!</span>}
           <p className="text-xs text-muted-foreground">Dela din kod för att bjuda in vänner</p>
         </div>
         <button
@@ -43,7 +44,7 @@ export function GameCodeDisplay() {
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </div>
         </button>
-        {copied && <span className="absolute px-2 py-1 text-xs font-medium -translate-x-1/2 rounded-md -top-8 left-1/2 text-card bg-foreground">Kopierat!</span>}
+        {/* <p className="text-xs text-muted-foreground">Dela din kod för att bjuda in vänner</p> */}
       </div>
     </div>
   );

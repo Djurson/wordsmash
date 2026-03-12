@@ -19,7 +19,7 @@ export type WSSendPayloadMap = {
   update_settings: GameSettings;
   lock_letter: { letterId: string; placement: Record<string, PlacedTile> };
   submit_turn: { newTiles: Record<string, PlacedTile> };
-  sumbit_bomb: { x: number; y: number };
+  submit_bomb: { x: number; y: number };
   submit_roadblock: { x: number; y: number };
   leave_room: null;
   start_game: null;
