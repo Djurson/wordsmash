@@ -119,7 +119,10 @@ func (r *GameRoom) Run() {
 				User:      newUser,
 				Message:   "Du gick med i spelet!",
 			}
-			client.send <- PrepareEvent(JoinedGameEvent, joinResponse)
+
+			if client.Id != r.State.Host {
+				client.send <- PrepareEvent(JoinedGameEvent, joinResponse)
+			}
 
 			log.Printf("[Room %s] Player '%s' joined (team=%s). Players in room: %d", r.ID, client.Username, assignedTeam, len(r.Clients))
 
@@ -205,23 +208,95 @@ func (r *GameRoom) Run() {
 
 		// A client has sent a new move
 		case submitTurnAction := <-r.ProcessMove:
+			if _, exists := r.State.Players[submitTurnAction.Client.Id]; !exists {
+				continue
+			}
+
 			if r.State.GameOver {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
+				r.UnlockLetter <- submitTurnAction.Client
 				continue
 			}
 
 			isValid, message := isValidPlacement(submitTurnAction, &r.State.Board, &r.State.Roadblocks)
 			if !isValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
+				r.UnlockLetter <- submitTurnAction.Client
 				continue
 			}
 
-			// Check for bombs
+			containsBombs, message, placedByUserId := wordContainsBomb(&submitTurnAction.NewTiles, &r.State.Board, &r.State.Bombs)
+			if containsBombs {
+				placedBombUser := r.State.Players[placedByUserId]
+				triggeredExplosionUser := r.State.Players[submitTurnAction.Client.Id]
+
+				placedBombUser.ExplosionsCaused++
+				triggeredExplosionUser.TriggeredExplosions++
+
+				triggeredExplosionUser.Score -= EXPLOSIONCAUSEDPOINTS
+				r.State.Teams[triggeredExplosionUser.Team].Score -= EXPLOSIONCAUSEDPOINTS
+
+				r.State.Players[submitTurnAction.Client.Id] = triggeredExplosionUser
+
+				// Send information about bomb detonation (toast)
+				if r.State.Players[placedByUserId].Team == submitTurnAction.Client.Team {
+					r.State.Players[placedByUserId] = placedBombUser
+
+					for c := range r.Clients {
+						if c.Team == triggeredExplosionUser.Team && c.Id != triggeredExplosionUser.UserId {
+							c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+						} else if c.Id == submitTurnAction.Client.Id {
+							c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": fmt.Sprintf("Du detonerade %s bomb", triggeredExplosionUser.Username)})
+						} else {
+							c.send <- PrepareEvent(SuccessEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+						}
+					}
+				} else {
+					placedBombUser.Score += EXPLOSIONCAUSEDPOINTS
+					r.State.Teams[placedBombUser.Team].Score += EXPLOSIONCAUSEDPOINTS
+
+					r.State.Players[placedByUserId] = placedBombUser
+
+					for c := range r.Clients {
+						if c.Team == submitTurnAction.Client.Team {
+							c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+						} else {
+							c.send <- PrepareEvent(SuccessEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+						}
+					}
+				}
+
+				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
+				placeholders := removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
+				r.State.Teams[submitTurnAction.Client.Team].Placeholders = placeholders
+
+				// Remove letters from the hand
+				teamLetters := r.State.Teams[submitTurnAction.Client.Team].Letters
+				for _, tile := range submitTurnAction.NewTiles {
+					removePlaceholdersByLetterId(tile.Id, r.State.Teams[submitTurnAction.Client.Team])
+					delete(teamLetters, tile.Id)
+				}
+
+				// Draw new letters
+				newLettersNeeded := len(submitTurnAction.NewTiles)
+				drawnLetters := GenerateRandomLetters(newLettersNeeded)
+				for _, drawnLetter := range drawnLetters {
+					newID := uuid.New()
+					teamLetters[newID] = TeamLetter{Id: newID, Letter: string(drawnLetter.Rune), IsLocked: false, LockedBy: uuid.Nil, Score: drawnLetter.Score}
+				}
+				r.State.Teams[submitTurnAction.Client.Team].Letters = teamLetters
+
+				// Update board
+				for client := range r.Clients {
+					client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
+				}
+			}
 
 			wordsCreated, moveScore := extractWordsAndScore(&submitTurnAction.NewTiles, &r.State.Board)
 
 			if len(wordsCreated) == 0 {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Du måste bilda ett ord på minst 2 bokstäver"})
+				r.UnlockLetter <- submitTurnAction.Client
 				continue
 			}
 
@@ -237,6 +312,7 @@ func (r *GameRoom) Run() {
 
 			if !wordsValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bildat ett ogiltigt ord"})
+				r.UnlockLetter <- submitTurnAction.Client
 				continue
 			}
 
@@ -244,18 +320,12 @@ func (r *GameRoom) Run() {
 			r.State.Teams[submitTurnAction.Client.Team].Score += moveScore
 
 			// Clear placeholders
-			placeholders := r.State.Teams[submitTurnAction.Client.Team].Placeholders
-			for key, tile := range placeholders {
-				if tile.PlacedBy == submitTurnAction.Client.Id.String() {
-					delete(placeholders, key)
-				}
-			}
+			placeholders := removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
 			r.State.Teams[submitTurnAction.Client.Team].Placeholders = placeholders
 
-			if player, exists := r.State.Players[submitTurnAction.Client.Id]; exists {
-				player.Score += moveScore
-				player.TilesPlaced += len(submitTurnAction.NewTiles)
-			}
+			player := r.State.Players[submitTurnAction.Client.Id]
+			player.Score += moveScore
+			player.TilesPlaced += len(submitTurnAction.NewTiles)
 
 			// Add the tiles to the board
 			for _, tile := range submitTurnAction.NewTiles {
@@ -264,73 +334,25 @@ func (r *GameRoom) Run() {
 			}
 
 			// Remove placeholders (if the collide)
-			for teamName, teamState := range r.State.Teams {
-				if teamName == submitTurnAction.Client.Team {
-					continue
-				}
+			removeCollidingPlaceholders(submitTurnAction.Client.Team, r)
 
-				teamWasPudlad := false
-				placeholders := teamState.Placeholders
-				letters := teamState.Letters
-
-				for key, pTile := range placeholders {
-					// Check for collision
-					if _, exists := r.State.Board[key]; exists {
-
-						// Unlock letter
-						if letter, exists := letters[pTile.Id]; exists {
-							letter.IsLocked = false
-							letter.LockedBy = uuid.Nil
-							letters[pTile.Id] = letter
-						}
-
-						delete(placeholders, key)
-						teamWasPudlad = true
-					}
-				}
-
-				if teamWasPudlad {
-					r.State.Teams[teamName].Placeholders = placeholders
-					r.State.Teams[teamName].Letters = letters
-
-					teamMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
-						TeamLetters:  letters,
-						Placeholders: placeholders,
-					})
-					for c := range r.Clients {
-						if c.Team == teamName {
-							c.send <- teamMessage
-						}
-					}
-				}
-			}
-
+			// Remove letters from the hand
 			teamLetters := r.State.Teams[submitTurnAction.Client.Team].Letters
 			for _, tile := range submitTurnAction.NewTiles {
 				delete(teamLetters, tile.Id)
 			}
 
+			// Draw new letters
 			newLettersNeeded := len(submitTurnAction.NewTiles)
 			drawnLetters := GenerateRandomLetters(newLettersNeeded)
-
 			for _, drawnLetter := range drawnLetters {
 				newID := uuid.New()
 				teamLetters[newID] = TeamLetter{Id: newID, Letter: string(drawnLetter.Rune), IsLocked: false, LockedBy: uuid.Nil, Score: drawnLetter.Score}
 			}
-
 			r.State.Teams[submitTurnAction.Client.Team].Letters = teamLetters
+
 			for client := range r.Clients {
 				client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
-			}
-
-			teamMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
-				TeamLetters:  teamLetters,
-				Placeholders: r.State.Teams[submitTurnAction.Client.Team].Placeholders,
-			})
-			for client := range r.Clients {
-				if client.Team == submitTurnAction.Client.Team {
-					client.send <- teamMessage
-				}
 			}
 
 		case payload := <-r.UpdateSettings:
@@ -401,7 +423,7 @@ func (r *GameRoom) Run() {
 
 			for key, tile := range action.Placement {
 				tile.State = TileStatePlaceholder
-				tile.PlacedBy = client.Id.String()
+				tile.PlacedBy = client.Id
 				r.State.Teams[client.Team].Placeholders[key] = tile
 			}
 
@@ -434,13 +456,7 @@ func (r *GameRoom) Run() {
 				}
 			}
 
-			placeholders := r.State.Teams[client.Team].Placeholders
-			for key, tile := range placeholders {
-				if tile.PlacedBy == client.Id.String() {
-					delete(placeholders, key)
-					changed = true
-				}
-			}
+			placeholders := removePlaceholdersPlacedByClient(client, r.State)
 			r.State.Teams[client.Team].Placeholders = placeholders
 
 			// Only send update if something changed
@@ -460,47 +476,9 @@ func (r *GameRoom) Run() {
 				if now >= r.State.EndTime {
 					r.State.GameOver = true
 
-					var topTileUser, topScoreUser *User
+					finalStats := r.State.GetFinalStats()
 
-					for _, player := range r.State.Players {
-						if topTileUser == nil || player.TilesPlaced > topTileUser.TilesPlaced {
-							topTileUser = player
-						}
-						if topScoreUser == nil || player.Score > topScoreUser.Score {
-							topScoreUser = player
-						}
-					}
-
-					mostPlacedTiles := Stat{Username: "Ingen", Value: 0}
-					if topTileUser != nil && topTileUser.TilesPlaced > 0 {
-						mostPlacedTiles = Stat{Username: topTileUser.Username, Value: topTileUser.TilesPlaced}
-					}
-
-					mostPoints := Stat{Username: "Ingen", Value: 0}
-					if topScoreUser != nil && topScoreUser.Score > 0 {
-						mostPoints = Stat{Username: topScoreUser.Username, Value: topScoreUser.Score}
-					}
-
-					teamPoints := map[string]int{
-						"a": r.State.Teams["a"].Score,
-						"b": r.State.Teams["b"].Score,
-					}
-
-					winner := "tie"
-					if teamPoints["a"] > teamPoints["b"] {
-						winner = "a"
-					} else if teamPoints["b"] > teamPoints["a"] {
-						winner = "b"
-					}
-
-					finalStats := FinalGameStats{
-						MostPlacedTiles: mostPlacedTiles,
-						MostPoints:      mostPoints,
-						TeamPoints:      teamPoints,
-						Winner:          winner,
-					}
-
-					log.Printf("[Room %s] Game over. Winner: %s. Score — A: %d, B: %d", r.ID, winner, teamPoints["a"], teamPoints["b"])
+					log.Printf("[Room %s] Game over. Winner: %s. Score — A: %d, B: %d", r.ID, finalStats.Winner, finalStats.TeamPoints["a"], finalStats.TeamPoints["b"])
 					gameOverMessage := PrepareEvent(GameOverEvent, finalStats)
 					for client := range r.Clients {
 						client.send <- gameOverMessage
@@ -530,7 +508,7 @@ func (r *GameRoom) Run() {
 
 			placeholders := r.State.Teams[client.Team].Placeholders
 			if tile, exists := placeholders[action.TileKey]; exists {
-				if tile.PlacedBy == client.Id.String() {
+				if tile.PlacedBy == client.Id {
 					delete(placeholders, action.TileKey)
 					changed = true
 				}
@@ -555,11 +533,29 @@ func (r *GameRoom) Run() {
 		case action := <-r.UpdateSpecialTiles:
 			switch action.Type {
 			case BombEffect:
-				// TODO: Implement placing bombs
+				teamState := r.State.Teams[action.Client.Team]
+				placed, message := tryPlaceBomb(action, &r.State.Bombs, teamState)
+
+				if !placed {
+					action.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
+				} else {
+					// Bomb was placed
+					user := r.State.Players[action.Client.Id]
+					user.PlacedBombs++
+					teamState.Bombs--
+
+					// Update the team
+					for client := range r.Clients {
+						if client.Team == action.Client.Team {
+							client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
+						}
+					}
+				}
 				continue
 
 			case RoadblockEffect:
 				// TODO: Implement placing roadblocks
+				// TODO: Increment user roadblocks
 				continue
 			}
 		}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"sort"
+
+	"github.com/google/uuid"
 )
 
 // getTileKey formats the given x and y coordinates into a comma-separated string,
@@ -168,40 +170,40 @@ func extractWordAt(startX, startY int, horizontal bool, fullBoard *map[string]Pl
 
 // wordContainsBomb checks if any of the new tiles are placed on top of active bombs.
 // It returns a boolean flag and a string message.
-func wordContainsBomb(newTiles *map[string]PlacedTile, placedTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
+func wordContainsBomb(newTiles *map[string]PlacedTile, placedTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string, uuid.UUID) {
 	if len(*bombs) == 0 {
-		return false, ""
+		return false, "", uuid.Nil
 	}
 
 	fullBoard := combineBoards(newTiles, placedTiles)
 	firstTile, isHorizontal := getPlacementDetails(newTiles)
 
-	// Simplified inner helper using getWordTiles
-	checkLineForBomb := func(startX, startY int, checkHorizontal bool) (bool, string) {
-		wordTiles := getWordTiles(startX, startY, checkHorizontal, &fullBoard)
-
-		for _, tile := range wordTiles {
-			key := getTileKey(tile.X, tile.Y)
-			if _, isBomb := (*bombs)[key]; isBomb {
-				return true, fmt.Sprintf("Du använde en bricka med en bomb på (%d, %d)!", tile.X, tile.Y)
-			}
-		}
-		return false, ""
-	}
-
 	// Check the main word line
-	if hasBomb, msg := checkLineForBomb(firstTile.X, firstTile.Y, isHorizontal); hasBomb {
-		return true, msg
+	if hasBomb, msg, placedByUserId := checkLineForBomb(firstTile.X, firstTile.Y, isHorizontal, &fullBoard, bombs); hasBomb {
+		return true, msg, placedByUserId
 	}
 
 	// Check all perpendicular cross-words formed by each new tile
 	for _, tile := range *newTiles {
-		if hasBomb, msg := checkLineForBomb(tile.X, tile.Y, !isHorizontal); hasBomb {
-			return true, msg
+		if hasBomb, msg, placedByUserId := checkLineForBomb(tile.X, tile.Y, !isHorizontal, &fullBoard, bombs); hasBomb {
+			return true, msg, placedByUserId
 		}
 	}
 
-	return false, ""
+	return false, "", uuid.Nil
+}
+
+func checkLineForBomb(startX, startY int, checkHorizontal bool, fullBoard *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string, uuid.UUID) {
+	wordTiles := getWordTiles(startX, startY, checkHorizontal, fullBoard)
+
+	for _, tile := range wordTiles {
+		key := getTileKey(tile.X, tile.Y)
+		if bomb, isBomb := (*bombs)[key]; isBomb {
+			delete(*bombs, key)
+			return true, "Du använde en bricka med en bomb!", bomb.PlacedBy
+		}
+	}
+	return false, "", uuid.Nil
 }
 
 // getPlacementDetails analyzes the new tiles to determine the first placed tile
@@ -280,4 +282,85 @@ func combineBoards(newTiles, board *map[string]PlacedTile) map[string]PlacedTile
 		fullBoard[k] = v
 	}
 	return fullBoard
+}
+
+func tryPlaceBomb(action *SubmitSpecialEffectAction, bombs *map[string]Bomb, teamState *TeamState) (bool, string) {
+	if teamState.Bombs <= 0 {
+		return false, "Ditt lag har inga bomber kvar att placera"
+	}
+
+	key := getTileKey(action.X, action.Y)
+
+	if existingBomb, isBomb := (*bombs)[key]; isBomb {
+		if existingBomb.Team == action.Client.Team {
+			return false, "Ni har redan placerat en bomb på den här rutan"
+		}
+	}
+
+	(*bombs)[key] = Bomb{X: action.X, Y: action.Y, Team: action.Client.Team, PlacedBy: action.Client.Id}
+
+	return true, ""
+}
+
+func removePlaceholdersPlacedByClient(c *Client, game *ServerGameState) map[string]PlacedTile {
+	placeholders := game.Teams[c.Team].Placeholders
+
+	for key, tile := range placeholders {
+		if tile.PlacedBy == c.Id {
+			delete(placeholders, key)
+		}
+	}
+
+	return placeholders
+}
+
+func removePlaceholdersByLetterId(id uuid.UUID, teamState *TeamState) {
+	for key, placeholder := range teamState.Placeholders {
+		if placeholder.Id == id {
+			delete(teamState.Placeholders, key)
+		}
+	}
+}
+
+func removeCollidingPlaceholders(submitTeam string, room *GameRoom) {
+	for teamName, teamState := range room.State.Teams {
+		if teamName == submitTeam {
+			continue
+		}
+
+		teamWasPudlad := false
+		placeholders := teamState.Placeholders
+		letters := teamState.Letters
+
+		for key, pTile := range placeholders {
+			// Check for collision
+			if _, exists := room.State.Board[key]; exists {
+
+				// Unlock letter
+				if letter, exists := letters[pTile.Id]; exists {
+					letter.IsLocked = false
+					letter.LockedBy = uuid.Nil
+					letters[pTile.Id] = letter
+				}
+
+				delete(placeholders, key)
+				teamWasPudlad = true
+			}
+		}
+
+		if teamWasPudlad {
+			room.State.Teams[teamName].Placeholders = placeholders
+			room.State.Teams[teamName].Letters = letters
+
+			teamMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{
+				TeamLetters:  letters,
+				Placeholders: placeholders,
+			})
+			for c := range room.Clients {
+				if c.Team == teamName {
+					c.send <- teamMessage
+				}
+			}
+		}
+	}
 }

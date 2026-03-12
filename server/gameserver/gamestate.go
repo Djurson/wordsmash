@@ -15,6 +15,8 @@ const (
 	TEAMHANDSIZE       int = 15
 	ROUNDSTARTWAITTIME int = 5
 
+	EXPLOSIONCAUSEDPOINTS int = 5
+
 	TileStatePlaced      TileState = "placed"
 	TileStatePlaceholder TileState = "placeholder"
 
@@ -26,11 +28,15 @@ var letterBag []Letter
 var letterScores map[rune]int
 
 type User struct {
-	Username    string    `json:"username"`
-	UserId      uuid.UUID `json:"userId"`
-	Team        string    `json:"team"`
-	Score       int       `json:"score"`
-	TilesPlaced int       `json:"tilesPlaced"`
+	Username            string    `json:"username"`
+	UserId              uuid.UUID `json:"userId"`
+	Team                string    `json:"team"`
+	Score               int       `json:"score"`
+	TilesPlaced         int       `json:"tilesPlaced"`
+	PlacedBombs         int       `json:"placedBombs"`
+	PlacedRoadBlocks    int       `json:"placedRoadblocks"`
+	TriggeredExplosions int       `json:"triggeredExplosions"`
+	ExplosionsCaused    int       `json:"explosionsCaused"`
 }
 
 type Letter struct {
@@ -44,22 +50,21 @@ type PlacedTile struct {
 	X        int       `json:"x"`
 	Y        int       `json:"y"`
 	State    TileState `json:"state"`
-	PlacedBy string    `json:"placedBy,omitempty"`
+	PlacedBy uuid.UUID `json:"placedBy,omitempty"`
 	Score    int       `json:"score"`
 }
 
 type Bomb struct {
-	Id       uuid.UUID `json:"id"`
+	PlacedBy uuid.UUID `json:"id"`
 	X        int       `json:"x"`
 	Y        int       `json:"y"`
-	PlacedBy string    `json:"placedBy"`
+	Team     string    `json:"team"`
 }
 
 type Roadblock struct {
-	Id        uuid.UUID `json:"id"`
+	PlacedBy  uuid.UUID `json:"placedBy"`
 	X         int       `json:"x"`
 	Y         int       `json:"y"`
-	PlacedBy  string    `json:"placedBy"`
 	ExpiresAt int64     `json:"expiresAt"`
 }
 
@@ -104,6 +109,7 @@ type ServerGameState struct {
 // Used to send information to client (only about their team)
 type ClientGameState struct {
 	Board       map[string]PlacedTile `json:"board"`
+	Bombs       map[string]Bomb       `json:"bombs"`
 	Roadblocks  map[string]Roadblock  `json:"roadblocks"`
 	Team        *TeamState            `json:"team"`
 	GameId      string                `json:"gameId"`
@@ -161,7 +167,7 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 			Letter:   string(r),
 			X:        x - startX,
 			Y:        0,
-			PlacedBy: "",
+			PlacedBy: uuid.Nil,
 			State:    TileStatePlaced,
 			Score:    letterScores[r],
 			Id:       uuid.New(),
@@ -183,8 +189,16 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 		totalScore += t.Score
 	}
 
+	filteredBombs := make(map[string]Bomb)
+	for key, bomb := range game.Bombs {
+		if bomb.Team == team {
+			filteredBombs[key] = bomb
+		}
+	}
+
 	return ClientGameState{
 		Board:       game.Board,
+		Bombs:       filteredBombs,
 		Roadblocks:  game.Roadblocks,
 		Team:        game.Teams[team],
 		GameId:      game.GameId,
@@ -196,35 +210,6 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 		StartTime:   game.StartTime,
 		TotalScore:  totalScore,
 		Players:     game.Players,
-	}
-}
-
-// getTileKey formats the given x and y coordinates into a comma-separated string,
-// which is used as the unique key in the board maps.
-func getTileKey(x, y int) string {
-	return fmt.Sprintf("%d,%d", x, y)
-}
-
-// scoreFromFrequency calculates a letter's score based on its frequency count relative
-// to the most common letter (maxCount). Rarer letters return higher scores.
-func scoreFromFrequency(count int, maxCount int) int {
-	ratio := float64(count) / float64(maxCount)
-
-	// Common letters score less -> rare letters score more
-	switch {
-
-	case ratio > 0.50:
-		return 1
-	case ratio > 0.25:
-		return 2
-	case ratio > 0.10:
-		return 3
-	case ratio > 0.04:
-		return 4
-	case ratio > 0.01:
-		return 6
-	default:
-		return 8
 	}
 }
 
@@ -296,5 +281,87 @@ func (game *ServerGameState) ResetStatsAfterGameFinish() {
 	for _, p := range game.Players {
 		p.Score = 0
 		p.TilesPlaced = 0
+	}
+}
+
+// GetFinalStats summarises the game and gets the game stats such as top scorer, top bomb placer etc
+// and returns a FinalGameStats payload for a game over event
+func (game *ServerGameState) GetFinalStats() FinalGameStats {
+	var topTileUser, topScoreUser, topBombUser, topTriggerBombsUser, topCauseExplosionsUser, topRoadblockUser *User
+
+	var EmptyStat Stat = Stat{Username: "Ingen", Value: 0}
+
+	for _, player := range game.Players {
+		if topTileUser == nil || player.TilesPlaced > topTileUser.TilesPlaced {
+			topTileUser = player
+		}
+		if topScoreUser == nil || player.Score > topScoreUser.Score {
+			topScoreUser = player
+		}
+		if topBombUser == nil || player.PlacedBombs > topBombUser.PlacedBombs {
+			topBombUser = player
+		}
+		if topTriggerBombsUser == nil || player.TriggeredExplosions > topTriggerBombsUser.TriggeredExplosions {
+			topTriggerBombsUser = player
+		}
+		if topCauseExplosionsUser == nil || player.ExplosionsCaused > topCauseExplosionsUser.ExplosionsCaused {
+			topCauseExplosionsUser = player
+		}
+		if topRoadblockUser == nil || player.PlacedRoadBlocks > topRoadblockUser.PlacedRoadBlocks {
+			topRoadblockUser = player
+		}
+	}
+
+	mostPlacedTiles := EmptyStat
+	if topTileUser != nil && topTileUser.TilesPlaced > 0 {
+		mostPlacedTiles = Stat{Username: topTileUser.Username, Value: topTileUser.TilesPlaced}
+	}
+
+	mostPoints := EmptyStat
+	if topScoreUser != nil && topScoreUser.Score > 0 {
+		mostPoints = Stat{Username: topScoreUser.Username, Value: topScoreUser.Score}
+	}
+
+	mostPlacedBombs := EmptyStat
+	if topBombUser != nil && topBombUser.PlacedBombs > 0 {
+		mostPlacedBombs = Stat{Username: topBombUser.Username, Value: topBombUser.PlacedBombs}
+	}
+
+	mostTriggeredBombs := EmptyStat
+	if topTriggerBombsUser != nil && topTriggerBombsUser.TriggeredExplosions > 0 {
+		mostTriggeredBombs = Stat{Username: topTriggerBombsUser.Username, Value: topTriggerBombsUser.TriggeredExplosions}
+	}
+
+	mostCausedExplosions := EmptyStat
+	if topCauseExplosionsUser != nil && topCauseExplosionsUser.ExplosionsCaused > 0 {
+		mostCausedExplosions = Stat{Username: topCauseExplosionsUser.Username, Value: topCauseExplosionsUser.ExplosionsCaused}
+	}
+
+	mostPlacedRoadblocks := EmptyStat
+	if topRoadblockUser != nil && topRoadblockUser.PlacedRoadBlocks > 0 {
+		mostPlacedRoadblocks = Stat{Username: topRoadblockUser.Username, Value: topRoadblockUser.PlacedRoadBlocks}
+	}
+
+	teamPoints := map[string]int{
+		"a": game.Teams["a"].Score,
+		"b": game.Teams["b"].Score,
+	}
+
+	winner := "tie"
+	if teamPoints["a"] > teamPoints["b"] {
+		winner = "a"
+	} else if teamPoints["b"] > teamPoints["a"] {
+		winner = "b"
+	}
+
+	return FinalGameStats{
+		MostPlacedTiles:      mostPlacedTiles,
+		MostPoints:           mostPoints,
+		MostPlacedBombs:      mostPlacedBombs,
+		MostTriggeredBombs:   mostTriggeredBombs,
+		MostCausedExplosions: mostCausedExplosions,
+		MostPlacedRoadblocks: mostPlacedRoadblocks,
+		TeamPoints:           teamPoints,
+		Winner:               winner,
 	}
 }

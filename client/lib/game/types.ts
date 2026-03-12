@@ -9,17 +9,16 @@ export interface PlacedTile {
 }
 
 export interface Bomb {
-  id: string;
+  placedBy: string;
   x: number;
   y: number;
-  placedBy: string;
+  team: Team;
 }
 
 export interface Roadblock {
-  id: string;
+  placedBy: string;
   x: number;
   y: number;
-  placedBy: string;
   expiresAt: number;
 }
 
@@ -30,6 +29,12 @@ export type User = {
   username: string;
   userId: string;
   team: Team;
+  score: number;
+  tilesPlaced: number;
+  placedBombs: number;
+  placedRoadblocks: number;
+  triggeredExplosions: number;
+  explosionsCaused: number;
 };
 
 export type TeamState = {
@@ -57,6 +62,7 @@ export type GameSettings = {
 
 export type GameState = {
   board: Record<string, PlacedTile>;
+  bombs: Record<string, Bomb>;
   roadblocks: Record<string, Roadblock>;
   team: TeamState;
   gameId: string;
@@ -85,6 +91,10 @@ export type Stat = {
 export type FinalGameStats = {
   mostPlacedTiles: Stat;
   mostPoints: Stat;
+  mostPlacedBombs: Stat;
+  mostTriggeredBombs: Stat;
+  mostCausedExplosions: Stat;
+  mostPlacedRoadblocks: Stat;
   teamPoints: Record<string, number>;
   winner: Team | "tie";
 };

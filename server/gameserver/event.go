@@ -12,6 +12,7 @@ const (
 	GameCreatedEvent        EventType = "game_created"         // Go (server) -> React (client)
 	JoinedGameEvent         EventType = "joined_game"          // Go (server) -> React (client)
 	ErrorEvent              EventType = "error"                // Go (server) -> React (client)
+	SuccessEvent            EventType = "success"              // Go (server) -> React (client)
 	LobbyUpdateEvent        EventType = "lobby_updated"        // Go (server) -> React (client)
 	GameStartedEvent        EventType = "game_started"         // Go (server) -> React (client)
 	BoardUpdateEvent        EventType = "board_updated"        // Go (server) -> React (client)
@@ -37,21 +38,6 @@ const (
 type Event struct {
 	Type    EventType       `json:"type"`
 	Payload json.RawMessage `json:"payload"`
-}
-
-// PrepareEvent wraps a given payload into an Event structure with the specified EventType.
-// It returns the JSON-marshaled byte slice of the final event, ready to be sent over the socket.
-func PrepareEvent(eventType EventType, payload any) []byte {
-	payloadBytes, _ := json.Marshal(payload)
-
-	updateEvent := Event{
-		Type:    eventType,
-		Payload: payloadBytes,
-	}
-
-	finalMessage, _ := json.Marshal(updateEvent)
-
-	return finalMessage
 }
 
 // Payload sent by the client when game_create event is sent
@@ -98,10 +84,14 @@ type Stat struct {
 }
 
 type FinalGameStats struct {
-	MostPlacedTiles Stat           `json:"mostPlacedTiles"`
-	MostPoints      Stat           `json:"mostPoints"`
-	TeamPoints      map[string]int `json:"teamPoints"`
-	Winner          string         `json:"winner"`
+	MostPlacedTiles      Stat           `json:"mostPlacedTiles"`
+	MostPoints           Stat           `json:"mostPoints"`
+	MostPlacedBombs      Stat           `json:"mostPlacedBombs"`
+	MostTriggeredBombs   Stat           `json:"mostTriggeredBombs"`
+	MostCausedExplosions Stat           `json:"mostCausedExplosions"`
+	MostPlacedRoadblocks Stat           `json:"mostPlacedRoadblocks"`
+	TeamPoints           map[string]int `json:"teamPoints"`
+	Winner               string         `json:"winner"`
 }
 
 type UnlockSingleLetterPayload struct {

@@ -251,6 +251,12 @@ func (c *Client) readPump() {
 				continue
 			}
 
+			for key := range payload.NewTiles {
+				tile := payload.NewTiles[key]
+				tile.PlacedBy = c.Id
+				payload.NewTiles[key] = tile
+			}
+
 			c.Room.ProcessMove <- &SubmitTurnAction{Client: c, NewTiles: payload.NewTiles}
 
 		case UnlockSingleLetterEvent:
