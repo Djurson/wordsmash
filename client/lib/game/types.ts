@@ -20,7 +20,7 @@ export interface Roadblock {
   x: number;
   y: number;
   placedBy: string;
-  placedTime: number;
+  expiresAt: number;
 }
 
 export type Direction = "vertical" | "horizontal";
@@ -52,12 +52,11 @@ export type GameSettings = {
   timerMinutes: number;
   enableBombs: boolean;
   enableRoadblocks: boolean;
-  blockTime: number;
+  roadblockDuration: number;
 };
 
 export type GameState = {
   board: Record<string, PlacedTile>;
-  bombs: Record<string, Bomb>;
   roadblocks: Record<string, Roadblock>;
   team: TeamState;
   gameId: string;
@@ -75,7 +74,7 @@ export type LocalGameState = {
   currentTurnTiles: Record<string, PlacedTile>;
   currentTurnDirection: Direction | null;
   selectedLetterId: string | null;
-  currentTurnBombs: Record<string, Bomb>;
+  selectedPowerup: "bomb" | "roadblock" | null;
 };
 
 export type Stat = {

@@ -10,11 +10,7 @@ import { useEffect } from "react";
 import { TeamLetter } from "@/lib/game/types";
 
 export function PlayerDock() {
-  const { gamestate, user, localGameState, handleSelectLetter, handleCancelPlacement, handleSubmitPlacement, handleRemoveSingleTileByLetterId } = useGameContext();
-
-  const handleTradeIn = () => {};
-
-  const handleShuffle = () => {};
+  const { gamestate, user, localGameState, handleSelectLetter, handleCancelPlacement, handleSubmitPlacement, handleRemoveSingleTileByLetterId, handleSelectPowerup } = useGameContext();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -58,7 +54,7 @@ export function PlayerDock() {
           <div className="flex gap-2">
             <Button
               disabled={gamestate.team.roadblocks === 0}
-              onClick={handleShuffle}
+              onClick={() => handleSelectPowerup("roadblock")}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-primary/10 transition-colors border border-border active:scale-95"
               aria-label="Roadblocks">
               <Construction className="size-5" />
@@ -66,8 +62,8 @@ export function PlayerDock() {
               <span className="text-sm text-muted-foreground">{gamestate.team.roadblocks ?? 0}</span>
             </Button>
             <Button
-              onClick={handleTradeIn}
-              disabled={gamestate.team.roadblocks === 0}
+              disabled={gamestate.team.bombs === 0}
+              onClick={() => handleSelectPowerup("bomb")}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tile-secondary text-foreground text-sm font-medium hover:bg-tile-secondary/10 transition-colors border border-border active:scale-95"
               aria-label="Bomber">
               <Bomb className="size-5" />

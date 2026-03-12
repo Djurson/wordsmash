@@ -25,7 +25,14 @@ export default function LobbyPage() {
   const [tab, setTab] = useState<string>("create");
   const [joinCode, setJoinCode] = useState("");
   const [username, setUsername] = useState("");
-  const [settings, setSettings] = useState(gamestate?.settings ?? { timerMinutes: 5, enableBombs: true, enableRoadblocks: true, blockTime: 10 });
+  const [settings, setSettings] = useState(
+    gamestate?.settings ?? {
+      timerMinutes: 5,
+      enableBombs: true,
+      enableRoadblocks: true,
+      roadblockDuration: 10,
+    },
+  );
 
   const handleSettingChange = (newSettings: GameSettings) => {
     setSettings(newSettings);

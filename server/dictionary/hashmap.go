@@ -18,13 +18,24 @@ func (h *HashMapDictionary) GetWordList() []string {
 }
 
 func (h *HashMapDictionary) RandomWord() string {
-	if len(h.wordList) == 0 {
-		return ""
+
+	var word string
+
+	for {
+		if len(h.wordList) == 0 {
+			return ""
+		}
+
+		randomIndex := rand.Intn(len(h.wordList))
+
+		word = h.wordList[randomIndex]
+
+		if len(word) > 4 {
+			break
+		}
 	}
 
-	randomIndex := rand.Intn(len(h.wordList))
-
-	return h.wordList[randomIndex]
+	return word
 }
 
 func (h *HashMapDictionary) IsValid(word string) bool {

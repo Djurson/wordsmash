@@ -25,6 +25,7 @@ export interface GameContextContextProps {
   handleSubmitPlacement: () => void;
   handlePlaceTile: (x: number, y: number) => void;
   finalStats: FinalGameStats | null;
+  handleSelectPowerup: (type: "bomb" | "roadblock" | null) => void;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -48,9 +49,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
-    currentTurnBombs: {},
     currentTurnDirection: null,
     selectedLetterId: null,
+    selectedPowerup: null,
   });
 
   const updateGameState = useCallback((updates: Partial<GameState>) => {
@@ -126,7 +127,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
             if (collision) {
               ToastError("Någon hann före! Dina brickor rensades.");
-              return { currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, currentTurnBombs: prevLocal.currentTurnBombs };
+              return { currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, selectedSpecialAbility: null, selectedPowerup: null };
             }
 
             return prevLocal;
@@ -150,9 +151,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           updateGameState(payload);
           setLocalGameState({
             currentTurnTiles: {},
-            currentTurnBombs: {},
             currentTurnDirection: null,
             selectedLetterId: null,
+            selectedPowerup: null,
           });
           setFinalStats(null);
           router.push("/game");
@@ -186,12 +187,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
           ToastSucess("Tiden är ute! Spelet är över.");
 
-          setLocalGameState({
-            currentTurnTiles: {},
-            currentTurnBombs: {},
-            currentTurnDirection: null,
-            selectedLetterId: null,
-          });
+          setLocalGameState({ currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, selectedPowerup: null });
           break;
 
         default:
@@ -226,7 +222,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
       if (newSelected && gamestate.team.teamLetters[newSelected].isLocked) return;
 
-      updateLocalGameState({ selectedLetterId: newSelected });
+      updateLocalGameState({ selectedLetterId: newSelected, selectedPowerup: null });
     },
     [gamestate, localGameState, updateLocalGameState],
   );
@@ -237,34 +233,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const keys = Object.keys(localGameState.currentTurnTiles);
-    if (keys.length === 0) {
-      sendMessage("unlock_letter", null);
-      updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {} });
-      return;
-    }
-
-    keys.forEach((key, index) => {
-      setTimeout(() => {
-        setLocalGameState((prev) => {
-          const newTiles = { ...prev.currentTurnTiles };
-          delete newTiles[key];
-
-          const isLast = index === keys.length - 1;
-          if (isLast) {
-            sendMessage("unlock_letter", null);
-          }
-
-          return {
-            ...prev,
-            currentTurnTiles: newTiles,
-            currentTurnDirection: isLast ? null : prev.currentTurnDirection,
-            selectedLetterId: isLast ? null : prev.selectedLetterId,
-          };
-        });
-      }, index * 100);
-    });
-  }, [localGameState.selectedLetterId, localGameState.currentTurnTiles, handleSelectLetter, sendMessage, updateLocalGameState]);
+    sendMessage("unlock_letter", null);
+    updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {}, selectedPowerup: null });
+  }, [localGameState.selectedLetterId, handleSelectLetter, sendMessage, updateLocalGameState]);
 
   const handleRemoveSingleTile = useCallback(
     (tileKey: string, letterId: string) => {
@@ -300,8 +271,8 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
     if (result === "failed") return;
 
-    sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles, newBombs: localGameState.currentTurnBombs });
-    updateLocalGameState({ currentTurnBombs: {}, currentTurnTiles: {}, selectedLetterId: null, currentTurnDirection: null });
+    sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles });
+    updateLocalGameState({ currentTurnTiles: {}, selectedLetterId: null, currentTurnDirection: null });
   }, [localGameState, gamestate, sendMessage, updateLocalGameState]);
 
   const handlePlaceTile = useCallback(
@@ -322,6 +293,24 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     [localGameState, gamestate, sendMessage, updateLocalGameState],
   );
 
+  const handleSelectPowerup = useCallback(
+    (type: "bomb" | "roadblock" | null) => {
+      let locGame: Partial<LocalGameState> = localGameState;
+
+      if (type !== null) {
+        sendMessage("unlock_letter", null);
+        locGame = {
+          currentTurnDirection: null,
+          currentTurnTiles: {},
+          selectedLetterId: null,
+        };
+      }
+
+      updateLocalGameState({ ...locGame, selectedPowerup: type });
+    },
+    [localGameState, sendMessage, updateLocalGameState],
+  );
+
   const value: GameContextContextProps = {
     isConnected,
     user,
@@ -338,6 +327,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     finalStats,
     handleRemoveSingleTileByLetterId,
     handleRemoveSingleTile,
+    handleSelectPowerup,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

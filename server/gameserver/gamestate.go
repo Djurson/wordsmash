@@ -76,10 +76,10 @@ type TeamState struct {
 }
 
 type GameSettings struct {
-	TimerMinutes     int  `json:"timerMinutes"`
-	EnableBombs      bool `json:"enableBombs"`
-	EnableRoadblocks bool `json:"enableRoadblocks"`
-	BlockTime        int  `json:"blockTime"`
+	TimerMinutes      int  `json:"timerMinutes"`
+	EnableBombs       bool `json:"enableBombs"`
+	EnableRoadblocks  bool `json:"enableRoadblocks"`
+	RoadblockDuration int  `json:"blockTime"`
 }
 
 type ServerGameState struct {
@@ -125,7 +125,7 @@ func NewGameState(id string) *ServerGameState {
 			"b": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
 		},
 		GameId:   id,
-		Settings: GameSettings{TimerMinutes: 5, EnableBombs: true},
+		Settings: GameSettings{TimerMinutes: 5, EnableBombs: true, EnableRoadblocks: true, RoadblockDuration: 10},
 	}
 }
 
@@ -137,6 +137,9 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 			id := uuid.New()
 			team.Letters[id] = TeamLetter{Letter: string(letter.Rune), IsLocked: false, Id: id, Score: letter.Score}
 		}
+
+		team.Roadblocks = 3
+		team.Bombs = 2
 	}
 
 	startWord := hub.Dictionary.RandomWord()
@@ -161,7 +164,6 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 	game.EndTime = time.Now().Add(duration).UnixMilli()
 
 	game.StartTime = time.Now().Add(time.Duration(5) * time.Second).UnixMilli()
-
 	game.GameStarted = true
 }
 

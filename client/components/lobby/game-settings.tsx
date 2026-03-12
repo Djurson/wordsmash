@@ -54,15 +54,15 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
         </div>
         <div className="flex items-center gap-4">
           <Slider
-            value={[settings.blockTime]}
-            onValueChange={([v]) => update("blockTime", v)}
+            value={[settings.roadblockDuration]}
+            onValueChange={([v]) => update("roadblockDuration", v)}
             min={5}
             max={30}
-            step={1}
+            step={5}
             disabled={!(gamestate?.host === user?.userId) || !settings.enableRoadblocks}
             className="flex-1"
           />
-          <span className="w-12 text-sm font-bold text-right text-foreground tabular-nums">{settings.blockTime} sek</span>
+          <span className="w-12 text-sm font-bold text-right text-foreground tabular-nums">{settings.roadblockDuration} sek</span>
         </div>
       </div>
 
