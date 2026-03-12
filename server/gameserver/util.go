@@ -6,12 +6,6 @@ import (
 	"math/rand"
 )
 
-// getTileKey formats the given x and y coordinates into a comma-separated string,
-// which is used as the unique key in the board maps.
-func getTileKey(x, y int) string {
-	return fmt.Sprintf("%d,%d", x, y)
-}
-
 // generateGameCode generates and returns a random, two-segment alphanumeric room code (e.g., ABCD-1234).
 func generateGameCode() string {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -40,19 +34,6 @@ func PrepareEvent(eventType EventType, payload any) []byte {
 	finalMessage, _ := json.Marshal(updateEvent)
 
 	return finalMessage
-}
-
-// combineBoards merges the newly placed tiles with the existing board tiles
-// to create a unified view of the board for word traversal and validation.
-func combineBoards(newTiles, board *map[string]PlacedTile) map[string]PlacedTile {
-	fullBoard := make(map[string]PlacedTile)
-	for k, v := range *board {
-		fullBoard[k] = v
-	}
-	for k, v := range *newTiles {
-		fullBoard[k] = v
-	}
-	return fullBoard
 }
 
 // scoreFromFrequency calculates a letter's score based on its frequency count relative
