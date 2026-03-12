@@ -47,6 +47,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const [finalStats, setFinalStats] = useState<FinalGameStats | null>(null);
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
+
+  const delay = Math.min(1000 * 2 ** reconnectAttempt, 10000);
 
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
@@ -76,28 +79,11 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_WS_PATH ? `wss://${process.env.NEXT_PUBLIC_WS_PATH}/ws` : `ws://${process.env.NEXT_PUBLIC_LOCAL_WS_PATH}/ws`;
-    const ws = new WebSocket(url);
-
-    ws.onopen = () => {
-      setWebSocket(ws);
-      setIsConnected(true);
-    };
-
-    ws.onerror = () => {
-      setIsConnected(false);
-      ToastError("Fel med anslutning till servern");
-      setConnectionError(true);
-    };
-
-    ws.onclose = () => {
-      reset();
-    };
-
-    ws.onmessage = (event) => {
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
       const parsedEvent = JSON.parse(event.data) as WSRecievedEvent;
       const { type, payload } = parsedEvent;
+
       switch (type) {
         case "game_created":
         case "joined_game":
@@ -195,10 +181,40 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           console.log("Ohanterat event från server:", type);
           break;
       }
+    },
+    [updateGameState, router],
+  );
+
+  useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_WS_PATH ? `wss://${process.env.NEXT_PUBLIC_WS_PATH}/ws` : `ws://${process.env.NEXT_PUBLIC_LOCAL_WS_PATH}/ws`;
+
+    const ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      setWebSocket(ws);
+      setIsConnected(true);
+      setConnectionError(false);
+      console.log("WebSocket connected");
     };
 
-    return () => ws.close();
-  }, [updateGameState, router]);
+    ws.onerror = () => {
+      ws.close();
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket closed, reconnecting...");
+      setIsConnected(false);
+      reset();
+      setTimeout(() => setReconnectAttempt((prev) => prev + 1), delay);
+    };
+
+    ws.onmessage = handleMessage;
+
+    return () => {
+      ws.onclose = null;
+      ws.close();
+    };
+  }, [handleMessage, reconnectAttempt]);
 
   const sendMessage: SendMessageType = useCallback(
     (type, payload) => {

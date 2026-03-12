@@ -23,6 +23,8 @@ type GameHub struct {
 	Dictionary Dictionary
 }
 
+// NewHub initializes and returns a new GameHub instance.
+// It requires a Dictionary interface for word validation and sets up the necessary channels and maps.
 func NewHub(dict Dictionary) *GameHub {
 	return &GameHub{
 		clients:    make(map[*Client]bool),
@@ -34,6 +36,9 @@ func NewHub(dict Dictionary) *GameHub {
 	}
 }
 
+// Run starts the hub's main loop.
+// It handles client registration, unregistration, broadcasting messages to all clients,
+// and periodically logs the status of the server.
 func (h *GameHub) Run() {
 	statusTicker := time.NewTicker(30 * time.Second)
 	defer statusTicker.Stop()
@@ -77,6 +82,7 @@ func (h *GameHub) Run() {
 	}
 }
 
+// generateGameCode generates and returns a random, two-segment alphanumeric room code (e.g., ABCD-1234).
 func generateGameCode() string {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -91,6 +97,8 @@ func generateGameCode() string {
 	return fmt.Sprintf("%s-%s", segment(), segment())
 }
 
+// CreateUniqueRoom generates a unique game code, creates a new GameRoom,
+// starts its run loop in a goroutine, and returns the generated code.
 func (h *GameHub) CreateUniqueRoom() string {
 	h.RoomsMutex.Lock()
 	defer h.RoomsMutex.Unlock()
@@ -114,6 +122,7 @@ func (h *GameHub) CreateUniqueRoom() string {
 	return code
 }
 
+// totalPlayers calculates and returns the aggregate number of clients across all active rooms in the hub.
 func (h *GameHub) totalPlayers() int {
 	total := 0
 	for _, room := range h.Rooms {
@@ -122,12 +131,15 @@ func (h *GameHub) totalPlayers() int {
 	return total
 }
 
+// GetRoom retrieves and returns a pointer to the GameRoom associated with the given code.
+// It utilizes a read-write mutex to ensure thread safety.
 func (h *GameHub) GetRoom(code string) *GameRoom {
-	h.RoomsMutex.Lock()
-	defer h.RoomsMutex.Unlock()
+	h.RoomsMutex.RLock()
+	defer h.RoomsMutex.RUnlock()
 	return h.Rooms[code]
 }
 
+// DeleteRoom securely removes the GameRoom associated with the given code from the hub's active rooms.
 func (h *GameHub) DeleteRoom(code string) {
 	h.RoomsMutex.Lock()
 	defer h.RoomsMutex.Unlock()

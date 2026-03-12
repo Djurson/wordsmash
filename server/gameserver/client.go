@@ -38,9 +38,9 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var (
-	pongWait      = 10 * time.Second
-	pingIntervall = (pongWait * 9) / 10
+const (
+	pongWait      = 60 * time.Second
+	pingIntervall = 50 * time.Second
 )
 
 const (
@@ -61,6 +61,9 @@ type Client struct {
 	Team     string
 }
 
+// readPump pumps messages from the websocket connection to the hub.
+// It sets up read deadlines, handles rate limiting to prevent spam,
+// unmarshals incoming JSON events, and dispatches them to the appropriate room or hub channel.
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
@@ -288,6 +291,9 @@ func (c *Client) readPump() {
 	}
 }
 
+// writePump pumps messages from the hub to the websocket connection.
+// It listens on the client's send channel and writes the messages to the socket,
+// while also handling periodic ping messages to keep the connection alive.
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingIntervall)
 
@@ -323,6 +329,9 @@ func (c *Client) writePump() {
 	}
 }
 
+// ServeWs handles websocket requests from the peer.
+// It upgrades the HTTP connection, initializes a new Client, registers it with the hub,
+// and starts the read and write pumps in separate goroutines.
 func ServeWs(hub *GameHub, w http.ResponseWriter, r *http.Request) {
 	// Upgrade the connection
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -347,10 +356,14 @@ func ServeWs(hub *GameHub, w http.ResponseWriter, r *http.Request) {
 	client.send <- PrepareEvent(ConnectedToServerEvent, map[string]string{"message": "Välkommen till Word Smash!"})
 }
 
+// pongHandler handles websocket pong messages by extending the read deadline,
+// ensuring the connection is kept alive.
 func (c *Client) pongHandler(pongMessage string) error {
 	return c.conn.SetReadDeadline(time.Now().Add(pongWait))
 }
 
+// ValidateCreateGameDataSetting ensures the game timer settings within a CreateGamePayload
+// stay within the minimum and maximum allowed minutes. It returns the validated payload.
 func ValidateCreateGameDataSetting(data CreateGamePayload) CreateGamePayload {
 	if data.Settings.TimerMinutes < MINTIMERMINUTES {
 		data.Settings.TimerMinutes = MINTIMERMINUTES

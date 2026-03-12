@@ -14,6 +14,10 @@ import (
 
 const WORD_FILE string = "svenska-ord.txt"
 
+// main is the entry point for the backend server.
+// It loads environment variables, initializes the Swedish dictionary, calculates
+// letter frequencies to populate the game's letter bag, sets up the central GameHub,
+// configures the HTTP/WebSocket routes, and starts the web server.
 func main() {
 	err := godotenv.Load()
 	if err != nil {

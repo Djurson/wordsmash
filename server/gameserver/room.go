@@ -25,7 +25,6 @@ type UnlockSingleLetterAction struct {
 type SubmitTurnAction struct {
 	Client   *Client
 	NewTiles map[string]PlacedTile
-	NewBombs map[string]Bomb
 }
 
 type SubmitSpecialEffectAction struct {
@@ -52,6 +51,8 @@ type GameRoom struct {
 	UpdateSpecialTiles chan *SubmitSpecialEffectAction
 }
 
+// NewRoom creates and returns a new GameRoom instance with the specified id.
+// It initializes the room's communication channels and the underlying GameState.
 func NewRoom(id string) *GameRoom {
 	return &GameRoom{
 		ID:                 id,
@@ -70,6 +71,8 @@ func NewRoom(id string) *GameRoom {
 	}
 }
 
+// Run starts the main event loop for the GameRoom.
+// It processes client joins/leaves, chat updates, game moves, timer ticks, and end-game state resolution.
 func (r *GameRoom) Run() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
@@ -306,7 +309,6 @@ func (r *GameRoom) Run() {
 				delete(teamLetters, tile.Id)
 			}
 
-			// TODO: Implement bombs
 			newLettersNeeded := len(submitTurnAction.NewTiles)
 			drawnLetters := GenerateRandomLetters(newLettersNeeded)
 
@@ -550,104 +552,116 @@ func (r *GameRoom) Run() {
 			}
 
 		case action := <-r.UpdateSpecialTiles:
-			// TODO: Implement different handling for bombs and roadblocks
-			continue
+			switch action.Type {
+			case BombEffect:
+				// TODO: Implement placing bombs
+				continue
+
+			case RoadblockEffect:
+				// TODO: Implement placing roadblocks
+				continue
+			}
 		}
 	}
 }
 
-/* Same implementation as client/lib/utils.ts */
+// isValidPlacement checks if the tiles in a SubmitTurnAction form a valid move.
+// It verifies overlaps with placed tiles or roadblocks, checks for adjacency to existing tiles,
+// and ensures the placement forms a straight, continuous line.
+// It returns a boolean indicating success and an error message if the placement is invalid.
 func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile, roadblocks *map[string]Roadblock) (bool, string) {
-	if len(turnAction.NewTiles) == 0 && len(turnAction.NewBombs) == 0 {
+	if len(turnAction.NewTiles) == 0 {
 		return false, "Behöver placera ut minst en bricka eller bomb"
 	}
 
-	if len(turnAction.NewTiles) > 0 {
-		hasPlacedNeighbor := false
-		var xs []int
-		var ys []int
+	hasPlacedNeighbor := false
+	var xs []int
+	var ys []int
 
-		for key, tile := range turnAction.NewTiles {
-			// Check overlap with already placed tiles
-			if _, exists := (*board)[key]; exists {
-				return false, "En av rutorna är redan upptagen på brädet"
+	for key, tile := range turnAction.NewTiles {
+		// Check overlap with already placed tiles
+		if _, exists := (*board)[key]; exists {
+			return false, "En av rutorna är redan upptagen på brädet"
+		}
+
+		if _, exists := (*roadblocks)[key]; exists {
+			return false, "En av rutorna är upptagen av en spärr"
+		}
+
+		// Does the key match the coordinates
+		if key != getTileKey(tile.X, tile.Y) {
+			return false, "Ogiltig data: Koordinaterna stämmer inte överens"
+		}
+
+		xs = append(xs, tile.X)
+		ys = append(ys, tile.Y)
+
+		// Does the tile touch any placed brackets
+		if checkTileNeighbors(tile.X, tile.Y, board) {
+			hasPlacedNeighbor = true
+		}
+	}
+
+	if !hasPlacedNeighbor {
+		return false, "Ditt ord måste sitta ihop med de befintliga brickorna på brädet"
+	}
+
+	// Direction checking
+	if len(turnAction.NewTiles) > 1 {
+		isHorizontal := true
+		isVertical := true
+
+		firstX, firstY := xs[0], ys[0]
+
+		// Check if they share the same row or column
+		for i := 1; i < len(xs); i++ {
+			if xs[i] != firstX {
+				isVertical = false
 			}
-
-			// Does the key match the coordinates
-			if key != getTileKey(tile.X, tile.Y) {
-				return false, "Ogiltig data: Koordinaterna stämmer inte överens"
-			}
-
-			xs = append(xs, tile.X)
-			ys = append(ys, tile.Y)
-
-			// Does the tile touch any placed brackets
-			if checkTileNeighbors(tile.X, tile.Y, board) {
-				hasPlacedNeighbor = true
+			if ys[i] != firstY {
+				isHorizontal = false
 			}
 		}
 
-		if !hasPlacedNeighbor {
-			return false, "Ditt ord måste sitta ihop med de befintliga brickorna på brädet"
+		if !isHorizontal && !isVertical {
+			return false, "Brickorna måste ligga på en rak horisontell eller vertikal linje"
 		}
 
-		// Direction checking
-		if len(turnAction.NewTiles) > 1 {
-			isHorizontal := true
-			isVertical := true
+		// Check if there are any gaps
+		if isHorizontal {
+			sort.Ints(xs)
+			minX, maxX := xs[0], xs[len(xs)-1]
 
-			firstX, firstY := xs[0], ys[0]
+			for x := minX; x <= maxX; x++ {
+				checkKey := getTileKey(x, firstY)
+				_, inNewTiles := turnAction.NewTiles[checkKey]
+				_, inBoard := (*board)[checkKey]
 
-			// Check if they share the same row or column
-			for i := 1; i < len(xs); i++ {
-				if xs[i] != firstX {
-					isVertical = false
-				}
-				if ys[i] != firstY {
-					isHorizontal = false
+				if !inNewTiles && !inBoard {
+					return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop"
 				}
 			}
+		} else if isVertical {
+			sort.Ints(ys)
+			minY, maxY := ys[0], ys[len(ys)-1]
 
-			if !isHorizontal && !isVertical {
-				return false, "Brickorna måste ligga på en rak horisontell eller vertikal linje"
-			}
+			for y := minY; y <= maxY; y++ {
+				checkKey := getTileKey(firstX, y)
+				_, inNewTiles := turnAction.NewTiles[checkKey]
+				_, inBoard := (*board)[checkKey]
 
-			// Check if there are any gaps
-			if isHorizontal {
-				sort.Ints(xs)
-				minX, maxX := xs[0], xs[len(xs)-1]
-
-				for x := minX; x <= maxX; x++ {
-					checkKey := getTileKey(x, firstY)
-					_, inNewTiles := turnAction.NewTiles[checkKey]
-					_, inBoard := (*board)[checkKey]
-
-					if !inNewTiles && !inBoard {
-						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop"
-					}
-				}
-			} else if isVertical {
-				sort.Ints(ys)
-				minY, maxY := ys[0], ys[len(ys)-1]
-
-				for y := minY; y <= maxY; y++ {
-					checkKey := getTileKey(firstX, y)
-					_, inNewTiles := turnAction.NewTiles[checkKey]
-					_, inBoard := (*board)[checkKey]
-
-					if !inNewTiles && !inBoard {
-						return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop"
-					}
+				if !inNewTiles && !inBoard {
+					return false, "Det finns luckor i ditt ord. Brickorna måste sitta ihop"
 				}
 			}
 		}
 	}
-
-	// TODO: Add new separate checking for roadblocks
 
 	return true, ""
 }
 
+// checkTileNeighbors checks if the given x and y coordinates have any directly adjacent tiles on the board.
+// It returns true if at least one orthogonal neighbor exists.
 func checkTileNeighbors(x int, y int, board *map[string]PlacedTile) bool {
 	neighborsKeys := []string{
 		getTileKey(x+1, y),
@@ -665,6 +679,8 @@ func checkTileNeighbors(x int, y int, board *map[string]PlacedTile) bool {
 	return false
 }
 
+// extractWordsAndScore analyzes the newly placed tiles in conjunction with the existing board.
+// It identifies all newly formed horizontal and vertical words and calculates the total score for the turn.
 func extractWordsAndScore(newTiles *map[string]PlacedTile, board *map[string]PlacedTile) ([]string, int) {
 	var words []string
 	totalScore := 0
@@ -716,6 +732,8 @@ func extractWordsAndScore(newTiles *map[string]PlacedTile, board *map[string]Pla
 	return words, totalScore
 }
 
+// extractWordAt traverses the full board from the given startX and startY coordinates in either a
+// horizontal or vertical direction. It returns the full connected word string and its accumulated score.
 func extractWordAt(startX, startY int, horizontal bool, fullBoard *map[string]PlacedTile) (string, int) {
 	word := ""
 	score := 0
@@ -759,6 +777,8 @@ func extractWordAt(startX, startY int, horizontal bool, fullBoard *map[string]Pl
 	return word, score
 }
 
+// isPlacedOnABombBombs checks if any of the new tiles are placed on top of active bombs.
+// It returns a boolean flag and a string message. (Note: Currently a stub).
 func isPlacedOnABombBombs(newTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
 	// TODO: Implement chcking for bombs
 	return false, ""

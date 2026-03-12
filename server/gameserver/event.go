@@ -39,6 +39,8 @@ type Event struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
+// PrepareEvent wraps a given payload into an Event structure with the specified EventType.
+// It returns the JSON-marshaled byte slice of the final event, ready to be sent over the socket.
 func PrepareEvent(eventType EventType, payload any) []byte {
 	payloadBytes, _ := json.Marshal(payload)
 

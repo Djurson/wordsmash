@@ -117,6 +117,8 @@ type ClientGameState struct {
 	Players     map[uuid.UUID]*User   `json:"players"`
 }
 
+// NewGameState creates and initializes a new ServerGameState for the given game id.
+// It sets up the default empty board, team structures, and default game settings.
 func NewGameState(id string) *ServerGameState {
 	return &ServerGameState{
 		Board:      make(map[string]PlacedTile),
@@ -132,6 +134,9 @@ func NewGameState(id string) *ServerGameState {
 	}
 }
 
+// PreStartGame prepares the state for a new game.
+// It generates starting hands for the teams, calculates game timers,
+// and places the initial random start word in the center of the board.
 func (game *ServerGameState) PreStartGame(hub *GameHub) {
 	for _, team := range game.Teams {
 		letters := GenerateRandomLetters(TEAMHANDSIZE)
@@ -170,6 +175,8 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 	game.GameStarted = true
 }
 
+// ToClientState converts the internal ServerGameState into a ClientGameState tailored for a specific team.
+// It calculates the total score and strips away the opponent's private data before returning.
 func (game *ServerGameState) ToClientState(team string) ClientGameState {
 	totalScore := 0
 	for _, t := range game.Teams {
@@ -192,10 +199,14 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 	}
 }
 
+// getTileKey formats the given x and y coordinates into a comma-separated string,
+// which is used as the unique key in the board maps.
 func getTileKey(x, y int) string {
 	return fmt.Sprintf("%d,%d", x, y)
 }
 
+// scoreFromFrequency calculates a letter's score based on its frequency count relative
+// to the most common letter (maxCount). Rarer letters return higher scores.
 func scoreFromFrequency(count int, maxCount int) int {
 	ratio := float64(count) / float64(maxCount)
 
@@ -217,6 +228,8 @@ func scoreFromFrequency(count int, maxCount int) int {
 	}
 }
 
+// InitLetterBag populates the global letterBag based on the provided letter frequencies.
+// It calculates the weight and score for each rune, filling the bag with Letter structs.
 func InitLetterBag(freq map[rune]int) {
 	bag := make([]Letter, 0)
 	letterScores = make(map[rune]int)
@@ -247,6 +260,8 @@ func InitLetterBag(freq map[rune]int) {
 	fmt.Printf("Letter bag generated: %d unique, %d total tiles.\n", len(freq), len(letterBag))
 }
 
+// GenerateRandomLetters draws the specified count of random letters from the global letter bag
+// and returns them as a slice.
 func GenerateRandomLetters(count int) []Letter {
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -260,6 +275,8 @@ func GenerateRandomLetters(count int) []Letter {
 	return hand
 }
 
+// ResetStatsAfterGameFinish clears the board, special tiles, and resets team/player scoring stats.
+// It resets the game state so a new round can be started in the same room.
 func (game *ServerGameState) ResetStatsAfterGameFinish() {
 	game.Board = make(map[string]PlacedTile)
 	game.Bombs = make(map[string]Bomb)
