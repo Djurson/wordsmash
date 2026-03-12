@@ -67,6 +67,7 @@ func NewRoom(id string) *GameRoom {
 		LockLetter:         make(chan *LockLetterAction),
 		UnlockLetter:       make(chan *Client),
 		UnlockSingleLetter: make(chan *UnlockSingleLetterAction),
+		UpdateSpecialTiles: make(chan *SubmitSpecialEffectAction),
 	}
 }
 

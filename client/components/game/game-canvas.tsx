@@ -145,13 +145,21 @@ export function GameCanvas() {
 
         {/* Draw the placed letters */}
         <AnimatePresence>
-          {Object.values(tiles).map((tile) => (
-            <div
-              key={`${tile.letter}-${tile.state}-${tile.x}-${tile.y}`}
-              style={{ position: "absolute", left: tile.x * CELL, top: tile.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 10 }}>
-              <GameTile letter={tile.letter} state={tile.state} score={tile.score} />
-            </div>
-          ))}
+          {Object.values(tiles).map((tile) => {
+            const bomb = gamestate.bombs[getTileKey(tile.x, tile.y)];
+            return (
+              <div
+                key={`${tile.letter}-${tile.state}-${tile.x}-${tile.y}`}
+                style={{ position: "absolute", left: tile.x * CELL, top: tile.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 10 }}>
+                {bomb && (
+                  <div style={{ position: "absolute", width: TILE_SIZE, height: TILE_SIZE, zIndex: 40 }} className="pointer-events-none">
+                    <GameTile state="bomb-placed" />
+                  </div>
+                )}
+                <GameTile letter={tile.letter} state={tile.state} score={tile.score} />
+              </div>
+            );
+          })}
         </AnimatePresence>
       </div>
 

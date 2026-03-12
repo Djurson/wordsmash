@@ -396,7 +396,8 @@ func tryPlaceRoadblock(action *SubmitSpecialEffectAction, tilemap *map[string]Pl
 		return false, "Det finns redan placerade spärrar på den här rutan", nil
 	}
 
-	var affectedTeams []string // Håll koll på vilka motståndarlag vi störde
+	// Keep track of the teams were disrupted
+	var affectedTeams []string
 
 	for teamName, team := range game.Teams {
 		if teamState == team {

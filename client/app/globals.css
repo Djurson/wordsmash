@@ -54,6 +54,7 @@
   --color-tile-locked: var(--tile-locked);
   --color-tile-foreground: var(--tile-foreground);
   --color-canvas-dot: var(--canvas-dot);
+  --color-bomb-red: var(--bomb-red);
 
   --animate-wiggle: wiggle 1s ease-in-out infinite;
   --animate-bounce: tileBounce 0.7s ease-in-out infinite;
@@ -132,6 +133,8 @@
   --tile-foreground: #334155;
   --tile-locked: #c2c0bb;
   --canvas-dot: #d6cfbf;
+
+  --bomb-red: #ef4444;
 }
 
 .dark {
@@ -176,6 +179,8 @@
   --tile-foreground: #334155;
   --tile-locked: #c2c0bb;
   --canvas-dot: #d6cfbf;
+
+  --bomb-red: #ef4444;
 }
 
 @layer base {

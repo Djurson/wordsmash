@@ -13,7 +13,7 @@ interface LetterTileProps {
   onRemove?: (e: React.MouseEvent) => void;
 }
 
-type LetterState = "idle" | "placed" | "selected" | "selected-hover" | "placeholder" | "secondary" | "locked" | "roadblock" | "roadblock-hover" | "bomb-hover" | "explosion";
+type LetterState = "idle" | "placed" | "selected" | "selected-hover" | "placeholder" | "secondary" | "locked" | "roadblock" | "roadblock-hover" | "bomb-hover" | "bomb-placed";
 
 export function GameTileSkeleton() {
   return <div className="flex items-center justify-center border-2 rounded-xl aspect-square size-18 bg-tile-primary/40 border-tile-border/40 animate-pulse" />;
@@ -34,13 +34,13 @@ function getTileStateClasses(state: LetterState): string {
     case "locked":
       return "rounded-xl text-tile-foreground border-tile-foreground/20 bg-tile-locked shadow-[0_4px_0_0_var(--tile-locked),0_6px_12px_rgba(0,0,0,0.15)]";
     case "roadblock":
-      return "rounded-xl border-2 border-[#dc2626] bg-[#ef4444]/90 shadow-lg";
+      return "rounded-xl border-2 border-[#dc2626] bg-bomb-red/90 shadow-lg";
     case "roadblock-hover":
-      return "rounded-xl border-2 border-dashed border-[#ef4444] bg-[#ef4444]/15 pointer-events-none";
+      return "rounded-xl border-2 border-dashed border-bomb-red bg-bomb-red/15 pointer-events-none";
     case "bomb-hover":
-      return "rounded-xl border-2 border-[#ef4444] bg-[#ef4444]/30 shadow-[0_0_20px_rgba(239,68,68,0.5)] pointer-events-none";
-    case "explosion":
-      return "rounded-xl border-none bg-[#ef4444] pointer-events-none";
+      return "rounded-xl border-3 border-bomb-red bg-bomb-red/30 shadow-[0_0_20px_rgba(239,68,68,0.5)] pointer-events-none";
+    case "bomb-placed":
+      return "rounded-xl border-3 border-bomb-red bg-bomb-red/60 shadow-[0_0_20px_rgba(239,68,68,0.5)] pointer-events-none";
     default:
       return cn(BASE_TILE, "bg-tile-primary", DEFAULT_SHADOW);
   }
@@ -69,8 +69,8 @@ export default function GameTile({ letter, score, state = "idle", onClick, delay
 
   const isActive = state === "idle" || state === "selected";
   const isPlaced = state === "placed";
-  const isGhost = state === "selected-hover" || state === "placeholder" || state === "roadblock-hover" || state === "bomb-hover";
-  const isInteractive = !isPlaced && !isGhost && state !== "roadblock" && state !== "explosion";
+  const isGhost = state === "selected-hover" || state === "placeholder" || state === "roadblock-hover" || state === "bomb-hover" || state === "bomb-placed";
+  const isInteractive = !isPlaced && !isGhost && state !== "roadblock";
 
   const sizeClasses = isInteractive ? "aspect-square size-18 cursor-pointer" : "w-full h-full";
   const hoverClasses =
@@ -81,7 +81,7 @@ export default function GameTile({ letter, score, state = "idle", onClick, delay
   const animate = isActive ? { scale: 1, opacity: 1 } : { scale: 1, opacity: 1, y: 0 };
   const transition = isGhost ? { duration: 0.05, delay: delay ?? 0 } : { type: "spring" as const, stiffness: 400, damping: 1500, delay: delay ?? 0 };
 
-  const isStandardLetter = state !== "roadblock" && state !== "roadblock-hover" && state !== "bomb-hover" && state !== "explosion" && letter;
+  const isStandardLetter = state !== "roadblock" && state !== "roadblock-hover" && state !== "bomb-hover" && state !== "bomb-placed" && letter;
 
   return (
     <motion.div
@@ -110,17 +110,9 @@ export default function GameTile({ letter, score, state = "idle", onClick, delay
         </>
       )}
 
-      {/* 3. GHOST PREVIEWS */}
+      {/* 3. GHOST PREVIEWS & BOMB PLACED*/}
       {state === "roadblock-hover" && <Construction className="text-red-400 w-7 h-7 opacity-60" />}
-      {state === "bomb-hover" && <Bomb className="text-red-500 w-7 h-7 animate-pulse" />}
-
-      {/* 4. EXPLOSION ANIMATION */}
-      {/* {state === "explosion" && (
-        <>
-          <Bomb className="relative z-10 w-8 h-8 text-white" />
-          <div className="absolute inset-0 border-4 border-orange-400 rounded-full animate-ping" style={{ animationDuration: "0.6s" }} />
-        </>
-      )} */}
+      {state === "bomb-hover" || (state === "bomb-placed" && <Bomb className="text-red-500 w-7 h-7 animate-pulse" />)}
 
       {/* REMOVE BUTTON */}
       {onRemove && (
