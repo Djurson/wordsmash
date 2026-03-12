@@ -30,6 +30,8 @@ const (
 	LockLetterEvent         EventType = "lock_letter"          // React (client) -> Go (server)
 	UnlockLetterEvent       EventType = "unlock_letter"        // React (client) -> Go (server)
 	UnlockSingleLetterEvent EventType = "unlock_single_letter" // React (client) -> Go (server)
+	SubmitBombEvent         EventType = "submit_bomb"          // React (client) -> Go (server)
+	SubmitRoadblockEvent    EventType = "submit_roadblock"     // React (client) -> Go (server)
 )
 
 type Event struct {
@@ -86,7 +88,6 @@ type LockLetterPayload struct {
 
 type SubmitTurnPayload struct {
 	NewTiles map[string]PlacedTile `json:"newTiles"`
-	NewBombs map[string]Bomb       `json:"newBombs"`
 }
 
 type Stat struct {
@@ -104,4 +105,9 @@ type FinalGameStats struct {
 type UnlockSingleLetterPayload struct {
 	LetterId uuid.UUID `json:"letterId"`
 	TileKey  string    `json:"tileKey"`
+}
+
+type SubmitSpecialEffectPayload struct {
+	X int `json:"x"`
+	Y int `json:"y"`
 }

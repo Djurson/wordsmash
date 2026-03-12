@@ -225,7 +225,7 @@ func (c *Client) readPump() {
 			}
 
 			if c.Room != nil {
-				c.Room.LockLetter <- LockLetterAction{
+				c.Room.LockLetter <- &LockLetterAction{
 					Client:    c,
 					LetterId:  payload.LetterId,
 					Placement: payload.Placement,
@@ -248,16 +248,42 @@ func (c *Client) readPump() {
 				continue
 			}
 
-			c.Room.ProcessMove <- SubmitTurnAction{Client: c, NewTiles: payload.NewTiles, NewBombs: payload.NewBombs}
+			c.Room.ProcessMove <- &SubmitTurnAction{Client: c, NewTiles: payload.NewTiles}
 
 		case UnlockSingleLetterEvent:
 			var payload UnlockSingleLetterPayload
 			json.Unmarshal(event.Payload, &payload)
-			c.hub.Rooms[c.Room.ID].UnlockSingleLetter <- UnlockSingleLetterAction{
+			c.hub.Rooms[c.Room.ID].UnlockSingleLetter <- &UnlockSingleLetterAction{
 				Client:   c,
 				LetterId: payload.LetterId,
 				TileKey:  payload.TileKey,
 			}
+
+		case SubmitBombEvent:
+			if c.Room == nil {
+				continue
+			}
+
+			var payload SubmitSpecialEffectPayload
+			if err := json.Unmarshal(event.Payload, &payload); err != nil {
+				log.Printf("Error reading submit_bomb payload: %v", err)
+				continue
+			}
+
+			c.Room.UpdateSpecialTiles <- &SubmitSpecialEffectAction{X: payload.X, Y: payload.Y, Client: c, Type: BombEffect}
+
+		case SubmitRoadblockEvent:
+			if c.Room == nil {
+				continue
+			}
+
+			var payload SubmitSpecialEffectPayload
+			if err := json.Unmarshal(event.Payload, &payload); err != nil {
+				log.Printf("Error reading submit_bomb payload: %v", err)
+				continue
+			}
+
+			c.Room.UpdateSpecialTiles <- &SubmitSpecialEffectAction{X: payload.X, Y: payload.Y, Client: c, Type: RoadblockEffect}
 		}
 	}
 }

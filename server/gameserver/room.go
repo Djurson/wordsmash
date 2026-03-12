@@ -28,6 +28,13 @@ type SubmitTurnAction struct {
 	NewBombs map[string]Bomb
 }
 
+type SubmitSpecialEffectAction struct {
+	Client *Client
+	X      int
+	Y      int
+	Type   SpecialType
+}
+
 type GameRoom struct {
 	ID                 string
 	Clients            map[*Client]bool
@@ -35,13 +42,14 @@ type GameRoom struct {
 	Broadcast          chan []byte
 	Register           chan *Client
 	Unregister         chan *Client
-	ProcessMove        chan SubmitTurnAction
+	ProcessMove        chan *SubmitTurnAction
 	UpdateSettings     chan []byte
 	UpdateUsername     chan *Client
 	StartGame          chan *Client
-	LockLetter         chan LockLetterAction
+	LockLetter         chan *LockLetterAction
 	UnlockLetter       chan *Client
-	UnlockSingleLetter chan UnlockSingleLetterAction
+	UnlockSingleLetter chan *UnlockSingleLetterAction
+	UpdateSpecialTiles chan *SubmitSpecialEffectAction
 }
 
 func NewRoom(id string) *GameRoom {
@@ -52,13 +60,13 @@ func NewRoom(id string) *GameRoom {
 		Broadcast:          make(chan []byte),
 		Register:           make(chan *Client),
 		Unregister:         make(chan *Client),
-		ProcessMove:        make(chan SubmitTurnAction),
+		ProcessMove:        make(chan *SubmitTurnAction),
 		UpdateSettings:     make(chan []byte),
 		UpdateUsername:     make(chan *Client),
 		StartGame:          make(chan *Client),
-		LockLetter:         make(chan LockLetterAction),
+		LockLetter:         make(chan *LockLetterAction),
 		UnlockLetter:       make(chan *Client),
-		UnlockSingleLetter: make(chan UnlockSingleLetterAction),
+		UnlockSingleLetter: make(chan *UnlockSingleLetterAction),
 	}
 }
 
@@ -200,7 +208,7 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
-			isValid, message := isValidPlacement(&submitTurnAction, &r.State.Board, &r.State.Bombs)
+			isValid, message := isValidPlacement(submitTurnAction, &r.State.Board)
 			if !isValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
 				continue
@@ -540,12 +548,16 @@ func (r *GameRoom) Run() {
 					}
 				}
 			}
+
+		case action := <-r.UpdateSpecialTiles:
+			// TODO: Implement different handling for bombs and roadblocks
+			continue
 		}
 	}
 }
 
 /* Same implementation as client/lib/utils.ts */
-func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
+func isValidPlacement(turnAction *SubmitTurnAction, board *map[string]PlacedTile) (bool, string) {
 	if len(turnAction.NewTiles) == 0 && len(turnAction.NewBombs) == 0 {
 		return false, "Behöver placera ut minst en bricka eller bomb"
 	}
@@ -745,4 +757,9 @@ func extractWordAt(startX, startY int, horizontal bool, fullBoard *map[string]Pl
 	}
 
 	return word, score
+}
+
+func isPlacedOnABombBombs(newTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string) {
+	// TODO: Implement chcking for bombs
+	return false, ""
 }

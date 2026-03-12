@@ -9,6 +9,7 @@ import (
 )
 
 type TileState string
+type SpecialType string
 
 const (
 	TEAMHANDSIZE       int = 15
@@ -16,6 +17,9 @@ const (
 
 	TileStatePlaced      TileState = "placed"
 	TileStatePlaceholder TileState = "placeholder"
+
+	BombEffect      SpecialType = "bomb"
+	RoadblockEffect SpecialType = "roadblock"
 )
 
 var letterBag []Letter
@@ -100,7 +104,6 @@ type ServerGameState struct {
 // Used to send information to client (only about their team)
 type ClientGameState struct {
 	Board       map[string]PlacedTile `json:"board"`
-	Bombs       map[string]Bomb       `json:"bombs"`
 	Roadblocks  map[string]Roadblock  `json:"roadblocks"`
 	Team        *TeamState            `json:"team"`
 	GameId      string                `json:"gameId"`
@@ -175,7 +178,6 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 
 	return ClientGameState{
 		Board:       game.Board,
-		Bombs:       game.Bombs,
 		Roadblocks:  game.Roadblocks,
 		Team:        game.Teams[team],
 		GameId:      game.GameId,
