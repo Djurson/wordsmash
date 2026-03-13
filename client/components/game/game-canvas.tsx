@@ -100,8 +100,6 @@ export function GameCanvas() {
 
   if (!gamestate || !user) return;
 
-  console.log(explosions);
-
   return (
     <div
       ref={containerRef}
@@ -153,10 +151,10 @@ export function GameCanvas() {
             <div
               key={exp.id}
               className="absolute pointer-events-none z-50"
-              style={{ position: "absolute", left: exp.x * CELL, top: exp.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(0%, -0%)`, zIndex: 20 }}>
+              style={{ position: "absolute", left: exp.x * CELL, top: exp.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 20 }}>
               {/* Detonate the bomb */}
-              <div className="relative inset-0 flex items-center justify-center animate-bomb-explode">
-                <div className="w-full h-full rounded-lg flex items-center justify-center shadow-2xl" style={{ backgroundColor: "--var(bomb-red)" }}>
+              <div className="relative flex items-center justify-center animate-bomb-explode">
+                <div className="w-full h-full rounded-lg flex items-center justify-center shadow-2xl bg-bomb-red" style={{ width: TILE_SIZE, height: TILE_SIZE }}>
                   <Bomb className="size-7 aspect-square text-white" />
                 </div>
               </div>
@@ -165,9 +163,9 @@ export function GameCanvas() {
               <div
                 className="absolute inset-0 border-4 border-bomb-red rounded-full animate-explosion-ring"
                 style={{
-                  left: "50%",
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
+                  // left: "50%",
+                  // top: "50%",
+                  // transform: "translate(-50%, -50%)",
                   width: TILE_SIZE,
                   height: TILE_SIZE,
                 }}
