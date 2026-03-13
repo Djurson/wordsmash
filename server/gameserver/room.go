@@ -471,6 +471,10 @@ func (r *GameRoom) Run() {
 		case <-ticker.C:
 			if r.State.GameStarted && !r.State.GameOver {
 				now := time.Now().UnixMilli()
+
+				// TODO: Check roadblocks, and schedule for deletion
+				// TODO: Implement reward system based on board coverage with tiles
+
 				if now >= r.State.EndTime {
 					r.State.GameOver = true
 
