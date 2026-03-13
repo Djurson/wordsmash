@@ -115,20 +115,20 @@ export function GameCanvas() {
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}>
       <div className="absolute" style={{ left: "50%", top: "50%", transformOrigin: "0 0", transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}>
-        {/* --- GHOST PREVIEWS --- */}
+        {/* GHOST PREVIEWS */}
         {hoverCell && (
           <div
             style={{ position: "absolute", left: hoverCell.x * CELL, top: hoverCell.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 15 }}
             className="pointer-events-none">
-            {/* 1. Preview Letter Tile */}
+            {/* Preview Letter Tile */}
             {localGameState.selectedLetterId && !hoverOccupied && !hoverBlocked && (
               <GameTile letter={gamestate.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" score={gamestate.team.teamLetters[localGameState.selectedLetterId].score} />
             )}
 
-            {/* 2. Preview Roadblock */}
+            {/* Preview Roadblock */}
             {localGameState.selectedPowerup === "roadblock" && !hoverOccupied && !hoverBlocked && <GameTile state="roadblock-hover" />}
 
-            {/* 3. Preview Bomb */}
+            {/* Preview Bomb */}
             {localGameState.selectedPowerup === "bomb" && hoverOccupied && <GameTile state="bomb-hover" />}
           </div>
         )}
