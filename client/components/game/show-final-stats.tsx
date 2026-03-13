@@ -4,6 +4,7 @@ import { useGameContext } from "@/hooks/gamecontext";
 import { Button } from "../ui/button";
 import { ArrowLeft, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Stat } from "@/lib/game/types";
 
 export function ShowFinalStats() {
   const { finalStats, leaveRoom, gamestate, user } = useGameContext();
@@ -30,14 +31,7 @@ export function ShowFinalStats() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-6 py-3 rounded-lg bg-muted/40">
-          <span className="text-sm text-muted-foreground">Flest placerade brickor</span>
-
-          <div className="flex items-center font-medium gap-4">
-            <span className="text-lg font-bold">{finalStats.mostPlacedTiles.username}</span>
-            <span className="text-muted-foreground">{finalStats.mostPlacedTiles.value}</span>
-          </div>
-        </div>
+        <ShowStat title="Flest placerade brickor" stat={finalStats.mostPlacedTiles} />
       </div>
       <div className="flex flex-col gap-3">
         <Button className="flex items-center px-5 py-6 text-base gap-2" onClick={() => router.push("/")}>
@@ -48,6 +42,19 @@ export function ShowFinalStats() {
           <ArrowLeft />
           Lämna
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function ShowStat({ title, stat }: { title: string; stat: Stat }) {
+  return (
+    <div className="flex items-center justify-between px-6 py-3 rounded-lg bg-muted/40">
+      <span className="text-sm text-muted-foreground">{title}</span>
+
+      <div className="flex items-center font-medium gap-4">
+        <span className="text-lg font-bold">{stat.username}</span>
+        <span className="text-muted-foreground">{stat.value}</span>
       </div>
     </div>
   );

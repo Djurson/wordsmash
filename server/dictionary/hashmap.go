@@ -1,6 +1,7 @@
 package dictionary
 
 import (
+	"api/gameserver"
 	"bufio"
 	"fmt"
 	"math/rand"
@@ -34,7 +35,7 @@ func (h *HashMapDictionary) RandomWord() string {
 
 		word = h.wordList[randomIndex]
 
-		if len(word) > 4 {
+		if len(word) > gameserver.MINRANDOMWORDSTARTLENGTH && len(word) <= gameserver.MAXRANDOMWORDSTARTLENGTH {
 			break
 		}
 	}

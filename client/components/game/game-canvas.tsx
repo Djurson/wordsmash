@@ -137,12 +137,20 @@ export function GameCanvas() {
         {/* Draw all roadblocks */}
         {/** //TODO: Implement visuals for roadblocks */}
         <AnimatePresence>
-          {gamestate.roadblocks &&
-            Object.values(gamestate.roadblocks).map((rb) => (
-              <div key={`rb-${rb.x}-${rb.y}`} style={{ position: "absolute", left: rb.x * CELL, top: rb.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 9 }}>
+          {Object.values(gamestate.roadblocks).map((rb) => {
+            const timeLeft = rb.expiresAt - Date.now();
+            const isDisappearing = timeLeft < 500;
+            console.log(isDisappearing);
+
+            return (
+              <div
+                key={`rb-${rb.x}-${rb.y}`}
+                className={`absolute rounded-lg flex items-center justify-center ${isDisappearing ? "animate-roadblock-disappear" : "animate-roadblock-appear animate-roadblock-pulse"}`}
+                style={{ left: rb.x * CELL, top: rb.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 9 }}>
                 <GameTile state="roadblock" expiresAt={rb.expiresAt} />
               </div>
-            ))}
+            );
+          })}
         </AnimatePresence>
 
         {Object.keys(explosions).map((key) => {

@@ -226,104 +226,7 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
-			containsBombs, bomb := wordContainsBomb(&submitTurnAction.NewTiles, &r.State.Board, &r.State.Bombs)
-			if containsBombs {
-				placedBombUser := r.State.Players[bomb.PlacedBy]
-				triggeredExplosionUser := r.State.Players[submitTurnAction.Client.Id]
-
-				placedBombUser.ExplosionsCaused++
-				triggeredExplosionUser.TriggeredExplosions++
-
-				triggeredExplosionUser.Score -= EXPLOSIONCAUSEDPOINTS
-				r.State.Teams[triggeredExplosionUser.Team].Score -= EXPLOSIONCAUSEDPOINTS
-
-				r.State.Players[submitTurnAction.Client.Id] = triggeredExplosionUser
-
-				// Send information about bomb detonation (toast)
-				if r.State.Players[bomb.PlacedBy].Team == submitTurnAction.Client.Team {
-					r.State.Players[bomb.PlacedBy] = placedBombUser
-
-					for c := range r.Clients {
-						if c.Team == triggeredExplosionUser.Team && c.Id != triggeredExplosionUser.UserId {
-							c.send <- PrepareEvent(BombExplodedEvent,
-								BombExplodedPayload{
-									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
-									X:       bomb.X,
-									Y:       bomb.Y,
-									Bad:     true,
-								})
-						} else if c.Id == submitTurnAction.Client.Id {
-							c.send <- PrepareEvent(BombExplodedEvent,
-								BombExplodedPayload{
-									Message: fmt.Sprintf("Du detonerade %s bomb", triggeredExplosionUser.Username),
-									X:       bomb.X,
-									Y:       bomb.Y,
-									Bad:     true,
-								})
-						} else {
-							c.send <- PrepareEvent(BombExplodedEvent,
-								BombExplodedPayload{
-									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
-									X:       bomb.X,
-									Y:       bomb.Y,
-									Bad:     false,
-								})
-						}
-					}
-				} else {
-					placedBombUser.Score += EXPLOSIONCAUSEDPOINTS
-					r.State.Teams[placedBombUser.Team].Score += EXPLOSIONCAUSEDPOINTS
-
-					r.State.Players[bomb.PlacedBy] = placedBombUser
-
-					for c := range r.Clients {
-						if c.Team == submitTurnAction.Client.Team {
-							c.send <- PrepareEvent(BombExplodedEvent,
-								BombExplodedPayload{
-									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
-									X:       bomb.X,
-									Y:       bomb.Y,
-									Bad:     true,
-								})
-						} else {
-							c.send <- PrepareEvent(BombExplodedEvent,
-								BombExplodedPayload{
-									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
-									X:       bomb.X,
-									Y:       bomb.Y,
-									Bad:     false,
-								})
-						}
-					}
-				}
-
-				removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
-
-				// Remove letters from the hand
-				teamLetters := r.State.Teams[submitTurnAction.Client.Team].Letters
-				for _, tile := range submitTurnAction.NewTiles {
-					removePlaceholdersByLetterId(tile.Id, r.State.Teams[submitTurnAction.Client.Team])
-					delete(teamLetters, tile.Id)
-				}
-
-				// Draw new letters
-				newLettersNeeded := len(submitTurnAction.NewTiles)
-				drawnLetters := GenerateRandomLetters(newLettersNeeded)
-				for _, drawnLetter := range drawnLetters {
-					newID := uuid.New()
-					teamLetters[newID] = TeamLetter{Id: newID, Letter: string(drawnLetter.Rune), IsLocked: false, LockedBy: uuid.Nil, Score: drawnLetter.Score}
-				}
-				r.State.Teams[submitTurnAction.Client.Team].Letters = teamLetters
-
-				// Update board
-				for client := range r.Clients {
-					client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
-				}
-				continue
-			}
-
 			wordsCreated, moveScore := extractWordsAndScore(&submitTurnAction.NewTiles, &r.State.Board)
-
 			if len(wordsCreated) == 0 {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Du måste bilda ett ord på minst 2 bokstäver"})
 				r.UnlockLetter <- submitTurnAction.Client
@@ -343,6 +246,12 @@ func (r *GameRoom) Run() {
 			if !wordsValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bildat ett ogiltigt ord"})
 				r.UnlockLetter <- submitTurnAction.Client
+				continue
+			}
+
+			bombs := wordContainsBomb(&submitTurnAction.NewTiles, &r.State.Board, &r.State.Bombs)
+			if len(bombs) > 0 {
+				handleWordConnectedWithBomb(&bombs, submitTurnAction, r)
 				continue
 			}
 
@@ -618,5 +527,101 @@ func (r *GameRoom) Run() {
 				continue
 			}
 		}
+	}
+}
+
+func handleWordConnectedWithBomb(bombs *[]Bomb, submitTurnAction *SubmitTurnAction, r *GameRoom) {
+	for _, bomb := range *bombs {
+		placedBombUser := r.State.Players[bomb.PlacedBy]
+		triggeredExplosionUser := r.State.Players[submitTurnAction.Client.Id]
+
+		placedBombUser.ExplosionsCaused++
+		triggeredExplosionUser.TriggeredExplosions++
+
+		triggeredExplosionUser.Score -= EXPLOSIONCAUSEDPOINTS
+		r.State.Teams[triggeredExplosionUser.Team].Score -= EXPLOSIONCAUSEDPOINTS
+
+		r.State.Players[submitTurnAction.Client.Id] = triggeredExplosionUser
+
+		// Send information about bomb detonation (toast)
+		if r.State.Players[bomb.PlacedBy].Team == submitTurnAction.Client.Team {
+			r.State.Players[bomb.PlacedBy] = placedBombUser
+
+			for c := range r.Clients {
+				if c.Team == triggeredExplosionUser.Team && c.Id != triggeredExplosionUser.UserId {
+					c.send <- PrepareEvent(BombExplodedEvent,
+						BombExplodedPayload{
+							Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+							X:       bomb.X,
+							Y:       bomb.Y,
+							Bad:     true,
+						})
+				} else if c.Id == submitTurnAction.Client.Id {
+					c.send <- PrepareEvent(BombExplodedEvent,
+						BombExplodedPayload{
+							Message: fmt.Sprintf("Du detonerade %s bomb", triggeredExplosionUser.Username),
+							X:       bomb.X,
+							Y:       bomb.Y,
+							Bad:     true,
+						})
+				} else {
+					c.send <- PrepareEvent(BombExplodedEvent,
+						BombExplodedPayload{
+							Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+							X:       bomb.X,
+							Y:       bomb.Y,
+							Bad:     false,
+						})
+				}
+			}
+		} else {
+			placedBombUser.Score += EXPLOSIONCAUSEDPOINTS
+			r.State.Teams[placedBombUser.Team].Score += EXPLOSIONCAUSEDPOINTS
+
+			r.State.Players[bomb.PlacedBy] = placedBombUser
+
+			for c := range r.Clients {
+				if c.Team == submitTurnAction.Client.Team {
+					c.send <- PrepareEvent(BombExplodedEvent,
+						BombExplodedPayload{
+							Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+							X:       bomb.X,
+							Y:       bomb.Y,
+							Bad:     true,
+						})
+				} else {
+					c.send <- PrepareEvent(BombExplodedEvent,
+						BombExplodedPayload{
+							Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+							X:       bomb.X,
+							Y:       bomb.Y,
+							Bad:     false,
+						})
+				}
+			}
+		}
+	}
+
+	removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
+
+	// Remove letters from the hand
+	teamLetters := r.State.Teams[submitTurnAction.Client.Team].Letters
+	for _, tile := range submitTurnAction.NewTiles {
+		removePlaceholdersByLetterId(tile.Id, r.State.Teams[submitTurnAction.Client.Team])
+		delete(teamLetters, tile.Id)
+	}
+
+	// Draw new letters
+	newLettersNeeded := len(submitTurnAction.NewTiles)
+	drawnLetters := GenerateRandomLetters(newLettersNeeded)
+	for _, drawnLetter := range drawnLetters {
+		newID := uuid.New()
+		teamLetters[newID] = TeamLetter{Id: newID, Letter: string(drawnLetter.Rune), IsLocked: false, LockedBy: uuid.Nil, Score: drawnLetter.Score}
+	}
+	r.State.Teams[submitTurnAction.Client.Team].Letters = teamLetters
+
+	// Update board
+	for client := range r.Clients {
+		client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
 	}
 }

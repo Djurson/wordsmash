@@ -12,6 +12,9 @@ type TileState string
 type SpecialType string
 
 const (
+	MINRANDOMWORDSTARTLENGTH = 5
+	MAXRANDOMWORDSTARTLENGTH = 9
+
 	TEAMHANDSIZE       int = 15
 	ROUNDSTARTWAITTIME int = 5
 
