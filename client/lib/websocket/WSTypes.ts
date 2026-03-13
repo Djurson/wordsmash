@@ -7,7 +7,8 @@ export type WSRecievedEvent =
   | { type: "game_over"; payload: FinalGameStats }
   | { type: "updated_settings"; payload: GameSettings }
   | { type: "error" | "server_connected" | "left_room"; payload: { message: string } }
-  | { type: "team_letter_updated"; payload: { teamLetters: Record<string, TeamLetter>; placeholders: Record<string, PlacedTile> } };
+  | { type: "team_letter_updated"; payload: { teamLetters: Record<string, TeamLetter>; placeholders: Record<string, PlacedTile> } }
+  | { type: "bomb_exploded"; payload: { x: number; y: number; message: string; bad: boolean } };
 
 export type WSEventType = WSRecievedEvent["type"];
 

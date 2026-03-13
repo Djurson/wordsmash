@@ -1,6 +1,6 @@
 "use client";
 
-import { FinalGameStats, GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
+import { Explosion, FinalGameStats, GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
 import { finalTesting, getTileKey, isValidPlacement } from "@/lib/game/utils";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
 import { WSRecievedEvent, WSSendEventType, WSSendPayloadMap } from "@/lib/websocket/WSTypes";
@@ -27,6 +27,7 @@ export interface GameContextContextProps {
   finalStats: FinalGameStats | null;
   handleSelectPowerup: (type: "bomb" | "roadblock" | null) => void;
   handleSpecialAbilityPlacement: (type: "bomb" | "roadblock", x: number, y: number) => void;
+  explosions: Record<string, Explosion>;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -47,6 +48,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const [finalStats, setFinalStats] = useState<FinalGameStats | null>(null);
+  const [explosions, setExplosions] = useState<Record<string, Explosion>>({});
 
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
@@ -111,9 +113,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           break;
 
         case "board_updated":
-          const gamestate = payload;
+          const pay_gamestate = payload;
           const newBoard = payload.board;
-          updateGameState(gamestate);
+          updateGameState(pay_gamestate);
           setLocalGameState((prevLocal) => {
             let collision = false;
 
@@ -191,6 +193,18 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           setLocalGameState({ currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, selectedPowerup: null });
           break;
 
+        case "bomb_exploded": {
+          // Show toast message
+          if (payload.bad) {
+            ToastError(payload.message);
+          } else {
+            ToastSucess(payload.message);
+          }
+          const explosionId = `exp-${payload.x}-${payload.y}`;
+          updateExplosions({ id: explosionId, x: payload.x, y: payload.y });
+          break;
+        }
+
         default:
           console.log("Ohanterat event från server:", type);
           break;
@@ -199,6 +213,23 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
     return () => ws.close();
   }, [updateGameState, router]);
+
+  const updateExplosions = useCallback(
+    (explosion: Explosion) => {
+      // add the explosion
+      setExplosions((prev) => ({ ...prev, [explosion.id]: explosion }));
+
+      // delete the explosion after the animation
+      setTimeout(() => {
+        setExplosions((prev) => {
+          const newList = prev;
+          delete newList[explosion.id];
+          return newList;
+        });
+      }, 600);
+    },
+    [explosions],
+  );
 
   const sendMessage: SendMessageType = useCallback(
     (type, payload) => {
@@ -348,6 +379,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleRemoveSingleTile,
     handleSelectPowerup,
     handleSpecialAbilityPlacement,
+    explosions,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

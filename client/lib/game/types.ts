@@ -1,4 +1,4 @@
-export interface PlacedTile {
+export type PlacedTile = {
   id: string;
   letter: string;
   x: number;
@@ -6,21 +6,27 @@ export interface PlacedTile {
   state: "placed" | "placeholder";
   score: number;
   placedBy?: string;
-}
+};
 
-export interface Bomb {
+export type Bomb = {
   placedBy: string;
   x: number;
   y: number;
   team: Team;
-}
+};
 
-export interface Roadblock {
+export type Explosion = {
+  id: string;
+  x: number;
+  y: number;
+};
+
+export type Roadblock = {
   placedBy: string;
   x: number;
   y: number;
   expiresAt: number;
-}
+};
 
 export type Direction = "vertical" | "horizontal";
 export type Team = "a" | "b";

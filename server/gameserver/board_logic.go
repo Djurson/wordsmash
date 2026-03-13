@@ -171,40 +171,40 @@ func extractWordAt(startX, startY int, horizontal bool, fullBoard *map[string]Pl
 
 // wordContainsBomb checks if any of the new tiles are placed on top of active bombs.
 // It returns a boolean flag and a string message.
-func wordContainsBomb(newTiles *map[string]PlacedTile, placedTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string, uuid.UUID) {
+func wordContainsBomb(newTiles *map[string]PlacedTile, placedTiles *map[string]PlacedTile, bombs *map[string]Bomb) (bool, *Bomb) {
 	if len(*bombs) == 0 {
-		return false, "", uuid.Nil
+		return false, &Bomb{}
 	}
 
 	fullBoard := combineBoards(newTiles, placedTiles)
 	firstTile, isHorizontal := getPlacementDetails(newTiles)
 
 	// Check the main word line
-	if hasBomb, msg, placedByUserId := checkLineForBomb(firstTile.X, firstTile.Y, isHorizontal, &fullBoard, bombs); hasBomb {
-		return true, msg, placedByUserId
+	if hasBomb, bomb := checkLineForBomb(firstTile.X, firstTile.Y, isHorizontal, &fullBoard, bombs); hasBomb {
+		return true, bomb
 	}
 
 	// Check all perpendicular cross-words formed by each new tile
 	for _, tile := range *newTiles {
-		if hasBomb, msg, placedByUserId := checkLineForBomb(tile.X, tile.Y, !isHorizontal, &fullBoard, bombs); hasBomb {
-			return true, msg, placedByUserId
+		if hasBomb, bomb := checkLineForBomb(tile.X, tile.Y, !isHorizontal, &fullBoard, bombs); hasBomb {
+			return true, bomb
 		}
 	}
 
-	return false, "", uuid.Nil
+	return false, &Bomb{}
 }
 
-func checkLineForBomb(startX, startY int, checkHorizontal bool, fullBoard *map[string]PlacedTile, bombs *map[string]Bomb) (bool, string, uuid.UUID) {
+func checkLineForBomb(startX, startY int, checkHorizontal bool, fullBoard *map[string]PlacedTile, bombs *map[string]Bomb) (bool, *Bomb) {
 	wordTiles := getWordTiles(startX, startY, checkHorizontal, fullBoard)
 
 	for _, tile := range wordTiles {
 		key := getTileKey(tile.X, tile.Y)
 		if bomb, isBomb := (*bombs)[key]; isBomb {
 			delete(*bombs, key)
-			return true, "Du använde en bricka med en bomb!", bomb.PlacedBy
+			return true, &bomb
 		}
 	}
-	return false, "", uuid.Nil
+	return false, &Bomb{}
 }
 
 // getPlacementDetails analyzes the new tiles to determine the first placed tile

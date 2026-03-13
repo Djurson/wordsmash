@@ -226,9 +226,9 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
-			containsBombs, message, placedByUserId := wordContainsBomb(&submitTurnAction.NewTiles, &r.State.Board, &r.State.Bombs)
+			containsBombs, bomb := wordContainsBomb(&submitTurnAction.NewTiles, &r.State.Board, &r.State.Bombs)
 			if containsBombs {
-				placedBombUser := r.State.Players[placedByUserId]
+				placedBombUser := r.State.Players[bomb.PlacedBy]
 				triggeredExplosionUser := r.State.Players[submitTurnAction.Client.Id]
 
 				placedBombUser.ExplosionsCaused++
@@ -240,34 +240,63 @@ func (r *GameRoom) Run() {
 				r.State.Players[submitTurnAction.Client.Id] = triggeredExplosionUser
 
 				// Send information about bomb detonation (toast)
-				if r.State.Players[placedByUserId].Team == submitTurnAction.Client.Team {
-					r.State.Players[placedByUserId] = placedBombUser
+				if r.State.Players[bomb.PlacedBy].Team == submitTurnAction.Client.Team {
+					r.State.Players[bomb.PlacedBy] = placedBombUser
 
 					for c := range r.Clients {
 						if c.Team == triggeredExplosionUser.Team && c.Id != triggeredExplosionUser.UserId {
-							c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+							c.send <- PrepareEvent(BombExplodedEvent,
+								BombExplodedPayload{
+									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+									X:       bomb.X,
+									Y:       bomb.Y,
+									Bad:     true,
+								})
 						} else if c.Id == submitTurnAction.Client.Id {
-							c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": fmt.Sprintf("Du detonerade %s bomb", triggeredExplosionUser.Username)})
+							c.send <- PrepareEvent(BombExplodedEvent,
+								BombExplodedPayload{
+									Message: fmt.Sprintf("Du detonerade %s bomb", triggeredExplosionUser.Username),
+									X:       bomb.X,
+									Y:       bomb.Y,
+									Bad:     true,
+								})
 						} else {
-							c.send <- PrepareEvent(SuccessEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+							c.send <- PrepareEvent(BombExplodedEvent,
+								BombExplodedPayload{
+									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+									X:       bomb.X,
+									Y:       bomb.Y,
+									Bad:     false,
+								})
 						}
 					}
 				} else {
 					placedBombUser.Score += EXPLOSIONCAUSEDPOINTS
 					r.State.Teams[placedBombUser.Team].Score += EXPLOSIONCAUSEDPOINTS
 
-					r.State.Players[placedByUserId] = placedBombUser
+					r.State.Players[bomb.PlacedBy] = placedBombUser
 
 					for c := range r.Clients {
 						if c.Team == submitTurnAction.Client.Team {
-							c.send <- PrepareEvent(ErrorEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+							c.send <- PrepareEvent(BombExplodedEvent,
+								BombExplodedPayload{
+									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+									X:       bomb.X,
+									Y:       bomb.Y,
+									Bad:     true,
+								})
 						} else {
-							c.send <- PrepareEvent(SuccessEvent, map[string]string{"message": fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username)})
+							c.send <- PrepareEvent(BombExplodedEvent,
+								BombExplodedPayload{
+									Message: fmt.Sprintf("%s detonerade %s bomb", triggeredExplosionUser.Username, placedBombUser.Username),
+									X:       bomb.X,
+									Y:       bomb.Y,
+									Bad:     false,
+								})
 						}
 					}
 				}
 
-				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
 				removePlaceholdersPlacedByClient(submitTurnAction.Client, r.State)
 
 				// Remove letters from the hand
@@ -290,6 +319,7 @@ func (r *GameRoom) Run() {
 				for client := range r.Clients {
 					client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
 				}
+				continue
 			}
 
 			wordsCreated, moveScore := extractWordsAndScore(&submitTurnAction.NewTiles, &r.State.Board)

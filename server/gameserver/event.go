@@ -21,6 +21,7 @@ const (
 	LeftRoomEvent           EventType = "left_room"            // Go (server) -> React (client)
 	UpdatedTeamLetterEvent  EventType = "team_letter_updated"  // Go (server) -> React (client)
 	GameOverEvent           EventType = "game_over"            // Go (server) -> React (client)
+	BombExplodedEvent       EventType = "bomb_exploded"        // Go (server) -> React (client)
 	CreateGameEvent         EventType = "create_game"          // React (client) -> Go (server)
 	JoinGameEvent           EventType = "join_game"            // React (client) -> Go (server)
 	SubmitTurnEvent         EventType = "submit_turn"          // React (client) -> Go (server)
@@ -102,4 +103,11 @@ type UnlockSingleLetterPayload struct {
 type SubmitSpecialEffectPayload struct {
 	X int `json:"x"`
 	Y int `json:"y"`
+}
+
+type BombExplodedPayload struct {
+	X       int    `json:"x"`
+	Y       int    `json:"y"`
+	Message string `json:"message"`
+	Bad     bool   `json:"bad"`
 }

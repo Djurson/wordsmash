@@ -112,7 +112,7 @@ export default function GameTile({ letter, score, state = "idle", onClick, delay
 
       {/* 3. GHOST PREVIEWS & BOMB PLACED*/}
       {state === "roadblock-hover" && <Construction className="text-red-400 w-7 h-7 opacity-60" />}
-      {state === "bomb-hover" || (state === "bomb-placed" && <Bomb className="text-red-500 w-7 h-7 animate-pulse" />)}
+      {(state === "bomb-hover" || state === "bomb-placed") && <Bomb className="text-red-500 size-10 aspect-square animate-pulse z-50" />}
 
       {/* REMOVE BUTTON */}
       {onRemove && (

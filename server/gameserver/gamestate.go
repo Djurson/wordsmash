@@ -15,6 +15,9 @@ const (
 	TEAMHANDSIZE       int = 15
 	ROUNDSTARTWAITTIME int = 5
 
+	STARTBOMBS      int = 100
+	STARTROADBLOCKS int = 100
+
 	EXPLOSIONCAUSEDPOINTS int = 5
 
 	TileStatePlaced      TileState = "placed"
@@ -152,8 +155,8 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 			team.Letters[id] = TeamLetter{Letter: string(letter.Rune), IsLocked: false, Id: id, Score: letter.Score}
 		}
 
-		team.Roadblocks = 3
-		team.Bombs = 2
+		team.Roadblocks = STARTROADBLOCKS
+		team.Bombs = STARTBOMBS
 	}
 
 	startWord := hub.Dictionary.RandomWord()
