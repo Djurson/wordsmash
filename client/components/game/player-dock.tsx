@@ -31,7 +31,7 @@ export function PlayerDock() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, type: "spring", bounceDamping: 15, bounce: 0.7 }}
       className="fixed z-50 flex flex-col items-center justify-center bottom-4">
-      <div className="px-4 pt-4 pb-6 space-y-6 border shadow-2xl bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8">
+      <div className="px-4 pt-4 pb-6 border shadow-2xl space-y-6 bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
             <span className="text-base font-semibold text-muted-foreground">Ditt lags brickor</span>

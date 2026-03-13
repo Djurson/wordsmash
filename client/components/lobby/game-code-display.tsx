@@ -40,7 +40,7 @@ export function GameCodeDisplay() {
               <LetterDisplay key={`r-${i}`} char={char} />
             ))}
           </div>
-          <div className="flex items-center justify-center ml-2 transition-colors rounded-lg w-9 h-9 bg-secondary text-secondary-foreground group-hover:bg-primary group-hover:text-primary-foreground">
+          <div className="flex items-center justify-center ml-2 rounded-lg transition-colors w-9 h-9 bg-secondary text-secondary-foreground group-hover:bg-primary group-hover:text-primary-foreground">
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </div>
         </button>

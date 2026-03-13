@@ -32,12 +32,6 @@ export function TopHUD() {
     return () => cancelAnimationFrame(requestRef.current!);
   }, [gamestate]);
 
-  const totalSeconds = Math.floor(timeLeft / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const milliseconds = Math.round((timeLeft % 1000) / 10);
-  const isUrgent = timeLeft < 30000;
-
   if (!gamestate || !user) return null;
 
   const teamAScore = user.team === "a" ? gamestate.team.score : gamestate.totalScore - gamestate.team.score;
@@ -51,17 +45,7 @@ export function TopHUD() {
       <div className="flex flex-col w-full px-4 py-3 border shadow-lg gap-2 bg-card/80 backdrop-blur-xl border-border rounded-2xl md:px-6 md:py-4">
         <div className="flex items-center justify-between">
           <TeamDisplay team="a" teamScore={teamAScore} />
-          {/* Timer */}
-          <div className="flex flex-col items-center">
-            <div className={cn("text-3xl md:text-4xl font-extrabold tabular-nums tracking-tight", isUrgent ? "text-destructive animate-pulse" : "text-foreground")}>
-              {minutes > 0
-                ? /* There are still minutes left */
-                  `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-                : /* Few seconds left */
-                  `${seconds.toString().padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`}
-            </div>
-          </div>
-
+          <HUDTimer timeLeft={timeLeft} />
           <TeamDisplay team="b" teamScore={gamestate.totalScore - teamAScore} />
         </div>
         <div className="flex w-full overflow-hidden rounded-xl bg-tile-accent">
@@ -97,16 +81,47 @@ function TeamDisplay({ team, teamScore }: { team: "a" | "b"; teamScore: number }
         {team === "a" ? (
           <>
             <div className="rounded-full size-6 bg-tile-primary" />
-            <span className="text-base font-bold text-foreground">Lag A</span>
+            <span className="text-base font-bold text-foreground">Lag 1</span>
           </>
         ) : (
           <>
-            <span className="text-base font-bold text-foreground">Lag B</span>
+            <span className="text-base font-bold text-foreground">Lag 2</span>
             <div className="rounded-full size-6 bg-tile-accent" />
           </>
         )}
       </div>
       {team === "a" && <p className="text-sm font-bold text-foreground">Poäng: {teamScore}</p>}
     </div>
+  );
+}
+
+interface TimerProps {
+  timeLeft: number;
+  isUrgent?: boolean;
+}
+
+/**
+ * Takes in the time left in hundreths of a second and displays it as a timer
+ */
+export function HUDTimer({ timeLeft, isUrgent }: TimerProps) {
+  const totalSeconds = Math.floor(timeLeft / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const milliseconds = Math.round((timeLeft % 1000) / 10);
+  const urgent = isUrgent ?? timeLeft < 30000;
+
+  return (
+    <>
+      {/* Timer */}
+      <div className="flex flex-col items-center">
+        <div className={`text-3xl md:text-4xl font-extrabold tabular-nums tracking-tight ${urgent ? "text-destructive animate-pulse" : "text-foreground"}`}>
+          {minutes > 0
+            ? /* There are still minutes left */
+              `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+            : /* Few seconds left */
+              `${seconds.toString().padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`}
+        </div>
+      </div>
+    </>
   );
 }

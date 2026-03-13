@@ -24,7 +24,7 @@ export function MenuHeader() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 800, damping: 20, delay: 0.5 }}
-            className="z-30 flex items-center justify-center px-4 py-2 font-medium border rounded-full cursor-pointer shadow-sm bg-white/90 backdrop-blur-md border-slate-200 text-slate-500 gap-2">
+            className="z-30 flex items-center justify-center gap-2 px-4 py-2 font-medium border rounded-full shadow-sm cursor-pointer bg-white/90 backdrop-blur-md border-slate-200 text-slate-500">
             <p className="text-sm font-medium text-muted-foreground">Hur spelar jag?</p>
             <Info className="text-muted-foreground size-5" />
           </motion.div>

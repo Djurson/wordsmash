@@ -15,7 +15,7 @@ export function HowToPlay({ children }: { children: ReactNode }) {
         <div className="flex flex-col gap-6 overflow-y-auto max-h-[70vh]">
           {/* Basic gameplay */}
           <section className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <h3 className="flex items-center text-sm font-bold gap-2 text-foreground">
               <Target className="w-4 h-4 text-tile-foreground" />
               Mål
             </h3>
@@ -25,11 +25,11 @@ export function HowToPlay({ children }: { children: ReactNode }) {
           </section>
 
           <section className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <h3 className="flex items-center text-sm font-bold gap-2 text-foreground">
               <Users className="w-4 h-4 text-tile-foreground" />
               Placera brickor
             </h3>
-            <ul className="flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
+            <ul className="flex flex-col text-sm leading-relaxed gap-2 text-muted-foreground">
               <li className="flex items-center gap-2">
                 <span className="font-medium text-foreground">1.</span>
                 Klicka på en bricka i din hand längst ner på skärmen
@@ -48,11 +48,11 @@ export function HowToPlay({ children }: { children: ReactNode }) {
 
           {/* Navigation */}
           <section className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <h3 className="flex items-center text-sm font-bold gap-2 text-foreground">
               <Timer className="w-4 h-4 text-tile-foreground" />
               Navigering
             </h3>
-            <ul className="flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
+            <ul className="flex flex-col text-sm leading-relaxed gap-2 text-muted-foreground">
               <li className="flex items-start gap-2">
                 <span className="font-medium text-foreground">Panorera:</span>
                 Klicka och dra på spelplanen för att flytta runt
@@ -66,7 +66,7 @@ export function HowToPlay({ children }: { children: ReactNode }) {
 
           {/* Power-ups */}
           <section className="flex flex-col w-full gap-3">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <h3 className="flex items-center text-sm font-bold gap-2 text-foreground">
               <Zap className="w-4 h-4 text-tile-foreground" />
               Power-ups
             </h3>

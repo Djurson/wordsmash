@@ -158,18 +158,18 @@ export function GameCanvas() {
           return (
             <div
               key={exp.id}
-              className="absolute pointer-events-none z-50"
+              className="absolute z-50 pointer-events-none"
               style={{ position: "absolute", left: exp.x * CELL, top: exp.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 20 }}>
               {/* Detonate the bomb */}
               <div className="relative flex items-center justify-center animate-bomb-explode">
-                <div className="w-full h-full rounded-lg flex items-center justify-center shadow-2xl bg-bomb-red" style={{ width: TILE_SIZE, height: TILE_SIZE }}>
-                  <Bomb className="size-7 aspect-square text-white" />
+                <div className="flex items-center justify-center w-full h-full rounded-lg shadow-2xl bg-bomb-red" style={{ width: TILE_SIZE, height: TILE_SIZE }}>
+                  <Bomb className="text-white size-7 aspect-square" />
                 </div>
               </div>
 
               {/* Ring explosion */}
               <div
-                className="absolute inset-0 border-4 border-bomb-red rounded-full animate-explosion-ring"
+                className="absolute inset-0 border-4 rounded-full border-bomb-red animate-explosion-ring"
                 style={{
                   // left: "50%",
                   // top: "50%",
