@@ -44,6 +44,8 @@ const (
 )
 
 const (
+	MAXROADBLOCKDURATION int   = 30
+	MINROADBLOCKDURATION int   = 5
 	MAXTIMERMINUTES      int   = 25
 	MINTIMERMINUTES      int   = 1
 	SOCKETREADLIMIT      int64 = 1024
@@ -269,7 +271,7 @@ func (c *Client) readPump() {
 			}
 
 		case SubmitBombEvent:
-			if c.Room == nil {
+			if c.Room == nil || !c.Room.State.Settings.EnableSpecials {
 				continue
 			}
 
@@ -282,7 +284,7 @@ func (c *Client) readPump() {
 			c.Room.UpdateSpecialTiles <- &SubmitSpecialEffectAction{X: payload.X, Y: payload.Y, Client: c, Type: BombEffect}
 
 		case SubmitRoadblockEvent:
-			if c.Room == nil {
+			if c.Room == nil || !c.Room.State.Settings.EnableSpecials {
 				continue
 			}
 
@@ -375,6 +377,16 @@ func ValidateCreateGameDataSetting(data CreateGamePayload) CreateGamePayload {
 		data.Settings.TimerMinutes = MINTIMERMINUTES
 	} else if data.Settings.TimerMinutes > MAXTIMERMINUTES {
 		data.Settings.TimerMinutes = MAXTIMERMINUTES
+	}
+
+	if data.Settings.EnableSpecials {
+		if data.Settings.RoadblockDuration < MINROADBLOCKDURATION {
+			data.Settings.RoadblockDuration = MINROADBLOCKDURATION
+		} else if data.Settings.RoadblockDuration > MAXROADBLOCKDURATION {
+			data.Settings.RoadblockDuration = MAXROADBLOCKDURATION
+		} else if data.Settings.RoadblockDuration%ROADBLOCKDURATIONSTEPSIZE != 0 {
+			data.Settings.RoadblockDuration = DEFAULTROADBLOCKDURATION
+		}
 	}
 
 	return data

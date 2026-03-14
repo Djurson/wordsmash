@@ -17,22 +17,22 @@ import { useGameContext } from "@/hooks/gamecontext";
 import { CELL } from "@/lib/game/utils";
 import { GameSettings } from "@/lib/game/types";
 import { LoadingIcon } from "@/components/game/loading";
+import { HowToPlay } from "@/components/lobby/how-to-play";
+import GuidePage from "@/components/lobby/guide";
+
+const DEFALT_SETTINGS: GameSettings = {
+  timerMinutes: 5,
+  enableSpecials: true,
+  roadblockDuration: 10,
+};
 
 export default function LobbyPage() {
-  const { gamestate, sendMessage, leaveRoom, user, connectionError, isConnected } = useGameContext();
+  const { gamestate, sendMessage, leaveRoom, user, connectionError, quickGuideOpen, handleUpdateQuickGuide } = useGameContext();
 
   const [tab, setTab] = useState<string>("create");
   const [joinCode, setJoinCode] = useState("");
   const [username, setUsername] = useState("");
-  const [settings, setSettings] = useState(
-    gamestate?.settings ?? {
-      timerMinutes: 5,
-      enableBombs: true,
-      enableRoadblocks: true,
-      roadblockDuration: 10,
-    },
-  );
-  const [quickGuideOpen, setQuickGuideOpen] = useState(false);
+  const [settings, setSettings] = useState<GameSettings>(gamestate?.settings ?? DEFALT_SETTINGS);
 
   const handleSettingChange = (newSettings: GameSettings) => {
     setSettings(newSettings);
@@ -61,8 +61,12 @@ export default function LobbyPage() {
     return <LoadingIcon />;
   }
 
+  if (quickGuideOpen) {
+    return <GuidePage />;
+  }
+
   return (
-    <main className="flex flex-col items-center w-full gap-6 min-h-dvh bg-background">
+    <main className="flex flex-col items-center w-full gap-10 min-h-dvh bg-background">
       <div
         className="fixed inset-0 overflow-hidden touch-none"
         style={{
@@ -80,7 +84,7 @@ export default function LobbyPage() {
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 1200, damping: 40, delay: 0.8 }}
-          className={`w-full ${gamestate ? "max-w-4xl" : "max-w-md"}`}>
+          className={`w-full space-y-6 ${gamestate ? "max-w-4xl" : "max-w-md"}`}>
           {!gamestate ? (
             <div className="w-full max-w-md">
               <Tabs value={tab} onValueChange={setTab} className="flex flex-col w-full gap-3">
@@ -118,7 +122,7 @@ export default function LobbyPage() {
               </div>
 
               <div className="flex flex-col w-full gap-5 lg:flex-1 lg:justify-between">
-                <div className="flex items-end p-6 border gap-2 shadow-sm rounded-2xl bg-card border-border">
+                <div className="flex items-end gap-2 p-6 border shadow-sm rounded-2xl bg-card border-border">
                   <div className="flex flex-col flex-1 gap-3">
                     <Label className="text-sm font-semibold text-foreground" htmlFor="username">
                       Namn
@@ -151,6 +155,20 @@ export default function LobbyPage() {
               </div>
             </div>
           )}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 800, damping: 20, delay: 1.1 }}
+            className="flex justify-between w-full gap-2 itesm-center">
+            <Button className="flex-1" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
+              Snabb Guide <Play />
+            </Button>
+            <HowToPlay>
+              <Button className="flex-1" variant="outline">
+                Hur Spelar Jag? <Info />
+              </Button>
+            </HowToPlay>
+          </motion.div>
         </motion.div>
       </div>
     </main>

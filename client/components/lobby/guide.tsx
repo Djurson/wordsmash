@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Bomb, ChevronLeft, ChevronRight, Construction, LayoutGrid, Play, Send, Timer, Trophy, Users, WholeWord, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bomb, ChevronLeft, ChevronRight, Construction, LayoutGrid, Play, Send, Timer, Trophy, Users, WholeWord, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import GameTile from "@/components/game/game-tile";
 import { useCallback, useEffect, useState } from "react";
 import { CELL, TILE_SIZE } from "@/lib/game/utils";
 import { HUDTimer } from "@/components/game/top-hud";
 import Link from "next/link";
+import { useGameContext } from "@/hooks/gamecontext";
 
 const STEPS = [
   { id: "intro", title: "Welcome to Wordsmash", icon: WholeWord },
@@ -151,7 +152,7 @@ const StepBuild = () => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex items-center px-4 py-3 border gap-2 rounded-2xl bg-card/95 backdrop-blur-md border-border">
+        className="flex items-center gap-2 px-4 py-3 border rounded-2xl bg-card/95 backdrop-blur-md border-border">
         {rackLetters.map((l, i) => {
           const isUsed = phase > 0 && i < 4;
           return (
@@ -165,7 +166,7 @@ const StepBuild = () => {
       {/* Board preview */}
       <div className="relative">
         {/* Existing word PLANT */}
-        <div className="flex mb-1 gap-3">
+        <div className="flex gap-3 mb-1">
           {"PLANT".split("").map((l, i) => (
             <div key={`base-${i}`} style={{ width: TILE_SIZE, height: TILE_SIZE }}>
               <GameTile letter={l} state="placed" />
@@ -193,7 +194,7 @@ const StepBuild = () => {
       {/* Submit button animation */}
       <AnimatePresence>
         {phase >= 3 && (
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center px-4 py-2 text-sm font-bold gap-2 rounded-xl bg-primary text-primary-foreground">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-primary text-primary-foreground">
             <Send className="w-4 h-4" />
             Submit Word
           </motion.div>
@@ -220,7 +221,7 @@ const StepScoring = () => {
             initial={{ x: -40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: i * 0.2 }}
-            className="flex items-center p-3 border gap-3 rounded-xl bg-card border-border">
+            className="flex items-center gap-3 p-3 border rounded-xl bg-card border-border">
             <div className="flex gap-1">
               {ex.word.split("").map((l, j) => (
                 <div key={j} style={{ width: TILE_SIZE, height: TILE_SIZE }}>
@@ -288,7 +289,7 @@ const StepControl = () => {
         </div>
       </div>
 
-      <div className="flex items-center px-3 py-2 border rounded-lg gap-2 bg-tile-primary border-tile-border/20">
+      <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-tile-primary border-tile-border/20">
         <Zap className="w-4 h-4 text-team-a" />
         <span className="text-sm font-medium text-team-a">Team 1 earns more power-ups!</span>
       </div>
@@ -394,22 +395,27 @@ const StepTimer = () => {
   );
 };
 
-const StepWin = () => (
-  <div className="flex flex-col items-center gap-6">
-    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }}>
-      <Trophy className="w-20 h-20 text-primary" />
-    </motion.div>
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center">
-      <div className="mb-2 text-2xl font-bold text-foreground">Most Points Wins!</div>
-      <p className="max-w-sm text-muted-foreground">Build words, expand them, control the board, use power-ups strategically, and outscore the other team before time runs out.</p>
-    </motion.div>
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="flex mt-4 gap-3">
-      <Link href="/" className="flex items-center px-6 py-3 text-sm font-bold gap-2 transition-opacity rounded-xl bg-primary text-primary-foreground hover:opacity-90">
-        Try the Board <ArrowRight className="size-4" />
-      </Link>
-    </motion.div>
-  </div>
-);
+const StepWin = () => {
+  const { handleUpdateQuickGuide } = useGameContext();
+  return (
+    <div className="flex flex-col items-center gap-6">
+      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }}>
+        <Trophy className="w-20 h-20 text-primary" />
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center">
+        <div className="mb-2 text-2xl font-bold text-foreground">Most Points Wins!</div>
+        <p className="max-w-sm text-muted-foreground">Build words, expand them, control the board, use power-ups strategically, and outscore the other team before time runs out.</p>
+      </motion.div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="flex gap-3 mt-4">
+        <div
+          onClick={() => handleUpdateQuickGuide(false)}
+          className="flex items-center gap-2 px-6 py-3 text-sm font-bold transition-opacity rounded-xl bg-primary text-primary-foreground hover:opacity-90">
+          Try the Board <ArrowRight className="size-4" />
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 const STEP_COMPONENTS: Record<string, React.FC> = {
   intro: StepIntro,
@@ -426,6 +432,8 @@ const STEP_COMPONENTS: Record<string, React.FC> = {
 
 export default function GuidePage() {
   const [step, setStep] = useState(0);
+  const { handleUpdateQuickGuide } = useGameContext();
+
   const current = STEPS[step];
   const StepComponent = STEP_COMPONENTS[current.id];
   const Icon = current.icon;
@@ -443,25 +451,33 @@ export default function GuidePage() {
   }, [next, prev]);
 
   return (
-    <div className="flex flex-col w-screen h-screen overflow-hidden bg-background">
+    <div className="flex flex-col w-screen h-screen overflow-hidden bg-background z-100">
       {/* Progress bar */}
       <div className="h-1 bg-muted">
         <motion.div className="h-full bg-primary" animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }} transition={{ type: "spring", stiffness: 200 }} />
       </div>
 
       {/* Step dots */}
-      <div className="flex items-center justify-center py-4 gap-2">
+      <div className="flex items-center justify-center gap-2 py-4">
         {STEPS.map((s, i) => (
           <button key={s.id} onClick={() => setStep(i)} className={`w-2 h-2 rounded-full transition-all duration-300 ${i === step ? "w-6 bg-primary" : i < step ? "bg-primary/50" : "bg-muted"}`} />
         ))}
       </div>
 
       {/* Header */}
-      <motion.div key={current.id + "-header"} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center mb-2 gap-3">
+      <motion.div key={current.id + "-header"} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-3 mb-2">
         <div className="p-2 rounded-lg bg-primary/10">
           <Icon className="w-5 h-5 text-primary" />
         </div>
         <h2 className="text-xl font-bold text-foreground">{current.title}</h2>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute flex items-center justify-center gap-2 p-2 font-medium duration-300 ease-in-out border rounded-full shadow-sm cursor-pointer right-12 top-12 border-slate-200 text-slate-500 bg-white/90 hover:shadow-lg"
+        onClick={() => handleUpdateQuickGuide(false)}>
+        <X />
       </motion.div>
 
       <div className="mb-4 text-xs text-center text-muted-foreground">
@@ -488,17 +504,17 @@ export default function GuidePage() {
         <button
           onClick={prev}
           disabled={step === 0}
-          className="flex items-center px-4 py-2 border gap-2 transition-colors rounded-xl bg-card border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed">
+          className="flex items-center gap-2 px-4 py-2 transition-colors border rounded-xl bg-card border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed">
           <ChevronLeft className="w-4 h-4" />
           Back
         </button>
-        <span className="flex items-center justify-center font-mono text-xs gap-2 text-muted-foreground">
+        <span className="flex items-center justify-center gap-2 font-mono text-xs text-muted-foreground">
           <ArrowLeft className="size-3" /> <ArrowRight className="size-3" /> or space to navigate
         </span>
         <button
           onClick={next}
           disabled={step === STEPS.length - 1}
-          className="flex items-center px-4 py-2 font-semibold gap-2 transition-colors rounded-xl bg-primary text-primary-foreground disabled:opacity-30 disabled:cursor-not-allowed">
+          className="flex items-center gap-2 px-4 py-2 font-semibold transition-colors rounded-xl bg-primary text-primary-foreground disabled:opacity-30 disabled:cursor-not-allowed">
           Next
           <ChevronRight className="w-4 h-4" />
         </button>

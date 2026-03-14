@@ -61,8 +61,7 @@ export type TeamLetter = {
 
 export type GameSettings = {
   timerMinutes: number;
-  enableBombs: boolean;
-  enableRoadblocks: boolean;
+  enableSpecials: boolean;
   roadblockDuration: number;
 };
 

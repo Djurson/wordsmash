@@ -249,9 +249,16 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
-			bombs := wordContainsBomb(&submitTurnAction.NewTiles, &r.State.Board, &r.State.Bombs)
-			if len(bombs) > 0 {
-				handleWordConnectedWithBomb(&bombs, submitTurnAction, r)
+			if r.State.Settings.EnableSpecials {
+				bombs := wordContainsBomb(&submitTurnAction.NewTiles, &r.State.Board, &r.State.Bombs)
+				if len(bombs) > 0 {
+					handleWordConnectedWithBomb(&bombs, submitTurnAction, r)
+					continue
+				}
+			}
+
+			isValid = isValidTilesFromHand(&submitTurnAction.NewTiles, r.State.Teams[submitTurnAction.Client.Team])
+			if !isValid {
 				continue
 			}
 

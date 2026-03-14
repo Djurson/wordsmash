@@ -12,8 +12,11 @@ type TileState string
 type SpecialType string
 
 const (
-	MINRANDOMWORDSTARTLENGTH = 5
-	MAXRANDOMWORDSTARTLENGTH = 9
+	MINRANDOMWORDSTARTLENGTH int = 5
+	MAXRANDOMWORDSTARTLENGTH int = 9
+
+	DEFAULTROADBLOCKDURATION  int = 10
+	ROADBLOCKDURATIONSTEPSIZE int = 5
 
 	TEAMHANDSIZE       int = 15
 	ROUNDSTARTWAITTIME int = 5
@@ -92,8 +95,7 @@ type TeamState struct {
 
 type GameSettings struct {
 	TimerMinutes      int  `json:"timerMinutes"`
-	EnableBombs       bool `json:"enableBombs"`
-	EnableRoadblocks  bool `json:"enableRoadblocks"`
+	EnableSpecials    bool `json:"enableSpecials"`
 	RoadblockDuration int  `json:"roadblockDuration"`
 }
 
@@ -142,7 +144,7 @@ func NewGameState(id string) *ServerGameState {
 			"b": {Score: 0, Letters: make(map[uuid.UUID]TeamLetter), Placeholders: make(map[string]PlacedTile)},
 		},
 		GameId:   id,
-		Settings: GameSettings{TimerMinutes: 5, EnableBombs: true, EnableRoadblocks: true, RoadblockDuration: 10},
+		Settings: GameSettings{TimerMinutes: 5, EnableSpecials: true, RoadblockDuration: DEFAULTROADBLOCKDURATION},
 	}
 }
 

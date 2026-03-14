@@ -58,3 +58,15 @@ func scoreFromFrequency(count int, maxCount int) int {
 		return 8
 	}
 }
+
+func isValidTilesFromHand(newTiles *map[string]PlacedTile, teamState *TeamState) bool {
+	var isValid bool = true
+
+	for _, tile := range *newTiles {
+		if _, exists := teamState.Letters[tile.Id]; !exists {
+			isValid = false
+		}
+	}
+
+	return isValid
+}

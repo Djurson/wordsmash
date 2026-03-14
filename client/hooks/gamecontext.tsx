@@ -28,6 +28,8 @@ export interface GameContextContextProps {
   handleSelectPowerup: (type: "bomb" | "roadblock" | null) => void;
   handleSpecialAbilityPlacement: (type: "bomb" | "roadblock", x: number, y: number) => void;
   explosions: Record<string, Explosion>;
+  quickGuideOpen: boolean;
+  handleUpdateQuickGuide: (state: boolean) => void;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -49,6 +51,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const [finalStats, setFinalStats] = useState<FinalGameStats | null>(null);
   const [explosions, setExplosions] = useState<Record<string, Explosion>>({});
+  const [quickGuideOpen, setQuickGuideOpen] = useState(false);
 
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
@@ -361,6 +364,13 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     [sendMessage, updateLocalGameState],
   );
 
+  const handleUpdateQuickGuide = useCallback(
+    (state: boolean) => {
+      setQuickGuideOpen(state);
+    },
+    [setQuickGuideOpen],
+  );
+
   const value: GameContextContextProps = {
     isConnected,
     user,
@@ -380,6 +390,8 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleSelectPowerup,
     handleSpecialAbilityPlacement,
     explosions,
+    quickGuideOpen,
+    handleUpdateQuickGuide,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
