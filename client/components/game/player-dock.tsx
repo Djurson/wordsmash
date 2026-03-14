@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Bomb, Construction, Repeat1, Shuffle } from "lucide-react";
 import GameTile from "./game-tile";
 import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { useGameContext } from "@/hooks/gamecontext";
 import { useEffect } from "react";
 import { TeamLetter } from "@/lib/game/types";
@@ -40,9 +40,19 @@ export function PlayerDock() {
           <div className={`flex gap-2 duration-300 ease-in-out ${Object.keys(localGameState.currentTurnTiles).length > 0 ? "translate-y-0" : "translate-y-86"}`}>
             <Button size="sm" variant="outline" className="text-tile-foreground! px-5 flex items-center" onClick={handleCancelPlacement}>
               Avbryt{" "}
-              <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
-                Esc {localGameState.selectedLetterId ? "+ Esc" : ""}
-              </Kbd>
+              <KbdGroup>
+                <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
+                  Esc
+                </Kbd>
+                {localGameState.selectedLetterId && (
+                  <>
+                    {" + "}
+                    <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
+                      Esc
+                    </Kbd>
+                  </>
+                )}
+              </KbdGroup>
             </Button>
             <Button size="sm" variant="default" className="text-tile-foreground! px-5 flex items-center" onClick={handleSubmitPlacement}>
               Klar{" "}

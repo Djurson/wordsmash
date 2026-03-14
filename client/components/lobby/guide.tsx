@@ -6,20 +6,21 @@ import GameTile from "@/components/game/game-tile";
 import { useCallback, useEffect, useState } from "react";
 import { CELL, TILE_SIZE } from "@/lib/game/utils";
 import { HUDTimer } from "@/components/game/top-hud";
-import Link from "next/link";
 import { useGameContext } from "@/hooks/gamecontext";
+import { Kbd } from "../ui/kbd";
+import { Button } from "../ui/button";
 
 const STEPS = [
-  { id: "intro", title: "Welcome to Wordsmash", icon: WholeWord },
-  { id: "teams", title: "Team Up", icon: Users },
-  { id: "start", title: "The Starting Word", icon: Play },
-  { id: "build", title: "Build & Submit Words", icon: Send },
-  { id: "scoring", title: "Scoring System", icon: Trophy },
-  { id: "control", title: "Board Control", icon: LayoutGrid },
-  { id: "bombs", title: "Power-Up: Bombs", icon: Bomb },
-  { id: "blocks", title: "Power-Up: Blocks", icon: Construction },
-  { id: "timer", title: "Race the Clock", icon: Timer },
-  { id: "win", title: "Win the Game", icon: Trophy },
+  { id: "intro", title: "Välkommen Till Wordsmash", icon: WholeWord },
+  { id: "teams", title: "Spela I Lag", icon: Users },
+  { id: "start", title: "Startordet", icon: Play },
+  { id: "build", title: "Bygg Ord Dina Ord", icon: Send },
+  { id: "scoring", title: "Poängsystem", icon: Trophy },
+  { id: "control", title: "Kontroll Över Brädet", icon: LayoutGrid },
+  { id: "bombs", title: "Power-Up: Bomber", icon: Bomb },
+  { id: "blocks", title: "Power-Up: Spärrar", icon: Construction },
+  { id: "timer", title: "Tiden Tickar", icon: Timer },
+  { id: "win", title: "Vinn Spelet", icon: Trophy },
 ];
 
 const fadeSlide = {
@@ -29,23 +30,41 @@ const fadeSlide = {
   transition: { duration: 0.4, ease: "easeOut" as const },
 };
 
+type GuideStepProps = {
+  onNext?: () => void;
+};
+
 const StepIntro = () => (
   <div className="flex flex-col items-center gap-8">
-    <motion.div {...fadeSlide} className="flex gap-3">
-      {"WORDSMASH".split("").map((l, i) => (
-        <motion.div
-          key={i}
-          initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: i * 0.1, type: "spring", stiffness: 500 }}
-          style={{ width: TILE_SIZE, height: TILE_SIZE }}>
-          <GameTile letter={l} state="placed" score={1} />
-        </motion.div>
-      ))}
-    </motion.div>
+    <div className="flex gap-8">
+      <motion.div {...fadeSlide} className="flex gap-3">
+        {"WORD".split("").map((l, i) => (
+          <motion.div
+            key={i}
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: i * 0.1, type: "spring", stiffness: 500 }}
+            style={{ width: TILE_SIZE, height: TILE_SIZE }}>
+            <GameTile letter={l} score={Math.abs(Math.round(4 - (i * 3) / 2) + 1)} />
+          </motion.div>
+        ))}
+      </motion.div>
+      <motion.div {...fadeSlide} className="flex gap-3">
+        {"SMASH".split("").map((l, i) => (
+          <motion.div
+            key={i}
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.4 + i * 0.1, type: "spring", stiffness: 500 }}
+            style={{ width: TILE_SIZE, height: TILE_SIZE }}>
+            <GameTile letter={l} state="secondary" score={Math.abs(Math.round(4 - (i * 3) / 2) + 1)} />
+          </motion.div>
+        ))}
+      </motion.div>
+    </div>
     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="max-w-md text-lg text-center text-muted-foreground">
-      A real-time team word battle. Think <span className="font-semibold text-primary">Wordfeud</span> meets <span className="font-semibold text-tile-border">Bananagrams</span> but faster, together,
-      and explosive.
+      Ett ordspel i realtid där lag tävlar mot varandra. Tänk <span className="font-semibold text-primary">Wordfeud</span> möter <span className="font-semibold text-tile-border">Bananagrams</span> men
+      snabbare, tillsammans och lite mer kaos.
     </motion.p>
   </div>
 );
@@ -53,7 +72,7 @@ const StepIntro = () => (
 const StepTeams = () => (
   <div className="flex flex-col items-center gap-8">
     <div className="flex items-center gap-12">
-      {/* Team A */}
+      {/* Team 1 */}
       <motion.div initial={{ x: -60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", delay: 0.1 }} className="flex flex-col items-center gap-3">
         <div className="w-4 h-4 rounded-full bg-team-a glow-a" />
         <span className="text-sm font-bold tracking-wider uppercase text-primary">Lag 1</span>
@@ -75,7 +94,7 @@ const StepTeams = () => (
         VS
       </motion.span>
 
-      {/* Team B */}
+      {/* Team 2 */}
       <motion.div initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", delay: 0.1 }} className="flex flex-col items-center gap-3">
         <div className="w-4 h-4 rounded-full bg-team-b glow-b" />
         <span className="text-sm font-bold tracking-wider uppercase text-tile-accent">Lag 2</span>
@@ -86,7 +105,7 @@ const StepTeams = () => (
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.3 + i * 0.1, type: "spring" }}
-              className="flex items-center justify-center w-10 h-10 text-xs font-bold border rounded-full bg-tile-primary border-tile-border text-tile-foreground">
+              className="flex items-center justify-center w-10 h-10 text-xs font-bold border rounded-full bg-tile-accent border-tile-border text-tile-foreground">
               {name[0]}
             </motion.div>
           ))}
@@ -94,7 +113,7 @@ const StepTeams = () => (
       </motion.div>
     </div>
     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="max-w-sm text-center text-muted-foreground">
-      Players are divided into <span className="font-semibold text-foreground">two teams</span>. Everyone plays simultaneously in real-time, you see your teammates' and opponents moves instantly.
+      Spelare delas upp i <span className="font-semibold text-foreground">två lag</span>. Alla spelar samtidigt i realtid, så du ser både dina lagkamraters och motståndarnas drag direkt.
     </motion.p>
   </div>
 );
@@ -102,49 +121,51 @@ const StepTeams = () => (
 const StepStart = () => {
   const [revealed, setRevealed] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setRevealed((p) => Math.min(p + 1, 5)), 300);
+    const t = setInterval(() => setRevealed((p) => Math.min(p + 1, 6)), 300);
     return () => clearInterval(t);
   }, []);
 
   return (
     <div className="flex flex-col items-center gap-8">
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm tracking-wider uppercase text-muted-foreground">
-        A random word appears on the board...
+        När matchen börjar dyker ett slumpmässigt ord upp på brädet....
       </motion.p>
       <div className="flex gap-3">
-        {"PLANT".split("").map((l, i) => (
+        {"BÖRJAN".split("").map((l, i) => (
           <motion.div
             key={i}
             initial={{ scale: 0, rotateY: 180 }}
             animate={revealed > i ? { scale: 1, rotateY: 0 } : { scale: 0.8, rotateY: 180 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
             style={{ width: TILE_SIZE, height: TILE_SIZE }}>
-            <GameTile letter={revealed > i ? l : ""} state={revealed > i ? "placed" : "selected-hover"} />
+            <GameTile letter={revealed > i ? l : ""} state={revealed > i ? "placed" : "selected-hover"} score={Math.abs(Math.round(4 - (i * 3) / 2) + 1)} />
           </motion.div>
         ))}
       </div>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }} className="flex items-center gap-2 text-muted-foreground">
         <Zap className="w-4 h-4 text-primary" />
-        <span>Both teams expand from this word to score points!</span>
+        <span>Båda lagen bygger vidare från ordet för att skapa nya ord och få poäng.</span>
       </motion.div>
     </div>
   );
 };
 
-const StepBuild = () => {
+const StepBuild = ({ onNext }: GuideStepProps) => {
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     const timers = [setTimeout(() => setPhase(1), 600), setTimeout(() => setPhase(2), 1200), setTimeout(() => setPhase(3), 1800), setTimeout(() => setPhase(4), 2400)];
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  const rackLetters = ["R", "A", "I", "N", "S", "E", "D"];
-  const placedWord = "RAIN";
+  const rackLetters = ["R", "E", "Ö", "D", "D", "E", "S"];
+  const placedWord = "BRÖD";
+  const startWord = "BÖRJAN";
 
   return (
     <div className="flex flex-col items-center h-full gap-6">
       <p className="max-w-sm text-sm text-center text-muted-foreground">
-        Place <span className="font-semibold text-tile-foreground">placeholder tiles</span> on the board, build your word, then hit <span className="font-bold text-primary">Submit</span> to score!
+        Placera <span className="font-semibold text-tile-foreground">brickor</span> på brädet och bygg ditt ord. Tryck på <span className="font-bold text-primary">Klar</span> för att bekräfta och få
+        poäng!
       </p>
 
       {/* Rack */}
@@ -154,10 +175,10 @@ const StepBuild = () => {
         transition={{ delay: 0.2 }}
         className="flex items-center gap-2 px-4 py-3 border rounded-2xl bg-card/95 backdrop-blur-md border-border">
         {rackLetters.map((l, i) => {
-          const isUsed = phase > 0 && i < 4;
+          const isUsed = (phase > 0 && i === 0) || i === 2 || i === 3;
           return (
             <motion.div key={i} animate={isUsed ? { scale: 0.8, opacity: 0.3 } : { scale: 1, opacity: 1 }}>
-              <GameTile letter={l} state={isUsed ? "locked" : "idle"} score={i} />
+              <GameTile letter={l} state={isUsed ? "locked" : "idle"} score={Math.abs(Math.round(4 - (i * 3) / 2) + 1)} />
             </motion.div>
           );
         })}
@@ -167,9 +188,9 @@ const StepBuild = () => {
       <div className="relative">
         {/* Existing word PLANT */}
         <div className="flex gap-3 mb-1">
-          {"PLANT".split("").map((l, i) => (
+          {startWord.split("").map((l, i) => (
             <div key={`base-${i}`} style={{ width: TILE_SIZE, height: TILE_SIZE }}>
-              <GameTile letter={l} state="placed" />
+              <GameTile letter={l} state="placed" score={Math.abs(Math.round(4 - (i * 3) / 2) + 1)} />
             </div>
           ))}
         </div>
@@ -194,10 +215,15 @@ const StepBuild = () => {
       {/* Submit button animation */}
       <AnimatePresence>
         {phase >= 3 && (
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-primary text-primary-foreground">
+          <motion.button
+            type="button"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            onClick={onNext}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-bold cursor-pointer rounded-xl bg-primary text-primary-foreground">
             <Send className="w-4 h-4" />
-            Submit Word
-          </motion.div>
+            Klar
+          </motion.button>
         )}
       </AnimatePresence>
     </div>
@@ -206,10 +232,10 @@ const StepBuild = () => {
 
 const StepScoring = () => {
   const examples = [
-    { word: "AT", pts: 2, label: "Short word" },
-    { word: "RAIN", pts: Math.round("RAIN".length * Math.pow(1.2, "RAIN".length - 2)), label: "4 letters" },
-    { word: "STORM", pts: Math.round("STORM".length * Math.pow(1.2, "STORM".length - 2)), label: "5 letters" },
-    { word: "EXAMPLE", pts: Math.round("EXAMPLE".length * Math.pow(1.2, "EXAMPLE".length - 2)), label: "7 letters" },
+    { word: "ÅT", pts: 2, label: "Kort ord" },
+    { word: "SKOR", pts: Math.round("SKOR".length * Math.pow(1.2, "SKOR".length - 2)), label: "4 bokstäver" },
+    { word: "SPORT", pts: Math.round("SPORT".length * Math.pow(1.2, "SPORT".length - 2)), label: "5 bokstäver" },
+    { word: "SPORTER", pts: Math.round("SPORTER".length * Math.pow(1.2, "SPORTER".length - 2)), label: "7 bokstäver" },
   ];
 
   return (
@@ -238,7 +264,7 @@ const StepScoring = () => {
         ))}
       </div>
       <p className="max-w-sm text-sm text-center text-muted-foreground">
-        <span className="font-semibold text-foreground">Longer words</span> = more points. <span className="font-semibold text-primary">Expanding</span> existing words = bonus points!
+        <span className="font-black text-primary">Längre ord</span> = mer poäng. Så försök göra både långa ord och smarta utbyggnader.
       </p>
     </div>
   );
@@ -290,12 +316,16 @@ const StepControl = () => {
       </div>
 
       <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-tile-primary border-tile-border/20">
-        <Zap className="w-4 h-4 text-team-a" />
-        <span className="text-sm font-medium text-team-a">Team 1 earns more power-ups!</span>
+        <span className="flex items-center gap-1 text-sm">
+          +1 <Bomb className="size-4" />
+        </span>
+        <span className="flex items-center gap-1 text-sm">
+          +2 <Construction className="size-4" />
+        </span>
       </div>
 
       <p className="max-w-sm text-sm text-center text-muted-foreground">
-        The team with the <span className="font-semibold text-foreground">most placed tiles</span> (not most points) earns more power-ups.
+        Laget med <span className="font-bold text-foreground">flest placerade brickor</span> på brädet får fler powerups. Det handlar alltså inte om poäng här utan om hur mycket plats ni kontrollerar.
       </p>
     </div>
   );
@@ -325,8 +355,8 @@ const StepBombs = () => {
       </div>
 
       <p className="max-w-sm text-sm text-center text-muted-foreground">
-        Place <span className="font-semibold text-destructive">bombs</span> on already placed tiles. Only <span className="font-semibold text-foreground">your team</span> can see them, opponents won't
-        know until they build on a mined tile!
+        Du kan placera <span className="font-semibold text-destructive">bomber</span> på brickor som redan ligger på brädet. Du kan bara se{" "}
+        <span className="font-semibold text-foreground">ditt lags</span> bomber, motståndarna märker dem först när de bygger ett ord där!
       </p>
     </div>
   );
@@ -365,7 +395,8 @@ const StepBlocks = () => {
       </div>
 
       <p className="max-w-sm text-sm text-center text-muted-foreground">
-        Place <span className="font-semibold text-destructive">roadblocks</span> on any empty space to prevent opponents from building there. Strategic blocking can cut off entire word paths!
+        Du kan placera <span className="font-semibold text-destructive">spärrar</span> kan placeras på valfri tom ruta. De blockerar <span className="font-semibold text-foreground">alla</span> från
+        att använda rutan i ett antal sekunder.
       </p>
     </div>
   );
@@ -389,7 +420,7 @@ const StepTimer = () => {
       <HUDTimer timeLeft={timeLeft} />
       {/* <ScoreBar teamAScore={142} teamBScore={118} timeLeft={`${mins}:${secs.toString().padStart(2, "0")}`} round={1} totalRounds={1} /> */}
       <p className="max-w-sm text-sm text-center text-muted-foreground">
-        Choose the <span className="font-semibold text-foreground">game duration</span> before the match starts. When time runs out, the game ends and scores are tallied!
+        Innan matchen startar väljer man hur länge <span className="font-semibold text-foreground">spelet</span> ska pågå. När tiden är slut är matchen slut.
       </p>
     </div>
   );
@@ -403,21 +434,21 @@ const StepWin = () => {
         <Trophy className="w-20 h-20 text-primary" />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center">
-        <div className="mb-2 text-2xl font-bold text-foreground">Most Points Wins!</div>
-        <p className="max-w-sm text-muted-foreground">Build words, expand them, control the board, use power-ups strategically, and outscore the other team before time runs out.</p>
+        <div className="mb-2 text-2xl font-bold text-foreground">Mest Poäng Vinner!</div>
+        <p className="max-w-sm text-muted-foreground">Bygg ord, expandera dem, kontrollera brädet och använd powerups smart och få mer poäng än motståndar laget innan tiden tar slut.</p>
       </motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="flex gap-3 mt-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="flex gap-3 mt-4 cursor-pointer">
         <div
           onClick={() => handleUpdateQuickGuide(false)}
           className="flex items-center gap-2 px-6 py-3 text-sm font-bold transition-opacity rounded-xl bg-primary text-primary-foreground hover:opacity-90">
-          Try the Board <ArrowRight className="size-4" />
+          Prova Spela <ArrowRight className="size-4" />
         </div>
       </motion.div>
     </div>
   );
 };
 
-const STEP_COMPONENTS: Record<string, React.FC> = {
+const STEP_COMPONENTS: Record<string, React.ComponentType<GuideStepProps>> = {
   intro: StepIntro,
   teams: StepTeams,
   start: StepStart,
@@ -481,7 +512,7 @@ export default function GuidePage() {
       </motion.div>
 
       <div className="mb-4 text-xs text-center text-muted-foreground">
-        Step {step + 1} of {STEPS.length}
+        Steg {step + 1} av {STEPS.length}
       </div>
 
       {/* Content */}
@@ -493,31 +524,35 @@ export default function GuidePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.3 }}
-            className="flex flex-col justify-center w-full h-full max-w-xl">
-            <StepComponent />
+            className="flex flex-col justify-center w-full h-full max-w-2xl">
+            <StepComponent onNext={next} />
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between px-8 py-6">
-        <button
-          onClick={prev}
-          disabled={step === 0}
-          className="flex items-center gap-2 px-4 py-2 transition-colors border rounded-xl bg-card border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed">
+      <div className="flex items-center justify-between px-8 py-4">
+        <Button onClick={prev} disabled={step === 0} variant="outline" className="flex items-center gap-2 px-4 rounded-xl ">
           <ChevronLeft className="w-4 h-4" />
-          Back
-        </button>
-        <span className="flex items-center justify-center gap-2 font-mono text-xs text-muted-foreground">
-          <ArrowLeft className="size-3" /> <ArrowRight className="size-3" /> or space to navigate
+          Föregående
+        </Button>
+        <span className="flex items-center justify-center gap-1 font-mono text-xs text-muted-foreground">
+          <Kbd>
+            <ArrowLeft className="size-3" />
+          </Kbd>
+          <Kbd>
+            <ArrowRight className="size-3" />
+          </Kbd>
+          eller
+          <Kbd className="px-2">
+            <span>mellanslag</span>
+          </Kbd>
+          för att navigera
         </span>
-        <button
-          onClick={next}
-          disabled={step === STEPS.length - 1}
-          className="flex items-center gap-2 px-4 py-2 font-semibold transition-colors rounded-xl bg-primary text-primary-foreground disabled:opacity-30 disabled:cursor-not-allowed">
-          Next
+        <Button onClick={next} disabled={step === STEPS.length - 1} className="flex items-center gap-2 px-4 font-semibold rounded-xl">
+          Nästa
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

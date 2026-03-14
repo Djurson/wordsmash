@@ -119,10 +119,20 @@ export default function LobbyPage() {
               <div className="flex flex-col flex-1 gap-5">
                 <GameCodeDisplay />
                 <PlayerList />
+                <div className="flex justify-between w-full max-w-4xl gap-6 itesm-center">
+                  <Button className="flex-1" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
+                    Snabb Guide <Play />
+                  </Button>
+                  <HowToPlay>
+                    <Button className="flex-1" variant="outline">
+                      Hur Spelar Jag? <Info />
+                    </Button>
+                  </HowToPlay>
+                </div>
               </div>
 
               <div className="flex flex-col w-full gap-5 lg:flex-1 lg:justify-between">
-                <div className="flex items-end gap-2 p-6 border shadow-sm rounded-2xl bg-card border-border">
+                <div className="flex items-end p-6 border gap-2 shadow-sm rounded-2xl bg-card border-border">
                   <div className="flex flex-col flex-1 gap-3">
                     <Label className="text-sm font-semibold text-foreground" htmlFor="username">
                       Namn
@@ -155,20 +165,22 @@ export default function LobbyPage() {
               </div>
             </div>
           )}
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 800, damping: 20, delay: 1.1 }}
-            className="flex justify-between w-full gap-2 itesm-center">
-            <Button className="flex-1" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
-              Snabb Guide <Play />
-            </Button>
-            <HowToPlay>
-              <Button className="flex-1" variant="outline">
-                Hur Spelar Jag? <Info />
+          {!gamestate && (
+            <motion.div
+              initial={!user ? { scale: 0, opacity: 0 } : {}}
+              animate={!user ? { scale: 1, opacity: 1 } : {}}
+              transition={!user ? { type: "spring", stiffness: 800, damping: 20, delay: 1.1 } : {}}
+              className="flex justify-between w-full max-w-4xl gap-4 itesm-center">
+              <Button className="flex-1" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
+                Snabb Guide <Play />
               </Button>
-            </HowToPlay>
-          </motion.div>
+              <HowToPlay>
+                <Button className="flex-1" variant="outline">
+                  Hur Spelar Jag? <Info />
+                </Button>
+              </HowToPlay>
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </main>
