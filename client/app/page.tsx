@@ -2,7 +2,7 @@
 
 import { CreateGameTab } from "@/components/lobby/create-game-tab";
 import { GameCodeDisplay } from "@/components/lobby/game-code-display";
-import { GameSettingsPanel } from "@/components/lobby/game-settings";
+import { DEFAULT_SETTINGS_CONFIG, GameSettingsPanel } from "@/components/lobby/game-settings";
 import { MenuHeader } from "@/components/lobby/header";
 import { JoinTab } from "@/components/lobby/join-tab";
 import { PlayerList } from "@/components/lobby/player-list";
@@ -21,9 +21,9 @@ import { HowToPlay } from "@/components/lobby/how-to-play";
 import GuidePage from "@/components/lobby/guide";
 
 const DEFALT_SETTINGS: GameSettings = {
-  timerMinutes: 5,
+  timerMinutes: DEFAULT_SETTINGS_CONFIG.TIMER_DEFAULT,
   enableSpecials: true,
-  roadblockDuration: 10,
+  roadblockDuration: DEFAULT_SETTINGS_CONFIG.ROADBLOCK_DEFAULT,
 };
 
 export default function LobbyPage() {
@@ -120,11 +120,11 @@ export default function LobbyPage() {
                 <GameCodeDisplay />
                 <PlayerList />
                 <div className="flex justify-between w-full max-w-4xl gap-6 itesm-center">
-                  <Button className="flex-1" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
+                  <Button className="flex-1 py-5 text-base" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
                     Snabb Guide <Play />
                   </Button>
                   <HowToPlay>
-                    <Button className="flex-1" variant="outline">
+                    <Button className="flex-1 py-5 text-base" variant="outline">
                       Hur Spelar Jag? <Info />
                     </Button>
                   </HowToPlay>
@@ -132,7 +132,7 @@ export default function LobbyPage() {
               </div>
 
               <div className="flex flex-col w-full gap-5 lg:flex-1 lg:justify-between">
-                <div className="flex items-end p-6 border gap-2 shadow-sm rounded-2xl bg-card border-border">
+                <div className="flex items-end gap-2 p-6 border shadow-sm rounded-2xl bg-card border-border">
                   <div className="flex flex-col flex-1 gap-3">
                     <Label className="text-sm font-semibold text-foreground" htmlFor="username">
                       Namn
@@ -171,11 +171,11 @@ export default function LobbyPage() {
               animate={!user ? { scale: 1, opacity: 1 } : {}}
               transition={!user ? { type: "spring", stiffness: 800, damping: 20, delay: 1.1 } : {}}
               className="flex justify-between w-full max-w-4xl gap-4 itesm-center">
-              <Button className="flex-1" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
+              <Button className="flex-1 py-5 text-base" variant="default" onClick={() => handleUpdateQuickGuide(true)}>
                 Snabb Guide <Play />
               </Button>
               <HowToPlay>
-                <Button className="flex-1" variant="outline">
+                <Button className="flex-1 py-5 text-base" variant="outline">
                   Hur Spelar Jag? <Info />
                 </Button>
               </HowToPlay>

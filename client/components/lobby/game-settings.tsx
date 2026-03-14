@@ -13,6 +13,17 @@ interface GameSettingsProps {
   onChange: (settings: GameSettings) => void;
 }
 
+export const DEFAULT_SETTINGS_CONFIG = {
+  TIMER_DEFAULT: 5,
+  TIMER_MIN: 1,
+  TIMER_MAX: 25,
+  TIMER_STEP: 1,
+  ROADBLOCK_DEFAULT: 15,
+  ROADBLOCK_MIN: 15,
+  ROADBLOCK_MAX: 60,
+  ROADBLOCK_STEP: 5,
+};
+
 export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
   const update = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
     onChange({ ...settings, [key]: value });
@@ -25,17 +36,25 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2.5">
-        <div className="flex items-center text-sm font-semibold gap-2 text-foreground">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Timer className="w-4 h-4 text-muted-foreground" />
           Speltid
         </div>
         <div className="flex items-center gap-4">
-          <Slider value={[settings.timerMinutes]} onValueChange={([v]) => update("timerMinutes", v)} min={1} max={25} step={1} disabled={isDisabled} className="flex-1" />
+          <Slider
+            value={[settings.timerMinutes]}
+            onValueChange={([v]) => update("timerMinutes", v)}
+            min={DEFAULT_SETTINGS_CONFIG.TIMER_MIN}
+            max={DEFAULT_SETTINGS_CONFIG.TIMER_MAX}
+            step={DEFAULT_SETTINGS_CONFIG.TIMER_STEP}
+            disabled={isDisabled}
+            className="flex-1"
+          />
           <span className="w-12 text-sm font-bold text-right text-foreground tabular-nums">{settings.timerMinutes} min</span>
         </div>
       </div>
       <div className="flex flex-col gap-2.5">
-        <div className="flex items-center text-sm font-semibold gap-2 text-foreground">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Timer className="w-4 h-4 text-muted-foreground" />
           Spärrtid
         </div>
@@ -43,9 +62,9 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
           <Slider
             value={[settings.roadblockDuration]}
             onValueChange={([v]) => update("roadblockDuration", v)}
-            min={5}
-            max={30}
-            step={5}
+            min={DEFAULT_SETTINGS_CONFIG.ROADBLOCK_MIN}
+            max={DEFAULT_SETTINGS_CONFIG.ROADBLOCK_MAX}
+            step={DEFAULT_SETTINGS_CONFIG.ROADBLOCK_STEP}
             disabled={isDisabled || !settings.enableSpecials}
             className="flex-1"
           />
@@ -58,7 +77,7 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
         <div className="flex items-center gap-3">
           <AnimatePresence>
             {settings.enableSpecials && (
-              <motion.div className="flex gap-1.5" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+              <motion.div className={`flex gap-1.5 ${gamestate ? "lg:flex-col" : "flex-row"}`} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
                 <span className="flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded-md">
                   <Bomb className="w-3 h-3" /> Bombs
                 </span>
