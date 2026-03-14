@@ -306,8 +306,8 @@ const StepControl = () => {
       {/* Control bar */}
       <div className="w-64">
         <div className="flex justify-between mb-1 text-xs text-muted-foreground">
-          <span className="font-mono font-black text-tile-primary">{aCount} tiles</span>
-          <span className="font-mono font-black text-tile-accent">{bCount} tiles</span>
+          <span className="font-mono font-black text-tile-primary">{aCount} brickor</span>
+          <span className="font-mono font-black text-tile-accent">{bCount} brickor</span>
         </div>
         <div className="flex h-2 overflow-hidden rounded-full bg-muted">
           <motion.div className="h-full bg-tile-primary" animate={{ width: `${(aCount / total) * 100}%` }} />
@@ -383,7 +383,7 @@ const StepBlocks = () => {
               animate={{ scale: 1 }}
               transition={{ delay: i * 0.03 }}
               className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-mono font-bold ${isWord && "bg-tile-primary border border-tile-border text-tile-foreground"} ${isBlock && "border-[#dc2626] bg-bomb-red/90 shadow-lg"} ${!isWord && !isBlock && "bg-muted/20 border border-border/30"}`}>
-              {isWord && "WAVE"[i - 8]}
+              {isWord && "BLAD"[i - 8]}
               {isBlock && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
                   <Construction className="w-4 h-4 text-white drop-shadow-md" />
