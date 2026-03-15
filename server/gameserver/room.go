@@ -215,21 +215,21 @@ func (r *GameRoom) Run() {
 
 			if r.State.GameOver {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Tiden har gått ut"})
-				r.UnlockLetter <- submitTurnAction.Client
+				r.unlockLettersForClient(submitTurnAction.Client)
 				continue
 			}
 
 			isValid, message := isValidPlacement(submitTurnAction, &r.State.Board, &r.State.Roadblocks)
 			if !isValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": message})
-				r.UnlockLetter <- submitTurnAction.Client
+				r.unlockLettersForClient(submitTurnAction.Client)
 				continue
 			}
 
 			wordsCreated, moveScore := extractWordsAndScore(&submitTurnAction.NewTiles, &r.State.Board)
 			if len(wordsCreated) == 0 {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Du måste bilda ett ord på minst 2 bokstäver"})
-				r.UnlockLetter <- submitTurnAction.Client
+				r.unlockLettersForClient(submitTurnAction.Client)
 				continue
 			}
 
@@ -245,7 +245,7 @@ func (r *GameRoom) Run() {
 
 			if !wordsValid {
 				submitTurnAction.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Bildat ett ogiltigt ord"})
-				r.UnlockLetter <- submitTurnAction.Client
+				r.unlockLettersForClient(submitTurnAction.Client)
 				continue
 			}
 
@@ -271,6 +271,8 @@ func (r *GameRoom) Run() {
 			player := r.State.Players[submitTurnAction.Client.Id]
 			player.Score += moveScore
 			player.TilesPlaced += len(submitTurnAction.NewTiles)
+			r.State.Teams[player.Team].PlacedTiles++
+			r.State.TotalPlacedTiles += len(submitTurnAction.NewTiles)
 
 			// Add the tiles to the board
 			for _, tile := range submitTurnAction.NewTiles {
@@ -389,37 +391,35 @@ func (r *GameRoom) Run() {
 				continue
 			}
 
-			teamLetters := r.State.Teams[client.Team].Letters
-			changed := false
+			r.unlockLettersForClient(client)
 
-			for id, letter := range teamLetters {
-				if letter.IsLocked && letter.LockedBy == client.Id {
-					letter.IsLocked = false
-					letter.LockedBy = uuid.Nil
-					teamLetters[id] = letter
-					changed = true
-				}
-			}
-
-			placeholders := removePlaceholdersPlacedByClient(client, r.State)
-
-			// Only send update if something changed
-			if changed {
-				r.State.Teams[client.Team].Letters = teamLetters
-				finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{TeamLetters: teamLetters, Placeholders: placeholders})
-
-				for c := range r.Clients {
-					if c.Team == client.Team {
-						c.send <- finalMessage
-					}
-				}
-			}
 		case <-ticker.C:
 			if r.State.GameStarted && !r.State.GameOver {
 				now := time.Now().UnixMilli()
 
-				// TODO: Check roadblocks, and schedule for deletion
+				if now >= r.State.EnableSpecialsAt && !r.State.CanPlaceSpecials && r.State.Settings.EnableSpecials {
+					r.State.CanPlaceSpecials = true
+				}
+
+				// Check roadblocks
+				for key, roadblock := range r.State.Roadblocks {
+					if now >= roadblock.ExpiresAt {
+						delete(r.State.Roadblocks, key)
+					}
+				}
+
+				// if r.State.CanPlaceSpecials {
+				// 	for _, team := range r.State.Teams {
+				// 		continue;
+				// 		}
+				// 	}
+				// }
+
 				// TODO: Implement reward system based on board coverage with tiles
+
+				for c := range r.Clients {
+					c.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(c.Team))
+				}
 
 				if now >= r.State.EndTime {
 					r.State.GameOver = true
@@ -479,6 +479,17 @@ func (r *GameRoom) Run() {
 			}
 
 		case action := <-r.UpdateSpecialTiles:
+			if !r.State.CanPlaceSpecials && r.State.Settings.EnableSpecials {
+				seconds := (r.State.EnableSpecialsAt - time.Now().UnixMilli()) / 1000
+
+				action.Client.send <- PrepareEvent(
+					ErrorEvent,
+					map[string]string{
+						"message": fmt.Sprintf("Kan placera bomber/spärrar om: %d sek", seconds),
+					},
+				)
+			}
+
 			switch action.Type {
 			case BombEffect:
 				teamState := r.State.Teams[action.Client.Team]
@@ -630,5 +641,32 @@ func handleWordConnectedWithBomb(bombs *[]Bomb, submitTurnAction *SubmitTurnActi
 	// Update board
 	for client := range r.Clients {
 		client.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(client.Team))
+	}
+}
+
+func (r *GameRoom) unlockLettersForClient(client *Client) {
+	teamLetters := r.State.Teams[client.Team].Letters
+	changed := false
+
+	for id, letter := range teamLetters {
+		if letter.IsLocked && letter.LockedBy == client.Id {
+			letter.IsLocked = false
+			letter.LockedBy = uuid.Nil
+			teamLetters[id] = letter
+			changed = true
+		}
+	}
+
+	placeholders := removePlaceholdersPlacedByClient(client, r.State)
+
+	if changed {
+		r.State.Teams[client.Team].Letters = teamLetters
+		finalMessage := PrepareEvent(UpdatedTeamLetterEvent, UpdatedTeamLettersResponse{TeamLetters: teamLetters, Placeholders: placeholders})
+
+		for c := range r.Clients {
+			if c.Team == client.Team {
+				c.send <- finalMessage
+			}
+		}
 	}
 }

@@ -53,7 +53,7 @@ export function GameCanvas() {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (localGameState.selectedLetterId || localGameState.selectedPowerup) {
+      if (localGameState.currentAction.type === "select_letter" || localGameState.currentAction.type === "select_power_up") {
         const cell = screenToGrid(e.clientX, e.clientY);
         setHoverCell(cell);
       } else {
@@ -69,7 +69,7 @@ export function GameCanvas() {
 
       setOffset({ x: offsetStartRef.current.x + dx, y: offsetStartRef.current.y + dy });
     },
-    [isPanning, localGameState.selectedLetterId, localGameState.selectedPowerup, screenToGrid],
+    [isPanning, localGameState.currentAction, screenToGrid],
   );
 
   const handlePointerUp = useCallback(
@@ -80,12 +80,12 @@ export function GameCanvas() {
       if (!hasDragged.current) {
         const cell = screenToGrid(e.clientX, e.clientY);
 
-        if (localGameState.selectedLetterId) handlePlaceTile(cell.x, cell.y);
-        else if (localGameState.selectedPowerup === "bomb") handleSpecialAbilityPlacement("bomb", cell.x, cell.y);
-        else if (localGameState.selectedPowerup === "roadblock") handleSpecialAbilityPlacement("roadblock", cell.x, cell.y);
+        if (localGameState.currentAction.type === "select_letter") handlePlaceTile(cell.x, cell.y);
+        else if (localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "bomb") handleSpecialAbilityPlacement("bomb", cell.x, cell.y);
+        else if (localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "roadblock") handleSpecialAbilityPlacement("roadblock", cell.x, cell.y);
       }
     },
-    [localGameState.selectedLetterId, screenToGrid, handlePlaceTile, handleSpecialAbilityPlacement],
+    [localGameState.currentAction, screenToGrid, handlePlaceTile, handleSpecialAbilityPlacement],
   );
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -96,7 +96,7 @@ export function GameCanvas() {
   const hoverKey = hoverCell ? getTileKey(hoverCell.x, hoverCell.y) : null;
   const hoverOccupied = hoverKey ? !!tiles[hoverKey] : false;
   const hoverBlocked = hoverKey ? !!gamestate?.roadblocks && !!gamestate.roadblocks[hoverKey] : false;
-  const isHoldingTool = localGameState.selectedLetterId || localGameState.selectedPowerup;
+  const isHoldingTool = localGameState.currentAction.type === "select_letter" || localGameState.currentAction.type === "select_power_up";
 
   if (!gamestate || !user) return;
 
@@ -122,15 +122,19 @@ export function GameCanvas() {
             style={{ position: "absolute", left: hoverCell.x * CELL, top: hoverCell.y * CELL, width: TILE_SIZE, height: TILE_SIZE, transform: `translate(-50%, -50%)`, zIndex: 15 }}
             className="pointer-events-none">
             {/* Preview Letter Tile */}
-            {localGameState.selectedLetterId && !hoverOccupied && !hoverBlocked && (
-              <GameTile letter={gamestate.team.teamLetters[localGameState.selectedLetterId].letter} state="selected-hover" score={gamestate.team.teamLetters[localGameState.selectedLetterId].score} />
+            {localGameState.currentAction.type === "select_letter" && !hoverOccupied && !hoverBlocked && (
+              <GameTile
+                letter={gamestate.team.teamLetters[localGameState.currentAction.letterId].letter}
+                state="selected-hover"
+                score={gamestate.team.teamLetters[localGameState.currentAction.letterId].score}
+              />
             )}
 
             {/* Preview Roadblock */}
-            {localGameState.selectedPowerup === "roadblock" && !hoverOccupied && !hoverBlocked && <GameTile state="roadblock-hover" />}
+            {localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "roadblock" && !hoverOccupied && !hoverBlocked && <GameTile state="roadblock-hover" />}
 
             {/* Preview Bomb */}
-            {localGameState.selectedPowerup === "bomb" && hoverOccupied && <GameTile state="bomb-hover" />}
+            {localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "bomb" && hoverOccupied && <GameTile state="bomb-hover" />}
           </div>
         )}
 
@@ -171,9 +175,6 @@ export function GameCanvas() {
               <div
                 className="absolute inset-0 border-4 rounded-full border-bomb-red animate-explosion-ring"
                 style={{
-                  // left: "50%",
-                  // top: "50%",
-                  // transform: "translate(-50%, -50%)",
                   width: TILE_SIZE,
                   height: TILE_SIZE,
                 }}
@@ -202,7 +203,7 @@ export function GameCanvas() {
         </AnimatePresence>
       </div>
 
-      <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(MAX_ZOOM_IN, prev + ZOOM_STEP))} onZoomOut={() => setZoom((prev) => Math.max(MAX_ZOOM_OUT, prev - ZOOM_STEP))} />
+      {/* <ZoomControls zoom={zoom} onZoomIn={() => setZoom((prev) => Math.min(MAX_ZOOM_IN, prev + ZOOM_STEP))} onZoomOut={() => setZoom((prev) => Math.max(MAX_ZOOM_OUT, prev - ZOOM_STEP))} /> */}
     </div>
   );
 }

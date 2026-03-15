@@ -20,14 +20,22 @@ const (
 
 	MAXROADBLOCKDURATION      int = 60
 	MINROADBLOCKDURATION      int = 15
-	DEFAULTROADBLOCKDURATION  int = 15
+	DEFAULTROADBLOCKDURATION  int = 20
 	ROADBLOCKDURATIONSTEPSIZE int = 5
+
+	ENERGYCAP           int = 400
+	BOMBCOSTENERGY      int = 80
+	ROADBLOCKCOSTENERGY int = 30
+	MAXBOMBS            int = 5
+	MAXROADBLOCKS       int = 5
+
+	WAITTIMETOENABLESPECIALS int = 20
 
 	TEAMHANDSIZE       int = 15
 	ROUNDSTARTWAITTIME int = 5
 
-	STARTBOMBS      int = 100
-	STARTROADBLOCKS int = 100
+	STARTBOMBS      int = 2
+	STARTROADBLOCKS int = 3
 
 	EXPLOSIONCAUSEDPOINTS int = 5
 
@@ -96,6 +104,8 @@ type TeamState struct {
 	Placeholders map[string]PlacedTile    `json:"placeholders"`
 	Roadblocks   int                      `json:"roadblocks"`
 	Bombs        int                      `json:"bombs"`
+	PlacedTiles  int                      `json:"placedTiles"`
+	Energy       int                      `json:"energy"`
 }
 
 type GameSettings struct {
@@ -105,35 +115,39 @@ type GameSettings struct {
 }
 
 type ServerGameState struct {
-	Board       map[string]PlacedTile
-	Bombs       map[string]Bomb
-	Roadblocks  map[string]Roadblock
-	Teams       map[string]*TeamState
-	GameId      string
-	Settings    GameSettings
-	Host        uuid.UUID
-	GameStarted bool
-	GameOver    bool
-	EndTime     int64
-	StartTime   int64
-	Players     map[uuid.UUID]*User
+	Board            map[string]PlacedTile
+	Bombs            map[string]Bomb
+	Roadblocks       map[string]Roadblock
+	Teams            map[string]*TeamState
+	GameId           string
+	Settings         GameSettings
+	Host             uuid.UUID
+	GameStarted      bool
+	GameOver         bool
+	EndTime          int64
+	StartTime        int64
+	EnableSpecialsAt int64
+	CanPlaceSpecials bool
+	Players          map[uuid.UUID]*User
+	TotalPlacedTiles int
 }
 
 // Used to send information to client (only about their team)
 type ClientGameState struct {
-	Board       map[string]PlacedTile `json:"board"`
-	Bombs       map[string]Bomb       `json:"bombs"`
-	Roadblocks  map[string]Roadblock  `json:"roadblocks"`
-	Team        *TeamState            `json:"team"`
-	GameId      string                `json:"gameId"`
-	Settings    GameSettings          `json:"settings"`
-	Host        uuid.UUID             `json:"host"`
-	GameStarted bool                  `json:"gameStarted"`
-	GameOver    bool                  `json:"gameOver"`
-	EndTime     int64                 `json:"endTime"`
-	StartTime   int64                 `json:"startTime"`
-	TotalScore  int                   `json:"totalScore"`
-	Players     map[uuid.UUID]*User   `json:"players"`
+	Board            map[string]PlacedTile `json:"board"`
+	Bombs            map[string]Bomb       `json:"bombs"`
+	Roadblocks       map[string]Roadblock  `json:"roadblocks"`
+	Team             *TeamState            `json:"team"`
+	GameId           string                `json:"gameId"`
+	Settings         GameSettings          `json:"settings"`
+	Host             uuid.UUID             `json:"host"`
+	GameStarted      bool                  `json:"gameStarted"`
+	GameOver         bool                  `json:"gameOver"`
+	EndTime          int64                 `json:"endTime"`
+	StartTime        int64                 `json:"startTime"`
+	TotalScore       int                   `json:"totalScore"`
+	Players          map[uuid.UUID]*User   `json:"players"`
+	TotalPlacedTiles int                   `json:"totalPlacedTiles"`
 }
 
 // NewGameState creates and initializes a new ServerGameState for the given game id.
@@ -167,7 +181,11 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 
 		team.Roadblocks = STARTROADBLOCKS
 		team.Bombs = STARTBOMBS
+		team.PlacedTiles = 0
+		team.Energy = 0
 	}
+
+	game.TotalPlacedTiles = 0
 
 	startWord := hub.Dictionary.RandomWord()
 	runeWord := []rune(startWord)
@@ -189,8 +207,13 @@ func (game *ServerGameState) PreStartGame(hub *GameHub) {
 
 	duration := time.Duration(game.Settings.TimerMinutes)*time.Minute + time.Duration(ROUNDSTARTWAITTIME)*time.Second
 	game.EndTime = time.Now().Add(duration).UnixMilli()
-
 	game.StartTime = time.Now().Add(time.Duration(5) * time.Second).UnixMilli()
+
+	if game.Settings.EnableSpecials {
+		duration = time.Duration(WAITTIMETOENABLESPECIALS)*time.Second + time.Duration(ROUNDSTARTWAITTIME)*time.Second
+		game.EnableSpecialsAt = time.Now().Add(duration).UnixMilli()
+	}
+
 	game.GameStarted = true
 }
 
@@ -210,19 +233,20 @@ func (game *ServerGameState) ToClientState(team string) ClientGameState {
 	}
 
 	return ClientGameState{
-		Board:       game.Board,
-		Bombs:       filteredBombs,
-		Roadblocks:  game.Roadblocks,
-		Team:        game.Teams[team],
-		GameId:      game.GameId,
-		Settings:    game.Settings,
-		Host:        game.Host,
-		GameStarted: game.GameStarted,
-		GameOver:    game.GameOver,
-		EndTime:     game.EndTime,
-		StartTime:   game.StartTime,
-		TotalScore:  totalScore,
-		Players:     game.Players,
+		Board:            game.Board,
+		Bombs:            filteredBombs,
+		Roadblocks:       game.Roadblocks,
+		Team:             game.Teams[team],
+		GameId:           game.GameId,
+		Settings:         game.Settings,
+		Host:             game.Host,
+		GameStarted:      game.GameStarted,
+		GameOver:         game.GameOver,
+		EndTime:          game.EndTime,
+		StartTime:        game.StartTime,
+		TotalScore:       totalScore,
+		Players:          game.Players,
+		TotalPlacedTiles: game.TotalPlacedTiles,
 	}
 }
 
@@ -284,11 +308,14 @@ func (game *ServerGameState) ResetStatsAfterGameFinish() {
 	game.GameStarted = false
 	game.EndTime = 0
 	game.StartTime = 0
+	game.TotalPlacedTiles = 0
 
 	for _, team := range game.Teams {
 		team.Score = 0
 		team.Letters = make(map[uuid.UUID]TeamLetter)
 		team.Placeholders = make(map[string]PlacedTile)
+		team.PlacedTiles = 0
+		team.Energy = 0
 	}
 
 	for _, p := range game.Players {

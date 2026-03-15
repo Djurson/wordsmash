@@ -49,6 +49,8 @@ export type TeamState = {
   placeholders: Record<string, PlacedTile>;
   bombs: number;
   roadblocks: number;
+  placedTiles: number;
+  energy: number;
 };
 
 export type TeamLetter = {
@@ -79,13 +81,19 @@ export type GameState = {
   startTime: number;
   totalScore: number;
   players: Record<string, User>;
+  totalPlacedTiles: number;
 };
+
+type CurrentAction =
+  | { type: "idle" }
+  | { type: "select_letter"; letterId: string }
+  | { type: "select_power_up"; powerup: "bomb" | "roadblock" }
+  | { type: "select_trade_in"; letterIds: Record<string, TeamLetter> };
 
 export type LocalGameState = {
   currentTurnTiles: Record<string, PlacedTile>;
   currentTurnDirection: Direction | null;
-  selectedLetterId: string | null;
-  selectedPowerup: "bomb" | "roadblock" | null;
+  currentAction: CurrentAction;
 };
 
 export type Stat = {

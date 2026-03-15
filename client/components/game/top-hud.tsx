@@ -1,7 +1,6 @@
 "use client";
 
 import { useGameContext } from "@/hooks/gamecontext";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -35,6 +34,7 @@ export function TopHUD() {
   if (!gamestate || !user) return null;
 
   const teamAScore = user.team === "a" ? gamestate.team.score : gamestate.totalScore - gamestate.team.score;
+  const teamATiles = user.team === "a" ? gamestate.team.placedTiles : gamestate.totalPlacedTiles - gamestate.team.placedTiles;
 
   return (
     <motion.div
@@ -49,7 +49,11 @@ export function TopHUD() {
           <TeamDisplay team="b" teamScore={gamestate.totalScore - teamAScore} />
         </div>
         <div className="flex w-full overflow-hidden rounded-xl bg-tile-accent">
-          <div className="h-2 bg-tile-primary rounded-xl" style={{ width: `${teamAScore === 0 && gamestate.totalScore === 0 ? 50 : (teamAScore / gamestate.totalScore) * 100}%` }} />
+          <div className="h-2 bg-tile-primary rounded-xl" style={{ width: `${teamATiles === 0 && gamestate.totalPlacedTiles === 0 ? 50 : (teamATiles / gamestate.totalPlacedTiles) * 100}%` }} />
+        </div>
+        <div className="flex w-full justify-between text-xs">
+          <span className="text-muted-foreground">Placerade brickor: {teamATiles}</span>
+          <span className="text-muted-foreground">Placerade brickor: {gamestate.totalPlacedTiles - teamATiles}</span>
         </div>
       </div>
       <div
@@ -57,9 +61,9 @@ export function TopHUD() {
         onClick={() => {
           if (finalStats) router.push("/");
         }}>
-        {localGameState.selectedLetterId && !finalStats ? (
+        {localGameState.currentAction.type === "select_letter" && !finalStats ? (
           /* Show letter if a letter is selected */
-          `Klicka på brädet för att placera "${gamestate.team.teamLetters[localGameState.selectedLetterId].letter}"`
+          `Klicka på brädet för att placera "${gamestate.team.teamLetters[localGameState.currentAction.letterId].letter}"`
         ) : !finalStats /* Show zoom / pan text if no letter is selected */ ? (
           "Dra för att panorera · Skrolla för att zooma"
         ) : (
@@ -75,7 +79,7 @@ export function TopHUD() {
 
 function TeamDisplay({ team, teamScore }: { team: "a" | "b"; teamScore: number }) {
   return (
-    <div className="flex items-center justify-between gap-8">
+    <div className="flex items-center justify-between gap-12">
       {team === "b" && <p className="text-sm font-bold text-foreground">Poäng: {teamScore}</p>}
       <div className="flex items-center gap-3">
         {team === "a" ? (

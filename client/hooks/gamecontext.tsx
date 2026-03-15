@@ -56,8 +56,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const [localGameState, setLocalGameState] = useState<LocalGameState>({
     currentTurnTiles: {},
     currentTurnDirection: null,
-    selectedLetterId: null,
-    selectedPowerup: null,
+    currentAction: { type: "idle" },
   });
 
   const updateGameState = useCallback((updates: Partial<GameState>) => {
@@ -133,7 +132,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
             if (collision) {
               ToastError("Någon hann före! Dina brickor rensades.");
-              return { currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, selectedPowerup: null };
+              return { currentTurnTiles: {}, currentTurnDirection: null, currentAction: { type: "idle" } };
             }
 
             return prevLocal;
@@ -158,8 +157,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
           setLocalGameState({
             currentTurnTiles: {},
             currentTurnDirection: null,
-            selectedLetterId: null,
-            selectedPowerup: null,
+            currentAction: { type: "idle" },
           });
           setFinalStats(null);
           router.push("/game");
@@ -193,7 +191,11 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
           ToastSucess("Tiden är ute! Spelet är över.");
 
-          setLocalGameState({ currentTurnTiles: {}, currentTurnDirection: null, selectedLetterId: null, selectedPowerup: null });
+          setLocalGameState({
+            currentTurnTiles: {},
+            currentTurnDirection: null,
+            currentAction: { type: "idle" },
+          });
           break;
 
         case "bomb_exploded": {
@@ -253,24 +255,24 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   const handleSelectLetter = useCallback(
     (key: string | null) => {
       if (!gamestate) return;
-      const newSelected = localGameState.selectedLetterId === key ? null : key;
+      const newSelected = localGameState.currentAction.type === "select_letter" && localGameState.currentAction.letterId === key ? null : key;
 
       if (newSelected && gamestate.team.teamLetters[newSelected].isLocked) return;
 
-      updateLocalGameState({ selectedLetterId: newSelected, selectedPowerup: null });
+      updateLocalGameState({ currentAction: newSelected === null ? { type: "idle" } : { type: "select_letter", letterId: newSelected } });
     },
     [gamestate, localGameState, updateLocalGameState],
   );
 
   const handleCancelPlacement = useCallback(() => {
-    if (localGameState.selectedLetterId !== null) {
+    if (localGameState.currentAction.type === "select_letter") {
       handleSelectLetter(null);
       return;
     }
 
     sendMessage("unlock_letter", null);
-    updateLocalGameState({ selectedLetterId: null, currentTurnDirection: null, currentTurnTiles: {}, selectedPowerup: null });
-  }, [localGameState.selectedLetterId, handleSelectLetter, sendMessage, updateLocalGameState]);
+    updateLocalGameState({ currentAction: { type: "idle" }, currentTurnDirection: null, currentTurnTiles: {} });
+  }, [localGameState.currentAction, handleSelectLetter, sendMessage, updateLocalGameState]);
 
   const handleRemoveSingleTile = useCallback(
     (tileKey: string, letterId: string) => {
@@ -307,31 +309,34 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     if (result === "failed") return;
 
     sendMessage("submit_turn", { newTiles: localGameState.currentTurnTiles });
-    updateLocalGameState({ currentTurnTiles: {}, selectedLetterId: null, currentTurnDirection: null });
+    updateLocalGameState({ currentTurnTiles: {}, currentAction: { type: "idle" }, currentTurnDirection: null });
   }, [localGameState, gamestate, sendMessage, updateLocalGameState]);
 
   const handlePlaceTile = useCallback(
     (x: number, y: number) => {
-      if (localGameState.selectedLetterId === null || gamestate === null) return;
+      if (localGameState.currentAction.type !== "select_letter" || gamestate === null) return;
 
       const validationResult = isValidPlacement(x, y, localGameState.currentTurnDirection, gamestate.board, localGameState.currentTurnTiles);
       if (validationResult === false) return;
 
       const targetKey = getTileKey(x, y);
-      const letter = gamestate.team.teamLetters[localGameState.selectedLetterId];
+      const letter = gamestate.team.teamLetters[localGameState.currentAction.letterId];
       const newTile: PlacedTile = { letter: letter.letter, x, y, state: "placeholder", score: letter.score, id: letter.id };
       const updatedTurnTiles = { ...localGameState.currentTurnTiles, [targetKey]: newTile };
 
-      updateLocalGameState({ currentTurnDirection: validationResult, selectedLetterId: null, currentTurnTiles: updatedTurnTiles });
-      sendMessage("lock_letter", { letterId: localGameState.selectedLetterId, placement: updatedTurnTiles });
+      updateLocalGameState({
+        currentTurnDirection: validationResult,
+        currentAction: { type: "idle" },
+        currentTurnTiles: updatedTurnTiles,
+      });
+      sendMessage("lock_letter", { letterId: localGameState.currentAction.letterId, placement: updatedTurnTiles });
     },
     [localGameState, gamestate, sendMessage, updateLocalGameState],
   );
 
   const handleSelectPowerup = useCallback(
     (type: "bomb" | "roadblock" | null) => {
-      // Om användaren klickar på samma powerup igen, stäng av den (toggle)
-      const newType = localGameState.selectedPowerup === type ? null : type;
+      const newType = localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === type ? null : type;
 
       let locGame: Partial<LocalGameState> = { ...localGameState };
 
@@ -343,11 +348,10 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
         locGame = {
           currentTurnDirection: null,
           currentTurnTiles: {},
-          selectedLetterId: null,
         };
       }
 
-      updateLocalGameState({ ...locGame, selectedPowerup: newType });
+      updateLocalGameState({ ...locGame, currentAction: newType === null ? { type: "idle" } : { type: "select_power_up", powerup: newType } });
     },
     [localGameState, sendMessage, updateLocalGameState],
   );
@@ -359,7 +363,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
       } else if (type === "roadblock") {
         sendMessage("submit_roadblock", { x: x, y: y });
       }
-      updateLocalGameState({ selectedPowerup: null });
+      updateLocalGameState({ currentAction: { type: "idle" } });
     },
     [sendMessage, updateLocalGameState],
   );

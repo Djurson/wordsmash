@@ -291,6 +291,10 @@ func (c *Client) readPump() {
 			}
 
 			c.Room.UpdateSpecialTiles <- &SubmitSpecialEffectAction{X: payload.X, Y: payload.Y, Client: c, Type: RoadblockEffect}
+
+			// TODO: Handle trade in tiles case
+
+			// TODO: Handle buy power-up case
 		}
 	}
 }
