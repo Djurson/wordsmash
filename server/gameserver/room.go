@@ -33,6 +33,11 @@ type SubmitSpecialEffectAction struct {
 	Type   SpecialType
 }
 
+type SubmitTradeInAction struct {
+	Client    *Client
+	LetterIds []uuid.UUID
+}
+
 type GameRoom struct {
 	ID                 string
 	Clients            map[*Client]bool
@@ -48,6 +53,7 @@ type GameRoom struct {
 	UnlockLetter       chan *Client
 	UnlockSingleLetter chan *UnlockSingleLetterAction
 	UpdateSpecialTiles chan *SubmitSpecialEffectAction
+	SubmitTradeIn      chan *SubmitTradeInAction
 }
 
 // NewRoom creates and returns a new GameRoom instance with the specified id.
@@ -68,6 +74,7 @@ func NewRoom(id string) *GameRoom {
 		UnlockLetter:       make(chan *Client),
 		UnlockSingleLetter: make(chan *UnlockSingleLetterAction),
 		UpdateSpecialTiles: make(chan *SubmitSpecialEffectAction),
+		SubmitTradeIn:      make(chan *SubmitTradeInAction),
 	}
 }
 
@@ -257,7 +264,7 @@ func (r *GameRoom) Run() {
 				}
 			}
 
-			isValid = isValidTilesFromHand(&submitTurnAction.NewTiles, r.State.Teams[submitTurnAction.Client.Team])
+			isValid = isValidTilesFromHand(&submitTurnAction.NewTiles, r.State.Teams[submitTurnAction.Client.Team], r.State.Players[submitTurnAction.Client.Id])
 			if !isValid {
 				continue
 			}
@@ -543,6 +550,40 @@ func (r *GameRoom) Run() {
 					}
 				}
 				continue
+			}
+
+		case action := <-r.SubmitTradeIn:
+			client := action.Client
+			if r.State.GameOver {
+				continue
+			}
+
+			teamState := r.State.Teams[client.Team]
+			totalCost := len(action.LetterIds) * TRADEINCOSTPERTILE
+
+			// Check if the team can afford it
+			if teamState.Energy < totalCost {
+				client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Ni har inte tillräckligt med energi för bytet"})
+				continue
+			}
+
+			teamState.Energy -= totalCost
+
+			// Remove the traded in tiles and generate new ones
+			for _, id := range action.LetterIds {
+				delete(teamState.Letters, id)
+			}
+			drawnLetters := GenerateRandomLetters(len(action.LetterIds))
+			for _, drawnLetter := range drawnLetters {
+				newID := uuid.New()
+				teamState.Letters[newID] = TeamLetter{Id: newID, Letter: string(drawnLetter.Rune), IsLocked: false, LockedBy: uuid.Nil, Score: drawnLetter.Score}
+			}
+
+			r.State.Teams[client.Team] = teamState
+
+			// Since both the overall energy and tiles changed a new game update is sent
+			for c := range r.Clients {
+				c.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(c.Team))
 			}
 		}
 	}

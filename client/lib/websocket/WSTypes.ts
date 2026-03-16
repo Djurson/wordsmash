@@ -26,6 +26,7 @@ export type WSSendPayloadMap = {
   start_game: null;
   unlock_single_letter: { letterId: string; tileKey: string };
   unlock_letter: null;
+  submit_trade_in: { letterIds: string[] };
 };
 
 export type WSSendEventType = keyof WSSendPayloadMap;

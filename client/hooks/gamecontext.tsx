@@ -1,6 +1,6 @@
 "use client";
 
-import { Explosion, FinalGameStats, GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
+import { CurrentAction, Explosion, FinalGameStats, GameState, LocalGameState, PlacedTile, TeamLetter, User } from "@/lib/game/types";
 import { finalTesting, getTileKey, isValidPlacement } from "@/lib/game/utils";
 import { ToastError, ToastSucess } from "@/lib/toastfunctions";
 import { WSRecievedEvent, WSSendEventType, WSSendPayloadMap } from "@/lib/websocket/WSTypes";
@@ -30,6 +30,9 @@ export interface GameContextContextProps {
   explosions: Record<string, Explosion>;
   quickGuideOpen: boolean;
   handleUpdateQuickGuide: (state: boolean) => void;
+  handleToggleTradeInMode: () => void;
+  handleToggleTradeInLetter: (letterId: string) => void;
+  handleSubmitTradeIn: () => void;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -288,26 +291,30 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
 
   const handleRemoveSingleTile = useCallback(
     (tileKey: string, letterId: string) => {
-      setLocalGameState((prev) => {
-        const newTiles = { ...prev.currentTurnTiles };
-        delete newTiles[tileKey];
+      if (localGameState.currentAction.type === "select_letter") {
+        setLocalGameState((prev) => {
+          const newTiles = { ...prev.currentTurnTiles };
+          delete newTiles[tileKey];
 
-        let newDir = prev.currentTurnDirection;
-        if (Object.keys(newTiles).length <= 1) newDir = null;
+          let newDir = prev.currentTurnDirection;
+          if (Object.keys(newTiles).length <= 1) newDir = null;
 
-        return { ...prev, currentTurnTiles: newTiles, currentTurnDirection: newDir };
-      });
+          return { ...prev, currentTurnTiles: newTiles, currentTurnDirection: newDir };
+        });
 
-      sendMessage("unlock_single_letter", { letterId, tileKey });
+        sendMessage("unlock_single_letter", { letterId, tileKey });
+      }
     },
-    [sendMessage],
+    [sendMessage, localGameState.currentAction],
   );
 
   const handleRemoveSingleTileByLetterId = useCallback(
     (letterId: string) => {
-      const tileKey = Object.keys(localGameState.currentTurnTiles).find((key) => localGameState.currentTurnTiles[key].id === letterId);
-      if (tileKey) {
-        handleRemoveSingleTile(tileKey, letterId);
+      if (localGameState.currentAction.type === "select_letter") {
+        const tileKey = Object.keys(localGameState.currentTurnTiles).find((key) => localGameState.currentTurnTiles[key].id === letterId);
+        if (tileKey) {
+          handleRemoveSingleTile(tileKey, letterId);
+        }
       }
     },
     [localGameState.currentTurnTiles, handleRemoveSingleTile],
@@ -387,6 +394,51 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     [setQuickGuideOpen],
   );
 
+  const handleToggleTradeInMode = useCallback(() => {
+    if (localGameState.currentAction.type === "select_trade_in") {
+      Object.keys(localGameState.currentAction.letterIds).forEach((id) => {
+        sendMessage("unlock_single_letter", { letterId: id, tileKey: "" });
+      });
+      updateLocalGameState({ currentAction: { type: "idle" } });
+    } else {
+      if (localGameState.currentAction.type === "select_letter") {
+        handleCancelPlacement();
+      }
+      updateLocalGameState({ currentAction: { type: "select_trade_in", letterIds: {} } });
+    }
+  }, [localGameState.currentAction, sendMessage, updateLocalGameState, handleCancelPlacement]);
+
+  const handleToggleTradeInLetter = useCallback(
+    (letterId: string) => {
+      if (localGameState.currentAction.type !== "select_trade_in") return;
+
+      const currentSelected = { ...localGameState.currentAction.letterIds };
+
+      if (currentSelected[letterId]) {
+        delete currentSelected[letterId];
+        sendMessage("unlock_single_letter", { letterId, tileKey: "" });
+      } else {
+        const teamLetter = gamestate?.team.teamLetters[letterId];
+        if (teamLetter) {
+          currentSelected[letterId] = teamLetter;
+          sendMessage("lock_letter", { letterId, placement: {} });
+        }
+      }
+
+      updateLocalGameState({ currentAction: { type: "select_trade_in", letterIds: currentSelected } });
+    },
+    [localGameState.currentAction, gamestate, sendMessage, updateLocalGameState],
+  );
+
+  const handleSubmitTradeIn = useCallback(() => {
+    if (localGameState.currentAction.type !== "select_trade_in") return;
+    const ids = Object.keys(localGameState.currentAction.letterIds);
+    if (ids.length === 0) return;
+
+    sendMessage("submit_trade_in", { letterIds: ids });
+    updateLocalGameState({ currentAction: { type: "idle" } });
+  }, [localGameState.currentAction, sendMessage, updateLocalGameState]);
+
   const value: GameContextContextProps = {
     isConnected,
     user,
@@ -408,6 +460,9 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     explosions,
     quickGuideOpen,
     handleUpdateQuickGuide,
+    handleToggleTradeInMode,
+    handleToggleTradeInLetter,
+    handleSubmitTradeIn,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

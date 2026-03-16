@@ -34,6 +34,7 @@ const (
 	UnlockSingleLetterEvent EventType = "unlock_single_letter" // React (client) -> Go (server)
 	SubmitBombEvent         EventType = "submit_bomb"          // React (client) -> Go (server)
 	SubmitRoadblockEvent    EventType = "submit_roadblock"     // React (client) -> Go (server)
+	SubmitTradeInEvent      EventType = "submit_trade_in"      // React (client) -> Go (server)
 )
 
 type Event struct {
@@ -110,4 +111,8 @@ type BombExplodedPayload struct {
 	Y       int    `json:"y"`
 	Message string `json:"message"`
 	Bad     bool   `json:"bad"`
+}
+
+type SubmitTradeInPayload struct {
+	LetterIds []uuid.UUID `json:"letterIds"`
 }

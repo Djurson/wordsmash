@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Bomb, Construction, Repeat } from "lucide-react";
 import GameTile from "./game-tile";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,19 @@ import { useEffect } from "react";
 import { TeamLetter } from "@/lib/game/types";
 
 export function PlayerDock() {
-  const { gamestate, user, localGameState, handleSelectLetter, handleCancelPlacement, handleSubmitPlacement, handleRemoveSingleTileByLetterId, handleSelectPowerup } = useGameContext();
+  const {
+    gamestate,
+    user,
+    localGameState,
+    handleSelectLetter,
+    handleCancelPlacement,
+    handleSubmitPlacement,
+    handleRemoveSingleTileByLetterId,
+    handleSelectPowerup,
+    handleToggleTradeInMode,
+    handleToggleTradeInLetter,
+    handleSubmitTradeIn,
+  } = useGameContext();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -25,12 +37,26 @@ export function PlayerDock() {
 
   if (!gamestate || !user) return null;
 
+  const isTradeInMode = localGameState.currentAction.type === "select_trade_in";
+  const tradeInSelectionCount = localGameState.currentAction.type === "select_trade_in" ? Object.keys(localGameState.currentAction.letterIds).length : 0;
+
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, type: "spring", bounceDamping: 15, bounce: 0.7 }}
       className="fixed z-50 flex flex-col items-center justify-center bottom-4">
+      {/* TEMPORARY SOLUTION */}
+      <AnimatePresence>
+        {isTradeInMode && tradeInSelectionCount > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute left-1/2 -translate-x-1/2 -top-14">
+            <Button onClick={handleSubmitTradeIn} className="shadow-lg bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6">
+              Byt in {tradeInSelectionCount} brickor (Kostnad: {tradeInSelectionCount * 15} energi)
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="px-4 pt-4 pb-6 border shadow-2xl space-y-6 bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
@@ -114,7 +140,6 @@ export function PlayerDock() {
         <div className="flex items-center justify-center gap-2 md:gap-3">
           {Object.keys(gamestate.team.teamLetters).map((key, index) => {
             const teamLetter: TeamLetter = gamestate.team.teamLetters[key];
-
             const isLockedByMe = teamLetter.isLocked && teamLetter.lockedBy === user.userId;
             const onRemove = isLockedByMe
               ? (e: React.MouseEvent) => {
@@ -122,6 +147,8 @@ export function PlayerDock() {
                   handleRemoveSingleTileByLetterId(teamLetter.id);
                 }
               : undefined;
+            const isTradeInSelected = localGameState.currentAction.type === "select_trade_in" && !!localGameState.currentAction.letterIds[key];
+            const isLockedByOther = teamLetter.isLocked && teamLetter.lockedBy !== user.userId;
             return (
               <motion.div
                 layout
@@ -130,18 +157,20 @@ export function PlayerDock() {
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 + index * 0.05, type: "spring", bounce: 0.75, bounceDamping: 15 }}>
                 <div
-                  onClick={
-                    gamestate.team.teamLetters[key].isLocked
-                      ? () => {
-                          // console.log("isLocked", gamestate.team.teamLetters[key].isLocked);
-                        }
-                      : () => {
-                          // console.log("key", key);
-                          handleSelectLetter(key);
-                        }
-                  }
-                  className={`cursor-pointer transition-transform duration-200 ${(localGameState.currentAction.type === "select_letter" && localGameState.currentAction.letterId === key) || gamestate.team.teamLetters[key].isLocked ? "-translate-y-3 scale-110 drop-shadow-lg" : "hover:-translate-y-1"}`}>
-                  <GameTile letter={teamLetter.letter} state={gamestate.team.teamLetters[key].isLocked ? "locked" : "idle"} score={teamLetter.score} onRemove={onRemove} />
+                  onClick={() => {
+                    if (isLockedByOther) return;
+                    if (isTradeInMode) {
+                      handleToggleTradeInLetter(key);
+                    } else {
+                      handleSelectLetter(key);
+                    }
+                  }}
+                  className={`cursor-pointer transition-transform duration-200 ${
+                    (localGameState.currentAction.type === "select_letter" && localGameState.currentAction.letterId === key) || isTradeInSelected || isLockedByOther
+                      ? "-translate-y-3 scale-110 drop-shadow-lg"
+                      : "hover:-translate-y-1"
+                  }`}>
+                  <GameTile letter={teamLetter.letter} state={teamLetter.isLocked ? (isTradeInSelected ? "selected" : "locked") : "idle"} score={teamLetter.score} />
                 </div>
               </motion.div>
             );

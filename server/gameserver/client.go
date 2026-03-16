@@ -219,24 +219,27 @@ func (c *Client) readPump() {
 			}
 
 		case LockLetterEvent:
+			if c.Room == nil {
+				continue
+			}
+
 			var payload LockLetterPayload
 			if err := json.Unmarshal(event.Payload, &payload); err != nil {
 				log.Printf("Error reading lock_letter payload: %v", err)
 				continue
 			}
 
-			if c.Room != nil {
-				c.Room.LockLetter <- &LockLetterAction{
-					Client:    c,
-					LetterId:  payload.LetterId,
-					Placement: payload.Placement,
-				}
+			c.Room.LockLetter <- &LockLetterAction{
+				Client:    c,
+				LetterId:  payload.LetterId,
+				Placement: payload.Placement,
 			}
 
 		case UnlockLetterEvent:
-			if c.Room != nil {
-				c.Room.UnlockLetter <- c
+			if c.Room == nil {
+				continue
 			}
+			c.Room.UnlockLetter <- c
 
 		case SubmitTurnEvent:
 			if c.Room == nil {
@@ -258,6 +261,10 @@ func (c *Client) readPump() {
 			c.Room.ProcessMove <- &SubmitTurnAction{Client: c, NewTiles: payload.NewTiles}
 
 		case UnlockSingleLetterEvent:
+			if c.Room == nil {
+				continue
+			}
+
 			var payload UnlockSingleLetterPayload
 			json.Unmarshal(event.Payload, &payload)
 			c.hub.Rooms[c.Room.ID].UnlockSingleLetter <- &UnlockSingleLetterAction{
@@ -295,6 +302,19 @@ func (c *Client) readPump() {
 			// TODO: Handle trade in tiles case
 
 			// TODO: Handle buy power-up case
+
+		case SubmitTradeInEvent:
+			if c.Room == nil {
+				continue
+			}
+
+			var payload SubmitTradeInPayload
+			json.Unmarshal(event.Payload, &payload)
+
+			c.hub.Rooms[c.Room.ID].SubmitTradeIn <- &SubmitTradeInAction{
+				Client:    c,
+				LetterIds: payload.LetterIds,
+			}
 		}
 	}
 }

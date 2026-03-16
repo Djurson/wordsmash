@@ -84,7 +84,7 @@ export type GameState = {
   totalPlacedTiles: number;
 };
 
-type CurrentAction =
+export type CurrentAction =
   | { type: "idle" }
   | { type: "select_letter"; letterId: string }
   | { type: "select_power_up"; powerup: "bomb" | "roadblock" }
