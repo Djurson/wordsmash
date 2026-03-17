@@ -8,6 +8,8 @@ export const MAX_ZOOM_OUT = 0.6;
 export const MAX_ZOOM_IN = 2.0;
 export const ZOOM_STEP = 0.2;
 export const TRADE_IN_COSt_PER_TILE = 15;
+export const BOMB_COST = 80;
+export const ROADBLOCK_COST = 30;
 
 export const getTileKey = (x: number, y: number) => `${x},${y}`;
 export const seperateTileKey = (key: string) => {

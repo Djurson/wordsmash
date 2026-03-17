@@ -1,14 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Bomb, Construction, Repeat } from "lucide-react";
+import { Bomb, Construction, Repeat, Zap } from "lucide-react";
 import GameTile from "./game-tile";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { useGameContext } from "@/hooks/gamecontext";
 import { useEffect } from "react";
 import { TeamLetter } from "@/lib/game/types";
-import { TRADE_IN_COSt_PER_TILE } from "@/lib/game/utils";
+import { BOMB_COST, ROADBLOCK_COST, TRADE_IN_COSt_PER_TILE } from "@/lib/game/utils";
+import { Separator } from "../ui/separator";
 
 export function PlayerDock() {
   const {
@@ -90,9 +91,50 @@ export function PlayerDock() {
 
       <div className="px-4 pt-4 pb-6 space-y-6 border shadow-2xl bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-semibold text-muted-foreground">Ditt lags energi</span>
-            <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md ml-1">{gamestate.team.energy} energi</span>
+          <div className="flex items-center justify-start gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-semibold text-muted-foreground">Ditt lags energi</span>
+              <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md ml-1">{gamestate.team.energy} energi</span>
+            </div>
+            <div className="flex gap-3">
+              {/* Buy Roadblock Button */}
+              <Button
+                disabled={gamestate.team.energy < ROADBLOCK_COST || isTradeInMode}
+                variant="outline"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold hover:-translate-y-0.5 cursor-pointer"
+                aria-label="Buy Roadblock">
+                {/* Gain */}
+                <span className="flex items-center gap-1 font-bold">
+                  +1 <Construction className="size-4" />
+                </span>
+
+                <Separator orientation="vertical" />
+
+                {/* Cost */}
+                <span className="flex items-center gap-1 text-sm bg-black/10 px-2 py-0.5 rounded-md">
+                  - {ROADBLOCK_COST} <Zap />
+                </span>
+              </Button>
+
+              {/* Buy Roadblock Button */}
+              <Button
+                disabled={gamestate.team.energy < BOMB_COST || isTradeInMode}
+                variant="outline"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold hover:-translate-y-0.5 cursor-pointer"
+                aria-label="Buy Roadblock">
+                {/* Gain */}
+                <span className="flex items-center gap-1 font-bold">
+                  +1 <Bomb className="size-4" />
+                </span>
+
+                <Separator orientation="vertical" />
+
+                {/* Cost */}
+                <span className="flex items-center gap-1 text-sm bg-black/10 px-2 py-0.5 rounded-md">
+                  - {BOMB_COST} <Zap />
+                </span>
+              </Button>
+            </div>
           </div>
           <div className="flex gap-2">
             {/* Trade In Button */}
