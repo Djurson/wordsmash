@@ -270,8 +270,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
   // SPlit this function to multiple
   const handleCancelPlacement = useCallback(() => {
     if (localGameState.currentAction.type === "select_trade_in") {
-      // TODO: Reset all selected letters for trade in
-      updateLocalGameState({ currentAction: { type: "idle" } });
+      handleToggleTradeInMode;
       return;
     }
 

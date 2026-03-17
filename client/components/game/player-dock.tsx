@@ -51,7 +51,7 @@ export function PlayerDock() {
       <AnimatePresence>
         {isTradeInMode && tradeInSelectionCount > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute left-1/2 -translate-x-1/2 -top-14">
-            <Button onClick={handleSubmitTradeIn} className="shadow-lg bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6">
+            <Button onClick={handleSubmitTradeIn} className="shadow-lg bg-tile-primary hover:bg-tile-primary/80 text-tile-foreground rounded-full px-6 cursor-pointer">
               Byt in {tradeInSelectionCount} brickor (Kostnad: {tradeInSelectionCount * TRADE_IN_COSt_PER_TILE} energi)
             </Button>
           </motion.div>
@@ -93,7 +93,7 @@ export function PlayerDock() {
             <Button
               disabled={gamestate.team.roadblocks === 0}
               variant="outline"
-              onClick={() => handleToggleTradeInMode}
+              onClick={handleToggleTradeInMode}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border active:scale-95 ${
                 localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "roadblock" ? "bg-tile-locked/50" : "text-foreground hover:bg-card border-border"
               }`}
