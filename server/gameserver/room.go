@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -83,6 +84,8 @@ func NewRoom(id string) *GameRoom {
 func (r *GameRoom) Run() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
+
+	tick := 0
 
 	for {
 		select {
@@ -278,7 +281,7 @@ func (r *GameRoom) Run() {
 			player := r.State.Players[submitTurnAction.Client.Id]
 			player.Score += moveScore
 			player.TilesPlaced += len(submitTurnAction.NewTiles)
-			r.State.Teams[player.Team].PlacedTiles++
+			r.State.Teams[player.Team].PlacedTiles += len(submitTurnAction.NewTiles)
 			r.State.TotalPlacedTiles += len(submitTurnAction.NewTiles)
 
 			// Add the tiles to the board
@@ -402,7 +405,10 @@ func (r *GameRoom) Run() {
 
 		case <-ticker.C:
 			if r.State.GameStarted && !r.State.GameOver {
+				tick++
 				now := time.Now().UnixMilli()
+
+				changed := false
 
 				if now >= r.State.EnableSpecialsAt && !r.State.CanPlaceSpecials && r.State.Settings.EnableSpecials {
 					r.State.CanPlaceSpecials = true
@@ -411,21 +417,23 @@ func (r *GameRoom) Run() {
 				// Check roadblocks
 				for key, roadblock := range r.State.Roadblocks {
 					if now >= roadblock.ExpiresAt {
+						changed = true
 						delete(r.State.Roadblocks, key)
 					}
 				}
 
-				// if r.State.CanPlaceSpecials {
-				// 	for _, team := range r.State.Teams {
-				// 		continue;
-				// 		}
-				// 	}
-				// }
+				// Every 10 seconds plus energy
+				if tick%10 == 0 {
+					for _, team := range r.State.Teams {
+						team.Energy = Clamp(team.Energy+int(math.Round(math.Sqrt(float64(team.PlacedTiles))*5)), ENERGYCAP)
+						changed = true
+					}
+				}
 
-				// TODO: Implement reward system based on board coverage with tiles
-
-				for c := range r.Clients {
-					c.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(c.Team))
+				if changed {
+					for c := range r.Clients {
+						c.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(c.Team))
+					}
 				}
 
 				if now >= r.State.EndTime {

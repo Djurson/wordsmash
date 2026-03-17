@@ -50,43 +50,49 @@ export function PlayerDock() {
       {/* TEMPORARY SOLUTION */}
       <AnimatePresence>
         {isTradeInMode && tradeInSelectionCount > 0 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute left-1/2 -translate-x-1/2 -top-14">
-            <Button onClick={handleSubmitTradeIn} className="shadow-lg bg-tile-primary hover:bg-tile-primary/80 text-tile-foreground rounded-full px-6 cursor-pointer">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute -translate-x-1/2 left-1/2 -top-14">
+            <Button
+              onClick={handleSubmitTradeIn}
+              className="px-6 py-5 text-base rounded-full shadow-lg cursor-pointer shadow-tile-shadow/50 bg-tile-primary hover:bg-tile-primary/80 text-tile-foreground">
               Byt in {tradeInSelectionCount} brickor (Kostnad: {tradeInSelectionCount * TRADE_IN_COSt_PER_TILE} energi)
             </Button>
           </motion.div>
         )}
+        {Object.keys(localGameState.currentTurnTiles).length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 25 }} className="absolute -translate-x-1/2 left-1/2 -top-17">
+            <div className="flex items-center justify-center gap-2 px-8 py-4 bg-card">
+              <Button size="sm" variant="outline" className="text-tile-foreground! px-5 flex items-center" onClick={handleCancelPlacement}>
+                Avbryt{" "}
+                <KbdGroup>
+                  <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
+                    Esc
+                  </Kbd>
+                  {localGameState.currentAction.type !== "idle" && (
+                    <>
+                      {" + "}
+                      <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
+                        Esc
+                      </Kbd>
+                    </>
+                  )}
+                </KbdGroup>
+              </Button>
+              <Button size="sm" variant="default" className="text-tile-foreground! px-5 flex items-center" onClick={handleSubmitPlacement}>
+                Klar{" "}
+                <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/50">
+                  ⏎
+                </Kbd>
+              </Button>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
-      <div className="px-4 pt-4 pb-6 border shadow-2xl space-y-6 bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8">
+      <div className="px-4 pt-4 pb-6 space-y-6 border shadow-2xl bg-card/90 backdrop-blur-xl border-border rounded-2xl md:px-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <span className="text-base font-semibold text-muted-foreground">Ditt lags brickor</span>
-            <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md ml-1">{Object.keys(gamestate.team.teamLetters).length} kvar</span>
-          </div>
-          <div className={`flex gap-2 duration-300 ease-in-out ${Object.keys(localGameState.currentTurnTiles).length > 0 ? "translate-y-0" : "translate-y-86"}`}>
-            <Button size="sm" variant="outline" className="text-tile-foreground! px-5 flex items-center" onClick={handleCancelPlacement}>
-              Avbryt{" "}
-              <KbdGroup>
-                <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
-                  Esc
-                </Kbd>
-                {localGameState.currentAction.type !== "idle" && (
-                  <>
-                    {" + "}
-                    <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
-                      Esc
-                    </Kbd>
-                  </>
-                )}
-              </KbdGroup>
-            </Button>
-            <Button size="sm" variant="default" className="text-tile-foreground! px-5 flex items-center" onClick={handleSubmitPlacement}>
-              Klar{" "}
-              <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/50">
-                ⏎
-              </Kbd>
-            </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-base font-semibold text-muted-foreground">Ditt lags energi</span>
+            <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md ml-1">{gamestate.team.energy} energi</span>
           </div>
           <div className="flex gap-2">
             {/* Trade In Button */}
@@ -95,7 +101,7 @@ export function PlayerDock() {
               variant="outline"
               onClick={handleToggleTradeInMode}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border active:scale-95 ${
-                localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "roadblock" ? "bg-tile-locked/50" : "text-foreground hover:bg-card border-border"
+                isTradeInMode ? "bg-tile-locked/50" : "text-foreground hover:bg-card border-border"
               }`}
               aria-label="Roadblocks">
               <Repeat className="size-5" />
@@ -104,7 +110,7 @@ export function PlayerDock() {
 
             {/* Roadblock Button */}
             <Button
-              disabled={gamestate.team.roadblocks === 0}
+              disabled={gamestate.team.roadblocks === 0 || isTradeInMode}
               onClick={() => handleSelectPowerup("roadblock")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border active:scale-95 ${
                 localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "roadblock"
@@ -121,7 +127,7 @@ export function PlayerDock() {
 
             {/* Bomb Button */}
             <Button
-              disabled={gamestate.team.bombs === 0}
+              disabled={gamestate.team.bombs === 0 || isTradeInMode}
               onClick={() => handleSelectPowerup("bomb")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border active:scale-95 ${
                 localGameState.currentAction.type === "select_power_up" && localGameState.currentAction.powerup === "bomb"
@@ -171,7 +177,7 @@ export function PlayerDock() {
                       ? "-translate-y-3 scale-110 drop-shadow-lg"
                       : "hover:-translate-y-1"
                   }`}>
-                  <GameTile letter={teamLetter.letter} state={teamLetter.isLocked ? (isTradeInSelected ? "selected" : "locked") : "idle"} score={teamLetter.score} />
+                  <GameTile letter={teamLetter.letter} state={teamLetter.isLocked ? (isTradeInSelected ? "selected" : "locked") : "idle"} score={teamLetter.score} onRemove={onRemove} />
                 </div>
               </motion.div>
             );

@@ -74,3 +74,11 @@ func isValidTilesFromHand(newTiles *map[string]PlacedTile, teamState *TeamState,
 
 	return isValid
 }
+
+func Clamp(value, maxVal int) int {
+	if value < maxVal {
+		return value
+	}
+
+	return maxVal
+}
