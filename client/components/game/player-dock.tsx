@@ -24,6 +24,7 @@ export function PlayerDock() {
     handleToggleTradeInMode,
     handleToggleTradeInLetter,
     handleSubmitTradeIn,
+    handleBuySpecial,
   } = useGameContext();
 
   useEffect(() => {
@@ -31,11 +32,14 @@ export function PlayerDock() {
       if (e.key === "Escape") {
         handleCancelPlacement();
       }
+      if (e.key === "Enter" && Object.keys(localGameState.currentTurnTiles).length > 0) {
+        handleSubmitPlacement();
+      }
     };
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [handleCancelPlacement]);
+  }, [handleCancelPlacement, handleSubmitPlacement]);
 
   if (!gamestate || !user) return null;
 
@@ -61,16 +65,16 @@ export function PlayerDock() {
         )}
         {Object.keys(localGameState.currentTurnTiles).length > 0 && (
           <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 25 }} className="absolute -translate-x-1/2 left-1/2 -top-17">
-            <div className="flex items-center justify-center gap-2 px-8 py-4 bg-card">
+            <div className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-card">
               <Button size="sm" variant="outline" className="text-tile-foreground! px-5 flex items-center" onClick={handleCancelPlacement}>
-                Avbryt{" "}
-                <KbdGroup>
+                Avbryt
+                <KbdGroup className="flex items-center">
                   <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
                     Esc
                   </Kbd>
                   {localGameState.currentAction.type !== "idle" && (
                     <>
-                      {" + "}
+                      {"+"}
                       <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/5">
                         Esc
                       </Kbd>
@@ -79,7 +83,7 @@ export function PlayerDock() {
                 </KbdGroup>
               </Button>
               <Button size="sm" variant="default" className="text-tile-foreground! px-5 flex items-center" onClick={handleSubmitPlacement}>
-                Klar{" "}
+                Klar
                 <Kbd data-icon="inline-end" className="px-2 bg-tile-secondary/50">
                   ⏎
                 </Kbd>
@@ -100,38 +104,40 @@ export function PlayerDock() {
               {/* Buy Roadblock Button */}
               <Button
                 disabled={gamestate.team.energy < ROADBLOCK_COST || isTradeInMode}
+                onClick={() => handleBuySpecial("roadblock")}
                 variant="outline"
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold hover:-translate-y-0.5 cursor-pointer"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-semibold hover:-translate-y-0.5 cursor-pointer"
                 aria-label="Buy Roadblock">
                 {/* Gain */}
                 <span className="flex items-center gap-1 font-bold">
-                  +1 <Construction className="size-4" />
+                  +1 <Construction className="size-5" />
                 </span>
 
                 <Separator orientation="vertical" />
 
                 {/* Cost */}
-                <span className="flex items-center gap-1 text-sm bg-black/10 px-2 py-0.5 rounded-md">
-                  - {ROADBLOCK_COST} <Zap />
+                <span className="flex items-center gap-1 text-base">
+                  - {ROADBLOCK_COST} <Zap className="text-tile-foreground/20 fill-tile-primary size-5" />
                 </span>
               </Button>
 
-              {/* Buy Roadblock Button */}
+              {/* Buy Bomb Button */}
               <Button
+                onClick={() => handleBuySpecial("bomb")}
                 disabled={gamestate.team.energy < BOMB_COST || isTradeInMode}
                 variant="outline"
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold hover:-translate-y-0.5 cursor-pointer"
-                aria-label="Buy Roadblock">
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-semibold hover:-translate-y-0.5 cursor-pointer"
+                aria-label="Buy Bomb">
                 {/* Gain */}
                 <span className="flex items-center gap-1 font-bold">
-                  +1 <Bomb className="size-4" />
+                  +1 <Bomb className="size-5" />
                 </span>
 
                 <Separator orientation="vertical" />
 
                 {/* Cost */}
-                <span className="flex items-center gap-1 text-sm bg-black/10 px-2 py-0.5 rounded-md">
-                  - {BOMB_COST} <Zap />
+                <span className="flex items-center gap-1 text-base">
+                  - {BOMB_COST} <Zap className="text-tile-foreground/20 fill-tile-primary size-5" />
                 </span>
               </Button>
             </div>

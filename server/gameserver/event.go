@@ -35,6 +35,7 @@ const (
 	SubmitBombEvent         EventType = "submit_bomb"          // React (client) -> Go (server)
 	SubmitRoadblockEvent    EventType = "submit_roadblock"     // React (client) -> Go (server)
 	SubmitTradeInEvent      EventType = "submit_trade_in"      // React (client) -> Go (server)
+	BuySpecialEvent         EventType = "buy_special"          // React (client) -> Go (server)
 )
 
 type Event struct {
@@ -115,4 +116,8 @@ type BombExplodedPayload struct {
 
 type SubmitTradeInPayload struct {
 	LetterIds []uuid.UUID `json:"letterIds"`
+}
+
+type BuySpecialPayload struct {
+	Special SpecialType `json:"type"`
 }

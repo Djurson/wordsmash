@@ -27,6 +27,7 @@ export type WSSendPayloadMap = {
   unlock_single_letter: { letterId: string; tileKey: string };
   unlock_letter: null;
   submit_trade_in: { letterIds: string[] };
+  buy_special: { type: "bomb" | "roadblock" };
 };
 
 export type WSSendEventType = keyof WSSendPayloadMap;

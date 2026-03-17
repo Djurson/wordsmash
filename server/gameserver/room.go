@@ -39,6 +39,11 @@ type SubmitTradeInAction struct {
 	LetterIds []uuid.UUID
 }
 
+type BuySpecialAction struct {
+	Client  *Client
+	Special SpecialType
+}
+
 type GameRoom struct {
 	ID                 string
 	Clients            map[*Client]bool
@@ -55,6 +60,7 @@ type GameRoom struct {
 	UnlockSingleLetter chan *UnlockSingleLetterAction
 	UpdateSpecialTiles chan *SubmitSpecialEffectAction
 	SubmitTradeIn      chan *SubmitTradeInAction
+	BuySpecial         chan *BuySpecialAction
 }
 
 // NewRoom creates and returns a new GameRoom instance with the specified id.
@@ -76,6 +82,7 @@ func NewRoom(id string) *GameRoom {
 		UnlockSingleLetter: make(chan *UnlockSingleLetterAction),
 		UpdateSpecialTiles: make(chan *SubmitSpecialEffectAction),
 		SubmitTradeIn:      make(chan *SubmitTradeInAction),
+		BuySpecial:         make(chan *BuySpecialAction),
 	}
 }
 
@@ -592,6 +599,28 @@ func (r *GameRoom) Run() {
 			// Since both the overall energy and tiles changed a new game update is sent
 			for c := range r.Clients {
 				c.send <- PrepareEvent(BoardUpdateEvent, r.State.ToClientState(c.Team))
+			}
+
+		case action := <-r.BuySpecial:
+			if r.State.GameStarted && !r.State.GameOver {
+				if action.Special == BombEffect && r.State.Teams[action.Client.Team].Energy < BOMBCOSTENERGY || action.Special == RoadblockEffect && r.State.Teams[action.Client.Team].Energy < ROADBLOCKCOSTENERGY {
+					action.Client.send <- PrepareEvent(ErrorEvent, map[string]string{"message": "Ni har inte tillräckligt med energi för att kunna köpa"})
+					continue
+				}
+
+				if action.Special == BombEffect && r.State.Teams[action.Client.Team].Bombs < MAXBOMBS {
+					r.State.Teams[action.Client.Team].Bombs++
+					r.State.Teams[action.Client.Team].Energy -= BOMBCOSTENERGY
+				} else if action.Special == RoadblockEffect && r.State.Teams[action.Client.Team].Roadblocks < MAXROADBLOCKS {
+					r.State.Teams[action.Client.Team].Roadblocks++
+					r.State.Teams[action.Client.Team].Energy -= ROADBLOCKCOSTENERGY
+				}
+			}
+
+			for c := range r.Clients {
+				if c.Team == action.Client.Team {
+					c.send <- PrepareEvent(LobbyUpdateEvent, r.State.ToClientState(c.Team))
+				}
 			}
 		}
 	}

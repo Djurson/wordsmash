@@ -33,6 +33,7 @@ export interface GameContextContextProps {
   handleToggleTradeInMode: () => void;
   handleToggleTradeInLetter: (letterId: string) => void;
   handleSubmitTradeIn: () => void;
+  handleBuySpecial: (type: "bomb" | "roadblock") => void;
 }
 
 export const GameContext = createContext<GameContextContextProps | null>(null);
@@ -438,6 +439,13 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     updateLocalGameState({ currentAction: { type: "idle" } });
   }, [localGameState.currentAction, sendMessage, updateLocalGameState]);
 
+  const handleBuySpecial = useCallback(
+    (type: "bomb" | "roadblock") => {
+      sendMessage("buy_special", { type: type });
+    },
+    [sendMessage],
+  );
+
   const value: GameContextContextProps = {
     isConnected,
     user,
@@ -462,6 +470,7 @@ export function GameContextProvider({ children }: { children: ReactNode }) {
     handleToggleTradeInMode,
     handleToggleTradeInLetter,
     handleSubmitTradeIn,
+    handleBuySpecial,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

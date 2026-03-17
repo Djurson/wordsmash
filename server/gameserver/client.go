@@ -267,7 +267,7 @@ func (c *Client) readPump() {
 
 			var payload UnlockSingleLetterPayload
 			json.Unmarshal(event.Payload, &payload)
-			c.hub.Rooms[c.Room.ID].UnlockSingleLetter <- &UnlockSingleLetterAction{
+			c.Room.UnlockSingleLetter <- &UnlockSingleLetterAction{
 				Client:   c,
 				LetterId: payload.LetterId,
 				TileKey:  payload.TileKey,
@@ -311,10 +311,20 @@ func (c *Client) readPump() {
 			var payload SubmitTradeInPayload
 			json.Unmarshal(event.Payload, &payload)
 
-			c.hub.Rooms[c.Room.ID].SubmitTradeIn <- &SubmitTradeInAction{
+			c.Room.SubmitTradeIn <- &SubmitTradeInAction{
 				Client:    c,
 				LetterIds: payload.LetterIds,
 			}
+
+		case BuySpecialEvent:
+			if c.Room == nil {
+				continue
+			}
+
+			var payload BuySpecialPayload
+			json.Unmarshal(event.Payload, &payload)
+
+			c.Room.BuySpecial <- &BuySpecialAction{Client: c, Special: payload.Special}
 		}
 	}
 }
