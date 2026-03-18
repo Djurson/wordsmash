@@ -65,7 +65,7 @@ export function PlayerDock() {
         )}
         {Object.keys(localGameState.currentTurnTiles).length > 0 && (
           <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 25 }} className="absolute -translate-x-1/2 left-1/2 -top-17">
-            <div className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-card">
+            <div className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-card">
               <Button size="sm" variant="outline" className="text-tile-foreground! px-5 flex items-center" onClick={handleCancelPlacement}>
                 Avbryt
                 <KbdGroup className="flex items-center">
