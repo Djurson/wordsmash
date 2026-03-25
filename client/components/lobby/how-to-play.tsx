@@ -1,4 +1,4 @@
-import { Bomb, Construction, Target, Timer, Users, Zap } from "lucide-react";
+import { Bomb, Construction, Target, Timer, Trophy, Users, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { ReactNode } from "react";
 import { Kbd } from "../ui/kbd";
@@ -44,6 +44,7 @@ export function HowToPlay({ children }: { children: ReactNode }) {
                 för att avbryta
               </li>
             </ul>
+            <p className="text-sm leading-relaxed text-muted-foreground">Om ditt lag har svårt att bygga ett ord med de brickor ni har nu kan ni välja att byta in dem mot nya.</p>
           </section>
 
           {/* Navigation */}
@@ -70,13 +71,19 @@ export function HowToPlay({ children }: { children: ReactNode }) {
               <Zap className="w-4 h-4 text-tile-foreground" />
               Power-ups
             </h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Det går att spela med eller utan power-ups, varje lag börjar med <span className="px-1 py-0.5 bg-muted rounded">2 bomber</span> och{" "}
+              <span className="px-1 py-0.5 bg-muted rounded">3 spärrar</span>. Power-upsen går att placera ut efter <span className="px-1 py-0.5 bg-muted rounded">10 sekunder</span>. Genom att ha
+              brickor utplacerade på spelplanen tjänar laget <span className="px-1 py-0.5 bg-muted rounded">energi</span> som ni kan använda för att köpa fler bomber och spärrar.
+            </p>
             <div className="flex flex-col w-full gap-3">
               <div className="flex items-center w-[98%] gap-3 p-3 border-2 rounded-lg border-tile-primary bg-tile-primary/5">
                 <Bomb className="p-2 rounded-lg stroke-2 size-10 border-tile-primary bg-tile-primary/20 shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">Bomber</p>
                   <p className="text-xs text-muted-foreground">
-                    Placera bomber på brickor som redan ligger på spelplanen. Nästa gång brickan används i ett ord sprängs brickorna bort. Men se upp, du kan inte se var du har placerat dina bomber.
+                    Placera bomber på brickor som redan ligger på spelplanen. Nästa gång brickan används i ett ord sprängs brickorna bort. Men se upp, spränger du ditt egna lags bomber får ni minus
+                    poäng.
                   </p>
                 </div>
               </div>
@@ -94,9 +101,13 @@ export function HowToPlay({ children }: { children: ReactNode }) {
 
           {/* Scoring */}
           <section className="flex flex-col gap-3">
-            <h3 className="text-sm font-bold text-foreground">Poäng</h3>
+            <h3 className="flex items-center text-sm font-bold gap-2 text-foreground">
+              <Trophy className="w-4 h-4 text-tile-foreground" />
+              Poäng
+            </h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Varje bokstav har ett poängvärde (visas i hörnet av brickan). Längre ord ger bonuspoäng. Laget med flest poäng när tiden är slut vinner!
+              Varje bokstav har ett poängvärde (visas i hörnet av brickan). Längre ord ger bonuspoäng. Om andra laget spränger något av ditt lags bomber get även det poäng. Laget med flest poäng när
+              tiden är slut vinner!
             </p>
           </section>
         </div>
