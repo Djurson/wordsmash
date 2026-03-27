@@ -64,7 +64,7 @@ Navigate to the `server` directory, resolve dependencies, and start the Go serve
 ```bash
 cd server
 go mod tidy
-go run main.go
+go run .
 ```
 
 _The WebSocket server will start on `http://localhost:8080`._
